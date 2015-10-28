@@ -193,6 +193,10 @@ static inline int odp_config_shm_blocks(void)
  * @}
  */
 
+/**
+ * @}
+ */
+
 #ifdef __cplusplus
 }
 #endif
