@@ -308,6 +308,10 @@ static odp_pktio_t create_pktio(int iface_idx, odp_pktin_mode_t imode,
 	CU_ASSERT(pktio != ODP_PKTIO_INVALID);
 	CU_ASSERT(odp_pktio_to_u64(pktio) !=
 		  odp_pktio_to_u64(ODP_PKTIO_INVALID));
+	/* Print pktio debug info and test that the odp_pktio_print() function
+	 * is implemented. */
+	if (pktio != ODP_PKTIO_INVALID)
+		odp_pktio_print(pktio);
 
 	if (wait_for_network)
 		odp_time_wait_ns(ODP_TIME_SEC_IN_NS / 4);
