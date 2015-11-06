@@ -31,6 +31,7 @@ extern "C" {
 #define KEY_BITS_3DES       192  /**< 3DES cipher key length in bits */
 #define KEY_BITS_MD5_96     128  /**< MD5_96 auth key length in bits */
 #define KEY_BITS_SHA256_128 256  /**< SHA256_128 auth key length in bits */
+#define KEY_BITS_AES128     128  /**< AES128 auth key length in bits */
 
 /**< Number of bits represnted by a string of hexadecimal characters */
 #define KEY_STR_BITS(str) (4 * strlen(str))
@@ -95,17 +96,40 @@ int parse_key_string(char *keystring,
 
 	/* Algorithm is either cipher or authentication */
 	if (alg->cipher) {
-		if ((alg->u.cipher == ODP_CIPHER_ALG_3DES_CBC) &&
-		    (KEY_BITS_3DES == key_bits_in))
-			key->length = key_bits_in / 8;
-
-	} else {
-		if ((alg->u.auth == ODP_AUTH_ALG_MD5_96) &&
-		    (KEY_BITS_MD5_96 == key_bits_in))
-			key->length = key_bits_in / 8;
-		else if ((alg->u.auth == ODP_AUTH_ALG_SHA256_128) &&
-			 (KEY_BITS_SHA256_128 == key_bits_in))
-			key->length = key_bits_in / 8;
+		if (alg->u.cipher == ODP_CIPHER_ALG_3DES_CBC) {
+			if (KEY_BITS_3DES == key_bits_in) {
+				key->length = key_bits_in / 8;
+			}
+			else{
+				printf("Error: invalid 3des key length: %s\n", keystring);
+				abort();
+			}
+		} else if (alg->u.cipher == ODP_CIPHER_ALG_AES128_CBC) {
+			if (KEY_BITS_AES128 == key_bits_in) {
+				key->length = key_bits_in / 8;
+			}
+			else{
+				printf("Error: invalid aes128 key length: %s\n", keystring);
+				abort();
+			}
+		}
+	}
+	else {
+		if (alg->u.auth == ODP_AUTH_ALG_MD5_96) {
+			if (KEY_BITS_MD5_96 == key_bits_in) {
+				key->length = key_bits_in / 8;
+			} else {
+				printf("Error: invalid md5 key length: %s\n", keystring);
+				abort();
+			}
+		} else if (alg->u.auth == ODP_AUTH_ALG_SHA256_128) {
+			 if (KEY_BITS_SHA256_128 == key_bits_in) {
+				 key->length = key_bits_in / 8;
+			 } else {
+				 printf("Error: invalid md5 key length: %s\n", keystring);
+				 abort();
+			 }
+		}
 	}
 
 	for (idx = 0; idx < key->length; idx++) {
