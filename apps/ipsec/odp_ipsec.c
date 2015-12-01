@@ -751,12 +751,17 @@ static int num_workers;
  *
  * @return NULL (should never return)
  */
+
+static uint64_t pkt__[16];
+
 static
 void *pktio_thread(void *arg EXAMPLE_UNUSED)
 {
 	int thr;
 	odp_event_t ev;
 	pkt_disposition_e rc;
+
+	uint64_t totpkt = 0;
 
 	thr = odp_thread_id();
 
@@ -776,6 +781,8 @@ void *pktio_thread(void *arg EXAMPLE_UNUSED)
 				start_counter(CNT_RECV);
 				n_pkt = odp_pktio_recv(pktios[0], pkts, 4);
 				stop_counter(CNT_RECV);
+				totpkt += n_pkt;
+				__builtin_k1_sdu(&pkt__[thr], totpkt);
 			} while(n_pkt == 0);
 			count(CNT_PKT_RX);
 
@@ -1006,6 +1013,20 @@ main(int argc, char *argv[])
 		} while (!done);
 		printf("All received\n");
 	} else {
+		if (__k1_get_cluster_id() == 2) {
+			uint64_t prev = 0;
+			uint64_t prevcy = 0;
+			while (1) {
+				my_sleep(1);
+				int i;
+				uint64_t curpkt = 0;
+				for (i=0; i<16; i++) curpkt += __builtin_k1_ldu(&pkt__[i]);
+				uint64_t cy = __k1_read_dsu_timestamp();
+				printf("STATS: %llu pkts in %llu cycles\n", curpkt-prev, cy-prevcy);
+				prev = curpkt;
+				prevcy = cy;
+			}
+		}
 		odph_linux_pthread_join(thread_tbl, num_workers);
 	}
 
