@@ -31,7 +31,7 @@ buffer_ring_t g_full_buf_pool[MPPA_PCIE_ETH_MAX_INTERFACE_COUNT];
 
 #define BUF_POOL_COUNT	(1 + MPPA_PCIE_ETH_MAX_INTERFACE_COUNT)
 
-int mppa_pcie_noc_init_buff_pools()
+static int mppa_pcie_noc_init_buff_pools()
 {
 	mppa_pcie_noc_rx_buf_t **buf_pool;
 	mppa_pcie_noc_rx_buf_t *bufs[MPPA_PCIE_MULTIBUF_COUNT];
@@ -66,6 +66,10 @@ int mppa_pcie_noc_init_buff_pools()
 
 int mppa_pcie_eth_noc_init()
 {
+#ifdef K1B_EXPLORER
+	return 0;
+#endif
+
 	int i;
 
 	for(i = 0; i < BSP_NB_DMA_IO_MAX; i++) {
@@ -115,7 +119,7 @@ static int mppa_pcie_eth_setup_tx(unsigned int iface_id, unsigned int *tx_id, un
 	return 0;
 }
 
-odp_rpc_cmd_ack_t mppa_pcie_eth_open(unsigned remoteClus, odp_rpc_t * msg)
+static odp_rpc_cmd_ack_t mppa_pcie_eth_open(unsigned remoteClus, odp_rpc_t * msg)
 {
 	odp_rpc_cmd_pcie_open_t open_cmd = {.inl_data = msg->inl_data};
 	odp_rpc_cmd_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
@@ -157,7 +161,7 @@ odp_rpc_cmd_ack_t mppa_pcie_eth_open(unsigned remoteClus, odp_rpc_t * msg)
 	return ack;
 }
 
-odp_rpc_cmd_ack_t mppa_pcie_eth_close(__attribute__((unused)) unsigned remoteClus, __attribute__((unused)) odp_rpc_t * msg)
+static odp_rpc_cmd_ack_t mppa_pcie_eth_close(__attribute__((unused)) unsigned remoteClus, __attribute__((unused)) odp_rpc_t * msg)
 {
 	odp_rpc_cmd_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
 	ack.status = 0;
