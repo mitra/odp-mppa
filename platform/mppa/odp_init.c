@@ -15,7 +15,6 @@
 int cluster_iopcie_sync(void);
 
 struct odp_global_data_s odp_global_data;
-
 int cluster_iopcie_sync(void)
 {
 	unsigned cluster_id = __k1_get_cluster_id();
@@ -26,6 +25,10 @@ int cluster_iopcie_sync(void)
 		.data_len = 0,
 		.flags = 0,
 	};
+
+	if (getenv("SYNC_CLUSTER_ID")) {
+		cluster_id = atoi(getenv("SYNC_CLUSTER_ID"));
+	}
 
 	odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(__k1_spawner_id() / 128  - 1,
 						  cluster_id),
