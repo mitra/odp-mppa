@@ -25,14 +25,13 @@ int cluster_iopcie_sync(void)
 		.data_len = 0,
 		.flags = 0,
 	};
-
-	if (getenv("SYNC_CLUSTER_ID")) {
-		cluster_id = atoi(getenv("SYNC_CLUSTER_ID"));
+	unsigned int rpc_server_id = __k1_spawner_id() / 128 - 1;
+	if (getenv("SYNC_IODDR_ID")) {
+		rpc_server_id = atoi(getenv("SYNC_IODDR_ID"));
 	}
 
-	odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(__k1_spawner_id() / 128  - 1,
-						  cluster_id),
-			 odp_rpc_get_ioddr_tag_id(/* unused */ 0, cluster_id),
+	odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(rpc_server_id, cluster_id),
+			 odp_rpc_get_ioddr_tag_id(rpc_server_id, cluster_id),
 			 &cmd, NULL);
 
 	if (odp_rpc_wait_ack(&ack_msg, NULL, 5 * RPC_TIMEOUT_1S) != 1)
