@@ -7,12 +7,14 @@ ODP_MODULES = buffer \
 	      config \
 	      cpumask \
 	      errno \
+	      hash \
 	      init \
 	      queue \
 	      packet \
 	      pktio \
 	      pool \
 	      scheduler \
+	      std_clib \
 	      synchronizers \
 	      thread \
 	      time \

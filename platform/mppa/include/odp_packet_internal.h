@@ -27,6 +27,8 @@ extern "C" {
 #include <odp/crypto.h>
 #include <odp_crypto_internal.h>
 
+#define PACKET_JUMBO_LEN       (9 * 1024)
+
 /**
  * Packet input & protocol flags
  */
@@ -138,7 +140,7 @@ typedef struct {
 } odp_packet_hdr_t;
 
 typedef struct {
-	uint8_t *parseptr;
+	const uint8_t *parseptr;
 	uint32_t offset;
 
 	uint16_t l3_len;
@@ -247,7 +249,12 @@ void packet_parse_l2(odp_packet_hdr_t *pkt_hdr);
 int packet_parse_full(odp_packet_hdr_t *pkt_hdr);
 
 /* Reset parser metadata for a new parse */
-void packet_parse_reset(odp_packet_t pkt);
+void packet_parse_reset(odp_packet_hdr_t *pkt_hdr);
+
+int _odp_parse_common(odp_packet_hdr_t *pkt_hdr, const uint8_t *parseptr);
+
+int _odp_cls_parse(odp_packet_hdr_t *pkt_hdr, const uint8_t *parseptr);
+
 
 #ifdef __cplusplus
 }

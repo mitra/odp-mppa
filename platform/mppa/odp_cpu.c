@@ -6,7 +6,6 @@
 
 #include <odp/cpu.h>
 #include <odp/hints.h>
-#include <odp_cpu_internal.h>
 #include <HAL/hal/hal.h>
 
 uint64_t odp_cpu_cycles(void)
@@ -16,7 +15,10 @@ uint64_t odp_cpu_cycles(void)
 
 uint64_t odp_cpu_cycles_diff(uint64_t c1, uint64_t c2)
 {
-	return _odp_cpu_cycles_diff(c1, c2);
+	if (odp_likely(c2 >= c1))
+		return c2 - c1;
+
+	return c2 + (odp_cpu_cycles_max() - c1) + 1;
 }
 
 uint64_t odp_cpu_cycles_max(void)

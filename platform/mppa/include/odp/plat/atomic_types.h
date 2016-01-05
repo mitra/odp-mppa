@@ -48,17 +48,10 @@ struct odp_atomic_u32_s {
 	};
 } ODP_ALIGNED(sizeof(uint32_t)); /* Enforce alignement! */;
 
-/** @addtogroup odp_synchronizers
- *  @{
- */
-
 typedef struct odp_atomic_u64_s odp_atomic_u64_t;
 
 typedef struct odp_atomic_u32_s odp_atomic_u32_t;
 
-/**
- * @}
- */
 #define INVALIDATE_AREA(p, s) do {									\
 		const char *__ptr;									\
 		for (__ptr = (char*)(p); __ptr < ((char*)(p)) + (s); __ptr += _K1_DCACHE_LINE_SIZE) {	\

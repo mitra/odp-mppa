@@ -7,6 +7,7 @@
 #include <HAL/hal/hal.h>
 #include <odp/errno.h>
 #include <errno.h>
+#include "odp_classification_internal.h"
 #include "../../syscall/include/common.h"
 
 static int _magic_scall_init(void){
@@ -100,8 +101,9 @@ static int magic_recv(pktio_entry_t *const pktio_entry, odp_packet_t pkt_table[]
 			break;
 
 		/* Parse and set packet header data */
+		packet_parse_reset((odp_packet_hdr_t *)pkt);
 		odp_packet_pull_tail(pkt, pktio_entry->s.pkt_magic.max_frame_len - recv_bytes);
-		packet_parse_reset(pkt);
+		packet_parse_l2((odp_packet_hdr_t *)pkt);
 
 		pkt_table[nb_rx] = pkt;
 		pkt = ODP_PACKET_INVALID;
@@ -110,6 +112,16 @@ static int magic_recv(pktio_entry_t *const pktio_entry, odp_packet_t pkt_table[]
 
 	if (odp_unlikely(pkt != ODP_PACKET_INVALID))
 		odp_packet_free(pkt);
+
+	if (nb_rx && pktio_cls_enabled(pktio_entry)) {
+		int defq_pkts = 0;
+		for (int i = 0; i < nb_rx; ++i) {
+			if (0 > _odp_packet_classifier(pktio_entry, pkt_table[i])) {
+				pkt_table[defq_pkts] = pkt_table[i];
+			}
+		}
+		nb_rx = defq_pkts;
+	}
 
 	return nb_rx;
 }

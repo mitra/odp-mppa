@@ -26,11 +26,6 @@
 extern "C" {
 #endif
 
-/** @addtogroup odp_synchronizers
- *  Atomic operations.
- *  @{
- */
-
 /**
  * Pointer atomic type
  */
@@ -490,10 +485,6 @@ static inline int _odp_atomic_ptr_cmp_xchg_strong(
 {
 	return _odp_atomic_u32_cmp_xchg_strong_mm((odp_atomic_u32_t*)atom, (uint32_t*) exp, (uint32_t)val, success, failure);
 }
-
-/**
- * @}
- */
 
 #ifdef __cplusplus
 }

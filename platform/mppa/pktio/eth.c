@@ -16,6 +16,7 @@
 #include <utask.h>
 #endif
 
+#include <odp_classification_internal.h>
 #include "odp_pool_internal.h"
 #include "odp_rpc_internal.h"
 #include "odp_rx_internal.h"
@@ -342,7 +343,7 @@ static int eth_recv(pktio_entry_t *pktio_entry, odp_packet_t pkt_table[],
 			((uint8_t *)pkt_hdr->buf_hdr.addr) +
 			pkt_hdr->headroom;
 
-		packet_parse_reset(pkt);
+		packet_parse_reset(pkt_hdr);
 
 		union mppa_ethernet_header_info_t info;
 		uint8_t * const hdr_addr = base_addr -
@@ -354,7 +355,19 @@ static int eth_recv(pktio_entry_t *pktio_entry, odp_packet_t pkt_table[],
 		const unsigned frame_len =
 			info._.pkt_size - sizeof(mppa_ethernet_header_t);
 		pull_tail(pkt_hdr, pkt_hdr->frame_len - frame_len);
+		packet_parse_l2(pkt_hdr);
 	}
+
+	if (n_packet && pktio_cls_enabled(pktio_entry)) {
+		int defq_pkts = 0;
+		for (int i = 0; i < n_packet; ++i) {
+			if (0 > _odp_packet_classifier(pktio_entry, pkt_table[i])) {
+				pkt_table[defq_pkts] = pkt_table[i];
+			}
+		}
+		n_packet = defq_pkts;
+	}
+
 	return n_packet;
 }
 

@@ -301,6 +301,9 @@ static int _pktio_stop(pktio_entry_t *entry)
 {
 	int res = 0;
 
+       if (entry->s.state == STATE_STOP)
+               return -1;
+
 	if (entry->s.ops->stop)
 		res = entry->s.ops->stop(entry);
 	if (!res)
@@ -320,11 +323,6 @@ int odp_pktio_stop(odp_pktio_t id)
 		return -1;
 
 	lock_entry(entry);
-	if (entry->s.state == STATE_STOP) {
-		unlock_entry(entry);
-		return -1;
-	}
-
 	res = _pktio_stop(entry);
 	unlock_entry(entry);
 
@@ -551,9 +549,7 @@ int pktin_deq_multi(queue_entry_t *qentry, odp_buffer_hdr_t *buf_hdr[], int num)
 {
 	int nbr;
 	odp_packet_t pkt_tbl[QUEUE_MULTI_MAX];
-	odp_buffer_hdr_t *hdr_tbl[QUEUE_MULTI_MAX];
-	odp_buffer_hdr_t *tmp_hdr;
-	int pkts, i, j;
+	int pkts, j;
 	odp_pktio_t pktio;
 
 	nbr = queue_deq_multi(qentry, buf_hdr, num);
@@ -573,32 +569,16 @@ int pktin_deq_multi(queue_entry_t *qentry, odp_buffer_hdr_t *buf_hdr[], int num)
 	if (pkts <= 0)
 		return nbr;
 
-	pktio_entry_t * entry = get_pktio_entry(pktio);
-
-	if (pktio_cls_enabled(entry)) {
-		for (i = 0, j = 0; i < pkts; i++) {
-			if (0 > packet_classifier(pktio, pkt_tbl[i])) {
-				tmp_hdr = (odp_buffer_hdr_t *)pkt_tbl[i];
-				if(nbr < num)
-					buf_hdr[nbr++] = tmp_hdr;
-				else
-					hdr_tbl[j++] = tmp_hdr;
-			}
-		}
-		if (j)
-			queue_enq_multi(qentry, hdr_tbl, j, 0);
+	if(nbr + pkts <= num) {
+		j = 0;
 	} else {
-		if(nbr + pkts <= num) {
-			j = 0;
-		} else {
-			j = (pkts + nbr) - num;
-			queue_enq_multi(qentry,
-					(odp_buffer_hdr_t**)&pkt_tbl[num - nbr],
-					j, 0);
-		}
-		memcpy(&buf_hdr[nbr], &pkt_tbl[0], (pkts - j) * sizeof(*pkt_tbl));
-		nbr += pkts - j;
+		j = (pkts + nbr) - num;
+		queue_enq_multi(qentry,
+				(odp_buffer_hdr_t**)&pkt_tbl[num - nbr],
+				j, 0);
 	}
+	memcpy(&buf_hdr[nbr], &pkt_tbl[0], (pkts - j) * sizeof(*pkt_tbl));
+	nbr += pkts - j;
 
 	return nbr;
 }
@@ -613,8 +593,7 @@ odp_buffer_hdr_t *pktin_dequeue(queue_entry_t *qentry)
 int pktin_poll(pktio_entry_t *entry)
 {
 	odp_packet_t pkt_tbl[QUEUE_MULTI_MAX];
-	odp_buffer_hdr_t *hdr_tbl[QUEUE_MULTI_MAX];
-	int num, num_enq, i;
+	int num;
 
 	if (odp_unlikely(is_free(entry)))
 		return -1;
@@ -635,31 +614,9 @@ int pktin_poll(pktio_entry_t *entry)
 		return -1;
 	}
 
-	if (!entry->s.cls_enabled) {
-		queue_entry_t *qentry;
-		qentry = queue_to_qentry(entry->s.inq_default);
-		queue_enq_multi(qentry, (odp_buffer_hdr_t**)pkt_tbl, num, 0);
-		return 0;
-	}
-
-	for (i = 0, num_enq = 0; i < num; ++i) {
-		odp_buffer_t buf;
-		odp_buffer_hdr_t *hdr;
-
-		buf = (odp_buffer_t)pkt_tbl[i];
-		hdr = odp_buf_to_hdr(buf);
-
-		if (packet_classifier(entry->s.handle, pkt_tbl[i]) < 0) {
-			hdr_tbl[num_enq++] = hdr;
-		}
-	}
-
-	if (num_enq) {
-		queue_entry_t *qentry;
-		qentry = queue_to_qentry(entry->s.inq_default);
-		queue_enq_multi(qentry, hdr_tbl, num_enq, 0);
-	}
-
+	queue_entry_t *qentry;
+	qentry = queue_to_qentry(entry->s.inq_default);
+	queue_enq_multi(qentry, (odp_buffer_hdr_t**)pkt_tbl, num, 0);
 	return 0;
 }
 
@@ -803,4 +760,44 @@ int odp_pktio_term_global(void)
 	}
 
 	return ret;
+}
+
+void odp_pktio_print(odp_pktio_t id)
+{
+	pktio_entry_t *entry;
+	uint8_t addr[ETH_ALEN];
+	int max_len = 512;
+	char str[max_len];
+	int len = 0;
+	int n = max_len - 1;
+
+	entry = get_pktio_entry(id);
+	if (entry == NULL) {
+		ODP_DBG("pktio entry %d does not exist\n", id);
+		return;
+	}
+	INVALIDATE(entry);
+	len += snprintf(&str[len], n - len,
+			"pktio\n");
+	len += snprintf(&str[len], n - len,
+			"  handle       %" PRIu64 "\n", odp_pktio_to_u64(id));
+	len += snprintf(&str[len], n - len,
+			"  name         %s\n", entry->s.name);
+	len += snprintf(&str[len], n - len,
+			"  state        %s\n",
+			entry->s.state ==  STATE_START ? "start" :
+		       (entry->s.state ==  STATE_STOP ? "stop" : "unknown"));
+	memset(addr, 0, sizeof(addr));
+	odp_pktio_mac_addr(id, addr, ETH_ALEN);
+	len += snprintf(&str[len], n - len,
+			"  mac          %02x:%02x:%02x:%02x:%02x:%02x\n",
+			addr[0], addr[1], addr[2], addr[3], addr[4], addr[5]);
+	len += snprintf(&str[len], n - len,
+			"  mtu          %d\n", odp_pktio_mtu(id));
+	len += snprintf(&str[len], n - len,
+			"  promisc      %s\n",
+			odp_pktio_promisc_mode(id) ? "yes" : "no");
+	str[len] = '\0';
+
+	ODP_PRINT("\n%s\n", str);
 }

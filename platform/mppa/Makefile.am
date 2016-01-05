@@ -26,6 +26,7 @@ odpinclude_HEADERS = \
 		  $(srcdir)/include/odp/debug.h \
 		  $(srcdir)/include/odp/errno.h \
 		  $(srcdir)/include/odp/event.h \
+		  $(srcdir)/include/odp/hash.h \
 		  $(srcdir)/include/odp/hints.h \
 		  $(srcdir)/include/odp/init.h \
 		  $(srcdir)/include/odp/packet_flags.h \
@@ -35,10 +36,13 @@ odpinclude_HEADERS = \
 		  $(srcdir)/include/odp/queue.h \
 		  $(srcdir)/include/odp/random.h \
 		  $(srcdir)/include/odp/rwlock.h \
+		  $(srcdir)/include/odp/rwlock_recursive.h \
 		  $(srcdir)/include/odp/schedule.h \
 		  $(srcdir)/include/odp/schedule_types.h \
 		  $(srcdir)/include/odp/shared_memory.h \
 		  $(srcdir)/include/odp/spinlock.h \
+		  $(srcdir)/include/odp/spinlock_recursive.h \
+		  $(srcdir)/include/odp/std_clib.h \
 		  $(srcdir)/include/odp/std_types.h \
 		  $(srcdir)/include/odp/sync.h \
 		  $(srcdir)/include/odp/system_info.h \
@@ -65,10 +69,13 @@ odpplatinclude_HEADERS = \
 		  $(srcdir)/include/odp/plat/pool_types.h \
 		  $(srcdir)/include/odp/plat/queue_types.h \
 		  $(srcdir)/include/odp/plat/rwlock_types.h \
+		  $(srcdir)/include/odp/plat/rwlock_recursive_types.h \
 		  $(srcdir)/include/odp/plat/schedule_types.h \
 		  $(srcdir)/include/odp/plat/shared_memory_types.h \
 		  $(srcdir)/include/odp/plat/spinlock_types.h \
+		  $(srcdir)/include/odp/plat/spinlock_recursive_types.h \
 		  $(srcdir)/include/odp/plat/strong_types.h \
+		  $(srcdir)/include/odp/plat/thread_types.h \
 		  $(srcdir)/include/odp/plat/thrmask_types.h \
 		  $(srcdir)/include/odp/plat/ticketlock_types.h \
 		  $(srcdir)/include/odp/plat/time_types.h \
@@ -84,7 +91,6 @@ noinst_HEADERS = \
 		  $(srcdir)/include/odp_classification_datamodel.h \
 		  $(srcdir)/include/odp_classification_inlines.h \
 		  $(srcdir)/include/odp_classification_internal.h \
-		  $(srcdir)/include/odp_config_internal.h \
 		  $(srcdir)/include/odp_crypto_internal.h \
 		  $(srcdir)/include/odp_debug_internal.h \
 		  $(srcdir)/include/odp_forward_typedefs_internal.h \
@@ -116,6 +122,7 @@ __LIB__libodp_la_SOURCES = \
 			   odp_cpumask_task.c \
 			   ../linux-generic/odp_errno.c \
 			   odp_event.c \
+			   ../linux-generic/odp_hash.c \
 			   odp_init.c \
 			   ../linux-generic/odp_impl.c \
 			   odp_packet.c \
@@ -134,15 +141,17 @@ __LIB__libodp_la_SOURCES = \
 			   odp_queue.c \
 			   odp_rpc.c \
 			   odp_rwlock.c \
+			   odp_rwlock_recursive.c \
 			   odp_schedule.c \
 			   odp_shared_memory.c \
 			   odp_sleep.c \
 			   odp_spinlock.c \
+			   odp_spinlock_recursive.c \
 			   odp_system_info.c \
 			   odp_thread.c \
 			   ../linux-generic/odp_thrmask.c \
 			   odp_ticketlock.c \
-			   ../linux-generic/odp_time.c \
+			   odp_time.c \
 			   odp_timer.c \
 			   os/@OS@/timer.c \
 			   ../linux-generic/odp_version.c \

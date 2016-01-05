@@ -227,11 +227,16 @@ static inline uint32_t odp_buffer_pool_tailroom(odp_pool_t pool)
 	return odp_pool_to_entry(pool)->s.tailroom;
 }
 
-static inline int pool_to_id(odp_pool_t pool) {
+static inline int pool_to_id(odp_pool_t pool)
+{
 	pool_entry_t * entry = odp_pool_to_entry(pool);
 	return entry - pool_tbl.pool;
 }
 
+static inline odp_pool_t pool_handle(pool_entry_t *pool)
+{
+	return (odp_pool_t)pool;
+}
 #ifdef __cplusplus
 }
 #endif

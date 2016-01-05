@@ -27,7 +27,7 @@ static void *odp_run_start_routine(void *arg)
 {
 	odp_start_args_t *start_args = arg;
 	/* ODP thread local init */
-	if (odp_init_local(ODP_THREAD_WORKER)) {
+	if (odp_init_local(start_args->thr_type)) {
 		ODPH_ERR("Local init failed\n");
 		return NULL;
 	}
@@ -41,8 +41,9 @@ static void *odp_run_start_routine(void *arg)
 }
 
 int odph_linux_pthread_create(odph_linux_pthread_t *thread_tbl,
-			       const odp_cpumask_t *mask_in,
-			       void *(*start_routine) (void *), void *arg)
+			      const odp_cpumask_t *mask_in,
+			      void *(*start_routine) (void *), void *arg,
+			      odp_thread_type_t thr_type)
 {
 	int i;
 	int num;
@@ -81,6 +82,8 @@ int odph_linux_pthread_create(odph_linux_pthread_t *thread_tbl,
 
 		thread_tbl[i].start_args->start_routine = start_routine;
 		thread_tbl[i].start_args->arg           = arg;
+		thread_tbl[i].start_args->thr_type      = thr_type;
+
 		utask_t task;
 		if(utask_start_pe(&task, odp_run_start_routine, thread_tbl[i].start_args, cpu))
 			ODPH_ABORT("Thread failed");
