@@ -11,7 +11,7 @@ int no_printf(__attribute__((unused)) const char *fmt , ...)
 
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 
-#ifndef NDEBUG
+#ifdef VERBOSE
 #    define dbg_printf(fmt, args...) \
 	printf("[DBG] %s:%d: " fmt,  __FILENAME__, __LINE__, ## args)
 #else
