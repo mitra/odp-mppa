@@ -528,7 +528,7 @@ static int schedule_loop(odp_queue_t *out_queue, uint64_t wait,
 		if (wait == ODP_SCHED_NO_WAIT)
 			break;
 
-		if (!first) {
+		if (first) {
 			wtime = odp_time_local_from_ns(wait);
 			next = odp_time_sum(odp_time_local(), wtime);
 			first = 0;
