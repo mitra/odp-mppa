@@ -14,45 +14,29 @@
 
 static odp_time_t start_time;
 
-static inline odp_time_t dsu_timestamp_to_time(uint64_t dsu_ts)
-{
-	odp_time_t time;
-	const uint64_t divisor =  __k1_read_dsu_timestamp_divisor();
-	const uint64_t cycles = dsu_ts * divisor;
-	const uint64_t freq = __bsp_frequency;
-
-	time.tv_sec = cycles / freq;
-	time.tv_nsec = ((cycles % freq) * ODP_TIME_SEC_IN_NS) / freq;
-	return time;
-}
-
 static inline odp_time_t get_time(void)
 {
-	return dsu_timestamp_to_time(__k1_read_dsu_timestamp());
+	odp_time_t time;
+	time.cycles = __k1_read_dsu_timestamp();
+#ifdef DSU_DIVISOR
+	time.cycles *= __k1_read_dsu_timestamp_divisor();
+#endif
+	return time;
 }
 
 static inline
 uint64_t time_to_ns(odp_time_t time)
 {
-	uint64_t ns;
+	const uint64_t freq = __bsp_frequency;
 
-	ns = time.tv_sec * ODP_TIME_SEC_IN_NS;
-	ns += time.tv_nsec;
-
-	return ns;
+	return (time.cycles / freq) * ODP_TIME_SEC_IN_NS +
+		(time.cycles % freq) * ODP_TIME_SEC_IN_NS / freq;
 }
 
 static inline odp_time_t time_diff(odp_time_t t2, odp_time_t t1)
 {
 	odp_time_t time;
-
-	time.tv_sec = t2.tv_sec - t1.tv_sec;
-	time.tv_nsec = t2.tv_nsec - t1.tv_nsec;
-
-	if (time.tv_nsec < 0) {
-		time.tv_nsec += ODP_TIME_SEC_IN_NS;
-		--time.tv_sec;
-	}
+	time.cycles = t2.cycles - t1.cycles;
 
 	return time;
 }
@@ -64,26 +48,17 @@ static inline odp_time_t time_local(void)
 
 static inline int time_cmp(odp_time_t t2, odp_time_t t1)
 {
-	if (t2.tv_sec < t1.tv_sec)
+	if (t2.cycles < t1.cycles)
 		return -1;
 
-	if (t2.tv_sec > t1.tv_sec)
-		return 1;
-
-	return t2.tv_nsec - t1.tv_nsec;
+	return (t2.cycles > t1.cycles);
 }
 
 static inline odp_time_t time_sum(odp_time_t t1, odp_time_t t2)
 {
 	odp_time_t time;
 
-	time.tv_sec = t2.tv_sec + t1.tv_sec;
-	time.tv_nsec = t2.tv_nsec + t1.tv_nsec;
-
-	if (time.tv_nsec >= (long)ODP_TIME_SEC_IN_NS) {
-		time.tv_nsec -= ODP_TIME_SEC_IN_NS;
-		++time.tv_sec;
-	}
+	time.cycles = t1.cycles + t2.cycles;
 
 	return time;
 }
@@ -91,9 +66,9 @@ static inline odp_time_t time_sum(odp_time_t t1, odp_time_t t2)
 static inline odp_time_t time_local_from_ns(uint64_t ns)
 {
 	odp_time_t time;
-
-	time.tv_sec = ns / ODP_TIME_SEC_IN_NS;
-	time.tv_nsec = ns - time.tv_sec * ODP_TIME_SEC_IN_NS;
+	const uint64_t freq = __bsp_frequency;
+	time.cycles = (ns / ODP_TIME_SEC_IN_NS) * freq +
+		((ns % ODP_TIME_SEC_IN_NS) * freq) / ODP_TIME_SEC_IN_NS;
 
 	return time;
 }
@@ -109,7 +84,7 @@ static inline void time_wait_until(odp_time_t time)
 
 static inline uint64_t time_local_res(void)
 {
-	return dsu_timestamp_to_time(1ULL).tv_nsec;
+	return __bsp_frequency;
 }
 
 odp_time_t odp_time_local(void)
@@ -178,7 +153,7 @@ void odp_time_wait_until(odp_time_t time)
 
 uint64_t odp_time_to_u64(odp_time_t time)
 {
-	return time_to_ns(time) / time_local_res();
+	return time.cycles;
 }
 
 int odp_time_global_init(void)

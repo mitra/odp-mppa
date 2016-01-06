@@ -9,7 +9,13 @@
 #include "time.h"
 
 #define BUSY_LOOP_CNT		30000000    /* used for t > min resolution */
+
+#ifdef __K1__
+#define BUSY_LOOP_CNT_LONG	200000000 /* used for t > 4 sec */
+#else
 #define BUSY_LOOP_CNT_LONG	12000000000 /* used for t > 4 sec */
+#endif
+
 #define MIN_TIME_RATE		32000
 #define MAX_TIME_RATE		15000000000
 #define DELAY_TOLERANCE		20000000	    /* deviation for delay */
