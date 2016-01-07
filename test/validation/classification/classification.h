@@ -45,7 +45,7 @@
 /* Config values for CoS L2 Priority */
 #define TEST_L2_QOS		1
 #define CLS_L2_QOS_0		6
-#define CLS_L2_QOS_MAX		5
+#define CLS_L2_QOS_MAX		3
 
 #define CLS_ENTRIES		(CLS_L2_QOS_0 + CLS_L2_QOS_MAX)
 
