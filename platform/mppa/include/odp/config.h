@@ -24,7 +24,7 @@ extern "C" {
 /**
  * Maximum number of pools
  */
-#define ODP_CONFIG_POOLS 8
+#define ODP_CONFIG_POOLS 12
 static inline int odp_config_pools(void)
 {
 	return ODP_CONFIG_POOLS;
