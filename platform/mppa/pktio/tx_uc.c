@@ -243,10 +243,7 @@ static int _tx_uc_send_aligned_packets(const pkt_tx_uc_config *tx_config,
 			len += sizeof(info);
 		}
 		/* ROund up to superior multiple of 8B */
-		if (len % sizeof(uint64_t)) {
-			len -= len % sizeof(uint64_t);
-			len += sizeof(uint64_t);
-		}
+		len = ( ( len + sizeof(uint64_t) - 1 ) / sizeof(uint64_t) ) * sizeof(uint64_t);
 		trs->parameter.array[i] = len / sizeof(uint64_t);
 
 		trs->pointer.array[i] =
