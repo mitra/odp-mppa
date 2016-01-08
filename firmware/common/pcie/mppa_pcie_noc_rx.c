@@ -175,7 +175,10 @@ static void poll_noc_rx_buffer(int pcie_eth_if)
 			dbg_printf("packet at addr %p, size %ld\n", pkt_addr, pkt_size);
 			/* Send one packet of the buffer and add buf as padding data to handle consumed packets */
 			mppa_pcie_eth_enqueue_tx(pcie_eth_if, pkt_addr, pkt_size, (uintptr_t) buf);
-			pkt_addr += sizeof(pkt_size);
+
+			// jump to next packet, rounded to sizeof(uin64_t)
+			pkt_addr += ( ( pkt_size + sizeof(uint64_t) - 1 ) / sizeof(uint64_t) ) * sizeof(uint64_t);
+
 			if (hdr.flags & END_OF_PACKETS)
 				break;
 		}
