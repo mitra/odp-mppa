@@ -309,31 +309,23 @@ int mppa_pcie_noc_configure_rx(rx_iface_t *iface, int dma_if, int rx_id)
 }
 
 
-int mppa_pcie_eth_setup_rx(int if_id, unsigned int *rx_id, unsigned int pcie_eth_if)
+int mppa_pcie_eth_setup_rx(int if_id, unsigned int rx_id, unsigned int pcie_eth_if)
 {
-	mppa_noc_ret_t ret;
 	int rx_thread_num = if_id / RX_THREAD_COUNT;
 	int th_iface_id = if_id % IF_PER_THREAD;
 	int rx_mask_off;
 	rx_iface_t *iface;
 
-	ret = mppa_noc_dnoc_rx_alloc_auto(if_id, rx_id, MPPA_NOC_NON_BLOCKING);
-	if(ret) {
-		fprintf(stderr, "[PCIe] Error: Failed to find an available Rx on if %d\n", if_id);
-		return 1;
-	}
-	dbg_printf("RX %d allocated on iface %d, using thread %d\n", *rx_id, if_id, rx_thread_num);
-
-	rx_mask_off = *rx_id / (sizeof(iface->ev_mask[0]) * 8);
+	rx_mask_off = rx_id / (sizeof(iface->ev_mask[0]) * 8);
 	iface = &g_rx_threads[rx_thread_num].iface[th_iface_id];
 
-	if (mppa_pcie_noc_configure_rx(iface, if_id, *rx_id)) {
+	if (mppa_pcie_noc_configure_rx(iface, if_id, rx_id)) {
 		dbg_printf("failed to configure noc rx\n");
 		return 1;
 	}
 
-	iface->ev_mask[rx_mask_off] |= (1 << *rx_id);
-	iface->rx_cfgs[*rx_id].pcie_eth_if = pcie_eth_if;
+	iface->ev_mask[rx_mask_off] |= (1 << rx_id);
+	iface->rx_cfgs[rx_id].pcie_eth_if = pcie_eth_if;
 	__k1_mb();
 
 	return 0;

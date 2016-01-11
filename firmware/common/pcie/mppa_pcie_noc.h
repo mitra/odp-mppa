@@ -51,7 +51,7 @@ int mppa_pcie_eth_noc_init();
 int mppa_pcie_eth_add_forward(unsigned int pcie_eth_if_id, struct mppa_pcie_eth_dnoc_tx_cfg *dnoc_tx_cfg);
 extern struct mppa_pcie_eth_control g_pcie_eth_control;
 
-int mppa_pcie_eth_setup_rx(int if_id, unsigned int *rx_id, unsigned int pcie_eth_if);
+int mppa_pcie_eth_setup_rx(int if_id, unsigned int rx_id, unsigned int pcie_eth_if);
 int mppa_pcie_eth_enqueue_tx(unsigned int pcie_eth_if, void *addr, unsigned int size, uint64_t data);
 int mppa_pcie_eth_tx_full(unsigned int pcie_eth_if);
 
