@@ -24,6 +24,7 @@ static struct {
 	uint8_t payload[RPC_MAX_PAYLOAD];
 } odp_rpc_ack_buf;
 static unsigned rx_port = -1;
+static int rpc_default_server_id = -1;
 
 int g_rpc_init = 0;
 
@@ -56,6 +57,18 @@ int odp_rpc_client_term(void){
 	mppa_noc_dnoc_rx_free(0, rx_port);
 
 	return 0;
+}
+
+int odp_rpc_client_get_default_server(void)
+{
+	if (rpc_default_server_id >= 0)
+		return rpc_default_server_id;
+
+	rpc_default_server_id = __k1_spawner_id() / 128 - 1;
+	if (getenv("SYNC_IODDR_ID")) {
+		rpc_default_server_id = atoi(getenv("SYNC_IODDR_ID"));
+	}
+	return rpc_default_server_id;
 }
 
 static const char * rpc_cmd_names[ODP_RPC_CMD_N_CMD] = {

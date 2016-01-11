@@ -240,6 +240,7 @@ extern int g_rpc_init;
 
 int odp_rpc_client_init(void);
 int odp_rpc_client_term(void);
+int odp_rpc_client_get_default_server(void);
 
 void odp_rpc_print_msg(const odp_rpc_t * cmd);
 
