@@ -25,10 +25,7 @@ int cluster_iopcie_sync(void)
 		.data_len = 0,
 		.flags = 0,
 	};
-	unsigned int rpc_server_id = __k1_spawner_id() / 128 - 1;
-	if (getenv("SYNC_IODDR_ID")) {
-		rpc_server_id = atoi(getenv("SYNC_IODDR_ID"));
-	}
+	const unsigned int rpc_server_id = odp_rpc_client_get_default_server();
 
 	odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(rpc_server_id, cluster_id),
 			 odp_rpc_get_ioddr_tag_id(rpc_server_id, cluster_id),

@@ -140,9 +140,10 @@ static int cluster_rpc_send_c2c_open(odp_pktio_param_t * params, pkt_cluster_t *
 		.inl_data = open_cmd.inl_data,
 		.flags = 0,
 	};
+	const unsigned int rpc_server_id = odp_rpc_client_get_default_server();
 
-	odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(0, cluster_id),
-			 odp_rpc_get_ioddr_tag_id(0, cluster_id),
+	odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(rpc_server_id, cluster_id),
+			 odp_rpc_get_ioddr_tag_id(rpc_server_id, cluster_id),
 			 &cmd, NULL);
 
 	ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * RPC_TIMEOUT_1S);
@@ -181,9 +182,10 @@ static int cluster_rpc_send_c2c_query(pkt_cluster_t *cluster)
 		.inl_data = query_cmd.inl_data,
 		.flags = 0,
 	};
+	const unsigned int rpc_server_id = odp_rpc_client_get_default_server();
 
-	odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(0, cluster_id),
-			 odp_rpc_get_ioddr_tag_id(0, cluster_id),
+	odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(rpc_server_id, cluster_id),
+			 odp_rpc_get_ioddr_tag_id(rpc_server_id, cluster_id),
 			 &cmd, NULL);
 
 	ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * RPC_TIMEOUT_1S);
@@ -373,12 +375,13 @@ static int cluster_close(pktio_entry_t * const pktio_entry ODP_UNUSED)
 		.flags = 0,
 		.inl_data = close_cmd.inl_data
 	};
+	const unsigned int rpc_server_id = odp_rpc_client_get_default_server();
 
 	/* Free packets being sent by DMA */
 	tx_uc_flush(c2c_get_ctx(clus));
 
-	odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(0, cluster_id),
-			 odp_rpc_get_ioddr_tag_id(0, cluster_id),
+	odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(rpc_server_id, cluster_id),
+			 odp_rpc_get_ioddr_tag_id(rpc_server_id, cluster_id),
 			 &cmd, NULL);
 
 	ret = odp_rpc_wait_ack(&ack_msg, NULL, 5 * RPC_TIMEOUT_1S);

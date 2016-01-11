@@ -889,11 +889,14 @@ odp_random_data(uint8_t *buf, int32_t len, odp_bool_t use_entropy ODP_UNUSED)
 			.pkt_type = ODP_RPC_CMD_RND_GET,
 			.data_len = 0,
 			.flags = 0,
-			.inl_data = ( ( odp_rpc_cmd_rnd_t ){ .rnd_len = pkt_len }).inl_data,
+			.inl_data = (( odp_rpc_cmd_rnd_t ){
+					.rnd_len = pkt_len }).inl_data,
 		};
+		const unsigned int rpc_server_id =
+			odp_rpc_client_get_default_server();
 
-		odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(0, cluster_id),
-				 odp_rpc_get_ioddr_tag_id(/* unused */ 0, cluster_id),
+		odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(rpc_server_id, cluster_id),
+				 odp_rpc_get_ioddr_tag_id(rpc_server_id, cluster_id),
 				 &cmd, NULL);
 		int ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * RPC_TIMEOUT_1S);
 		if (ret < 0) {
