@@ -20,12 +20,15 @@ TESTS = pktio/pktio_run \
 	${top_builddir}/test/validation/scheduler/scheduler_main$(EXEEXT) \
 	${top_builddir}/test/validation/synchronizers/synchronizers_main$(EXEEXT) \
 	${top_builddir}/test/validation/thread/thread_main$(EXEEXT) \
-	${top_builddir}/test/validation/time/time_main$(EXEEXT) \
 	${top_builddir}/test/validation/timer/timer_main$(EXEEXT) \
 	${top_builddir}/test/validation/shmem/shmem_main$(EXEEXT) \
 	${top_builddir}/test/validation/system/system_main$(EXEEXT)
 
 SUBDIRS = $(ODP_MODULES)
+if TARGET_IS_HW
+TESTS += 	${top_builddir}/test/validation/time/time_main$(EXEEXT)
+endif
+
 if crypto
 # if TARGET_IS_HW
 # TESTS +=	${top_builddir}/test/validation/crypto/crypto_main$(EXEEXT)
