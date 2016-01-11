@@ -55,12 +55,14 @@ rx_thread_t g_rx_threads[RX_THREAD_COUNT];
 
 static int reload_rx(rx_iface_t *iface, int rx_id)
 {
-	mppa_pcie_noc_rx_buf_t *buf;
+	mppa_pcie_noc_rx_buf_t *new_buf;
+	mppa_pcie_noc_rx_buf_t *old_buf;
 	uint32_t left;
 	uint16_t events;
 	uint16_t pcie_eth_if = iface->rx_cfgs[rx_id].pcie_eth_if;
-	
-	int ret = buffer_ring_get_multi(&g_free_buf_pool, &buf, 1, &left);
+	mppa_noc_dnoc_rx_set_activation_status(iface->iface_id, rx_id, MPPA_NOC_DEACTIVATED);
+
+	int ret = buffer_ring_get_multi(&g_free_buf_pool, &new_buf, 1, &left);
 	if (ret != 1) {
 		err_printf("No more free buffer available\n");
 		return -1;
@@ -72,14 +74,10 @@ static int reload_rx(rx_iface_t *iface, int rx_id)
 		exit(1);
 	}
 
-	dbg_printf("Adding buf to eth if %d\n", pcie_eth_if);
-	/* Add previous buffer to full list */
-	buffer_ring_push_multi(&g_full_buf_pool[pcie_eth_if], &iface->rx_cfgs[rx_id].mapped_buf, 1, &left);
-	
 	typeof(mppa_dnoc[iface->iface_id]->rx_queues[0]) * const rx_queue =
 		&mppa_dnoc[iface->iface_id]->rx_queues[rx_id];
 
-	rx_queue->buffer_base.dword = (uintptr_t) buf->buf_addr;
+	rx_queue->buffer_base.dword = (uintptr_t) new_buf->buf_addr;
 
 	/* Rearm the DMA Rx and check for dropped packets */
 	rx_queue->current_offset.reg = 0ULL;
@@ -99,8 +97,15 @@ static int reload_rx(rx_iface_t *iface, int rx_id)
 			rx_queue->activation.reg = 0x1;
 	}
 
-	iface->rx_cfgs[rx_id].mapped_buf = buf;
-	dbg_printf("Reloading rx %d of if %d with buffer %p\n", rx_id, iface->iface_id, buf);
+	mppa_noc_dnoc_rx_set_activation_status(iface->iface_id, rx_id, MPPA_NOC_ACTIVATED);
+
+	old_buf = iface->rx_cfgs[rx_id].mapped_buf;
+	iface->rx_cfgs[rx_id].mapped_buf = new_buf;
+	dbg_printf("Adding buf to eth if %d\n", pcie_eth_if);
+	/* Add previous buffer to full list */
+	buffer_ring_push_multi(&g_full_buf_pool[pcie_eth_if], &old_buf, 1, &left);
+	
+	printf("Reloading rx %d of if %d with buffer %p\n", rx_id, iface->iface_id, new_buf);
 
 	return 0;
 }
