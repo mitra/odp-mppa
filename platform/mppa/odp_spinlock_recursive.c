@@ -12,10 +12,11 @@
 
 void odp_spinlock_recursive_init(odp_spinlock_recursive_t *rlock)
 {
-	odp_spinlock_init(&rlock->lock);
+	INVALIDATE(rlock);
 	rlock->owner = NO_OWNER;
 	rlock->cnt   = 0;
 	__builtin_k1_wpurge();
+	odp_spinlock_init(&rlock->lock);
 }
 
 void odp_spinlock_recursive_lock(odp_spinlock_recursive_t *rlock)

@@ -13,10 +13,11 @@
 
 void odp_rwlock_recursive_init(odp_rwlock_recursive_t *rlock)
 {
+	INVALIDATE(rlock);
 	memset(rlock, 0, sizeof(odp_rwlock_recursive_t));
-	odp_rwlock_init(&rlock->lock);
 	rlock->wr_owner = NO_OWNER;
 	__builtin_k1_wpurge();
+	odp_rwlock_init(&rlock->lock);
 }
 
 /* Multiple readers can recurse the lock concurrently */
