@@ -510,7 +510,7 @@ static void *no_lock_functional_test(void *arg UNUSED)
 	lock_owner_delay = BASE_DELAY;
 
 	for (cnt = 1; cnt <= iterations; cnt++) {
-		global_mem->global_lock_owner = thread_num;
+		STORE_U32(global_mem->global_lock_owner, thread_num);
 		odp_mb_full();
 		thread_delay(per_thread_mem, lock_owner_delay);
 
