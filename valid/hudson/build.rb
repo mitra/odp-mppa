@@ -71,7 +71,7 @@ if ENV["label"].to_s() != "" then
     when /MPPADevelopers-ab01b*/, /MPPAEthDevelopers-ab01b*/, /KONIC80Developers*/
         valid_configs = [ "k1b-kalray-nodeos", "k1b-kalray-mos" ]
         valid_type = "jtag"
-    when "fedora19-64","fedora17-64","debian6-64","debian7-64", /MPPADevelopers*/, /MPPAEthDevelopers*/
+    when "fedora19-64","debian6-64","debian7-64", /MPPADevelopers*/, /MPPAEthDevelopers*/
         # Validate nothing.
         valid_configs = [ ]
     when "fedora17-64"
@@ -88,7 +88,6 @@ if ENV["label"].to_s() != "" then
         raise("Unsupported label #{ENV["label"]}!")
     end
 end
-
 
 if configs == nil then
     configs = (options["configs"].split(" ")).uniq
