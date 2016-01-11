@@ -175,7 +175,7 @@ static odp_rpc_cmd_ack_t mppa_pcie_eth_open(unsigned remoteClus, odp_rpc_t * msg
 	}
 	unsigned int min_tx_tag = first_rx;
 	unsigned int max_tx_tag = first_rx + MPPA_PCIE_NOC_RX_NB - 1;
-	for ( int rx_id = min_tx_tag; rx_id <= max_tx_tag; ++rx_id ) {
+	for ( unsigned rx_id = min_tx_tag; rx_id <= max_tx_tag; ++rx_id ) {
 		ret = mppa_pcie_eth_setup_rx(if_id, rx_id, open_cmd.pcie_eth_if_id);
 		if (ret)
 			return ack;
