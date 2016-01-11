@@ -62,13 +62,13 @@ static int reload_rx(rx_iface_t *iface, int rx_id)
 	
 	int ret = buffer_ring_get_multi(&g_free_buf_pool, &buf, 1, &left);
 	if (ret != 1) {
-		printf("No more free buffer available\n");
+		err_printf("No more free buffer available\n");
 		return -1;
 	}
 	
 	events = mppa_noc_dnoc_rx_lac_event_counter(iface->iface_id, rx_id);
 	if (!events) {
-		printf("Invalid count of events\n");
+		err_printf("Invalid count of events on rx %d\n", rx_id);
 		exit(1);
 	}
 
@@ -278,7 +278,7 @@ int mppa_pcie_noc_configure_rx(rx_iface_t *iface, int dma_if, int rx_id)
 	mppa_noc_dnoc_rx_configuration_t conf = MPPA_NOC_DNOC_RX_CONFIGURATION_INIT;
 	int ret = buffer_ring_get_multi(&g_free_buf_pool, &buf, 1, &left);
 	if (ret != 1) {
-		printf("No more free buffer available\n");
+		err_printf("No more free buffer available\n");
 		return -1;
 	}
 
