@@ -84,12 +84,17 @@ extra-build: $(INST_DIR)/lib64/libodp_syscall.so
 extra-valid:
 extra-install: $(INST_DIR)/lib64/libodp_syscall.so example-install
 extra-long:
+
+ifneq (,$(findstring x86_64,$(CONFIGS)))
 example-install: odp-x86_64-unknown-linux-gnu-build
 	mkdir -p $(K1ST_DIR)/doc/ODP/example/packet
 	install example/example_debug.h platform/mppa/test/pktio/pktio_env \
 		example/packet/{odp_pktio.c,Makefile.k1b-kalray-nodeos_simu} \
 		$(ARCH_DIR)/odp/x86_64-unknown-linux-gnu/example/generator/odp_generator \
 			$(K1ST_DIR)/doc/ODP/example
+else
+example-install:
+endif
 $(INST_DIR)/lib64/libodp_syscall.so: $(TOP_DIR)/syscall/run.sh
 	+$< $(INST_DIR)/local/k1tools/
 
