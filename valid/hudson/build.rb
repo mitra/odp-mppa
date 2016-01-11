@@ -63,6 +63,7 @@ b.default_targets = [valid]
 
 debug_flags = options["debug"] == true ? "--enable-debug" : ""
 
+configs=nil
 valid_configs = options["valid-configs"].split()
 valid_type = "sim"
 if ENV["label"].to_s() != "" then
@@ -71,6 +72,10 @@ if ENV["label"].to_s() != "" then
         valid_configs = [ "k1b-kalray-nodeos", "k1b-kalray-mos" ]
         valid_type = "jtag"
     when "fedora19-64","fedora17-64","debian6-64","debian7-64", /MPPADevelopers*/, /MPPAEthDevelopers*/
+        # Validate nothing.
+        valid_configs = [ ]
+    when "fedora17-64"
+        configs= [ "k1b-kalray-nodeos_explorer", "k1b-kalray-mos_explorer" ]
         # Validate nothing.
         valid_configs = [ ]
     when "centos7-64"
@@ -85,10 +90,12 @@ if ENV["label"].to_s() != "" then
 end
 
 
-configs = (options["configs"].split(" ")).uniq
-configs.each(){|conf|
-    raise ("Invalid config '#{conf}'") if CONFIGS[conf] == nil
-}
+if configs == nil then
+    configs = (options["configs"].split(" ")).uniq
+    configs.each(){|conf|
+        raise ("Invalid config '#{conf}'") if CONFIGS[conf] == nil
+    }
+end
 
 if options["output-dir"] != nil then
     artifacts = File.expand_path(options["output-dir"])
