@@ -10,6 +10,8 @@
 
 #define MPPA_PCIE_USABLE_DNOC_IF	4
 
+#define MPPA_PCIE_NOC_RX_NB 10
+
 /**
  * PKT size
  */

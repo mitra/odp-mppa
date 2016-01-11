@@ -136,7 +136,7 @@ static odp_rpc_cmd_ack_t mppa_pcie_eth_open(unsigned remoteClus, odp_rpc_t * msg
 	odp_rpc_cmd_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
 	struct mppa_pcie_eth_dnoc_tx_cfg *tx_cfg;
 	int if_id = remoteClus % MPPA_PCIE_USABLE_DNOC_IF;
-	unsigned int tx_id, rx_id = 0;
+	unsigned int tx_id;
 
 	dbg_printf("Received request to open PCIe\n");
 	int ret = mppa_pcie_eth_setup_tx(if_id, &tx_id, remoteClus, open_cmd.min_rx, open_cmd.max_rx);
@@ -145,12 +145,43 @@ static odp_rpc_cmd_ack_t mppa_pcie_eth_open(unsigned remoteClus, odp_rpc_t * msg
 		return ack;
 	}
 
-	ret = mppa_pcie_eth_setup_rx(if_id, &rx_id, open_cmd.pcie_eth_if_id);
-	if (ret)
-		return ack;
+	/*
+	 * Allocate contiguous RX ports
+	 */
+	int n_rx, first_rx;
 
-	dbg_printf("Rx %d and if %d allocated for cluster %d\n", rx_id, if_id, remoteClus);
+	for (first_rx = 0; first_rx <  MPPA_DNOC_RX_QUEUES_NUMBER - MPPA_PCIE_NOC_RX_NB;
+	     ++first_rx) {
+		for (n_rx = 0; n_rx < MPPA_PCIE_NOC_RX_NB; ++n_rx) {
+			mppa_noc_ret_t ret;
+			ret = mppa_noc_dnoc_rx_alloc(if_id,
+						     first_rx + n_rx);
+			if (ret != MPPA_NOC_RET_SUCCESS)
+				break;
+		}
+		if (n_rx < MPPA_PCIE_NOC_RX_NB) {
+			n_rx--;
+			for ( ; n_rx >= 0; --n_rx) {
+				mppa_noc_dnoc_rx_free(if_id,
+						      first_rx + n_rx);
+			}
+		} else {
+			break;
+		}
+	}
+	if (n_rx < MPPA_PCIE_NOC_RX_NB) {
+		err_printf("failed to allocate %d contiguous Rx ports\n", MPPA_PCIE_NOC_RX_NB);
+		exit(1);
+	}
+	unsigned int min_tx_tag = first_rx;
+	unsigned int max_tx_tag = first_rx + MPPA_PCIE_NOC_RX_NB - 1;
+	for ( int rx_id = min_tx_tag; rx_id <= max_tx_tag; ++rx_id ) {
+		ret = mppa_pcie_eth_setup_rx(if_id, rx_id, open_cmd.pcie_eth_if_id);
+		if (ret)
+			return ack;
+	}
 
+	dbg_printf("if %d RXs [%u..%u] allocated for cluster %d\n", if_id, min_tx_tag, max_tx_tag, remoteClus);
 	tx_cfg = &g_mppa_pcie_tx_cfg[if_id][tx_id];
 	tx_cfg->opened = 1; 
 	tx_cfg->cluster = remoteClus;
@@ -162,7 +193,8 @@ static odp_rpc_cmd_ack_t mppa_pcie_eth_open(unsigned remoteClus, odp_rpc_t * msg
 	if (ret)
 		return ack;
 
-	ack.cmd.pcie_open.tx_tag = rx_id; /* RX ID ! */
+	ack.cmd.pcie_open.min_tx_tag = min_tx_tag; /* RX ID ! */
+	ack.cmd.pcie_open.max_tx_tag = max_tx_tag; /* RX ID ! */
 	ack.cmd.pcie_open.tx_if = __k1_get_cluster_id() + if_id;
 	/* FIXME, we send the same MTU as the one received */
 	ack.cmd.pcie_open.mtu = open_cmd.pkt_size;

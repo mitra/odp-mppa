@@ -154,7 +154,8 @@ typedef union {
 			} eth_open;
 			struct {
 				uint16_t tx_if;	/* IO Cluster id */
-				uint8_t  tx_tag;	/* Tag of the IO Cluster rx */
+				uint8_t  min_tx_tag;	/* Tag of the first IO Cluster rx */
+				uint8_t  max_tx_tag;	/* Tag of the last IO Cluster rx */
 				uint8_t  mac[ETH_ALEN];
 				uint16_t mtu;
 			} pcie_open;

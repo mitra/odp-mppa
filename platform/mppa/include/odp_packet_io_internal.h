@@ -131,7 +131,9 @@ typedef struct {
 	/* Tx data */
 	uint16_t tx_if;                 /**< Remote DMA interface to forward
 					 *   to Eth Egress */
-	uint16_t tx_tag;                /**< Remote DMA tag to forward to
+	uint16_t min_tx_tag;            /**< Remote DMA first tag to forward to
+					 *   Eth Egress */
+	uint16_t max_tx_tag;            /**< Remote DMA last tag to forward to
 					 *   Eth Egress */
 
 	pkt_tx_uc_config tx_config;
