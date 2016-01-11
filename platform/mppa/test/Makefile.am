@@ -27,14 +27,11 @@ TESTS = pktio/pktio_run \
 
 SUBDIRS = $(ODP_MODULES)
 if crypto
-if TARGET_IS_HW
-TESTS +=	${top_builddir}/test/validation/crypto/crypto_main$(EXEEXT)
-endif
+# if TARGET_IS_HW
+# TESTS +=	${top_builddir}/test/validation/crypto/crypto_main$(EXEEXT)
+# endif
 TESTS +=	${top_builddir}/test/validation/random/random_main$(EXEEXT)
 endif
-
-endif
-
 endif
 
 if test_perf
