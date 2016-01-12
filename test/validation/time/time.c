@@ -363,7 +363,7 @@ void time_test_wait_ns(void)
 	start_time = odp_time_local();
 	for (i = 1; i < 6; i++) {
 		odp_time_wait_ns(ODP_TIME_SEC_IN_NS);
-		printf("%d..", i);
+		/* printf("%d..", i); */
 	}
 	end_time = odp_time_local();
 
