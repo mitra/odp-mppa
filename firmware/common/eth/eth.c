@@ -65,10 +65,17 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg)
 			}
 		}
 	} else {
-		if(status[eth_if].cluster[remoteClus].opened != ETH_CLUS_STATUS_OFF) {
+		if (status[eth_if].cluster[remoteClus].opened != ETH_CLUS_STATUS_OFF) {
 			fprintf(stderr, "[ETH] Error: Lane %d is already opened for cluster %d\n",
 					eth_if, remoteClus);
 			goto err;
+		}
+		if (data.jumbo) {
+			fprintf(stderr,
+				"[ETH] Error: Trying to enable Jumbo on 1/10G lane %d\n",
+				eth_if);
+			goto err;
+
 		}
 	}
 	int externalAddress = __k1_get_cluster_id() + nocIf;
@@ -78,6 +85,7 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg)
 
 	status[eth_if].cluster[remoteClus].rx_enabled = data.rx_enabled;
 	status[eth_if].cluster[remoteClus].tx_enabled = data.tx_enabled;
+	status[eth_if].cluster[remoteClus].jumbo = data.jumbo;
 
 	if (ethtool_setup_eth2clus(remoteClus, eth_if, nocIf, externalAddress,
 				   data.min_rx, data.max_rx))
@@ -98,7 +106,11 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg)
 	}
 	ack.cmd.eth_open.tx_if = externalAddress;
 	ack.cmd.eth_open.tx_tag = status[eth_if].cluster[remoteClus].rx_tag;
-	ack.cmd.eth_open.mtu = 1500;
+	if (data.jumbo) {
+		ack.cmd.eth_open.mtu = 9000;
+	} else {
+		ack.cmd.eth_open.mtu = 1600;
+	}
 	memset(ack.cmd.eth_open.mac, 0, ETH_ALEN);
 	ack.cmd.eth_open.mac[ETH_ALEN-1] = 1 << eth_if;
 	ack.cmd.eth_open.mac[ETH_ALEN-2] = __k1_get_cluster_id();

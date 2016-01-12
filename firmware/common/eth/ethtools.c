@@ -82,6 +82,13 @@ int ethtool_setup_eth2clus(unsigned remoteClus, int eth_if,
 	context->_.max_task_id = max_rx;
 	context->_.min_max_task_id_en = 1;
 
+	if (status[eth_if].cluster[remoteClus].jumbo) {
+		mppabeth_lb_cfg_jumbo_mode((void *)&(mppa_ethernet[0]->lb),
+					   eth_if, MPPABETHLB_JUMBO_ALLOWED);
+	} else {
+		mppabeth_lb_cfg_jumbo_mode((void *)&(mppa_ethernet[0]->lb),
+					   eth_if, MPPABETHLB_JUMBO_DISABLED);
+	}
 	/* Configure dispatcher so that the defaulat "MATCH ALL" also
 	 * sends packet to our cluster */
 	mppabeth_lb_cfg_table_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
@@ -115,12 +122,15 @@ int ethtool_setup_clus2eth(unsigned remoteClus, int eth_if, int nocIf)
 	if (mac_get_default_mode(eth_if) == MPPA_ETH_MAC_ETHMODE_40G) {
 		/* Jumbo frames */
 		fifo_id = (remoteClus % 4) * 4;
-		mppa_ethernet[0]->tx.fifo_if[nocIf].lane[eth_if].eth_fifo[fifo_id].eth_fifo_ctrl._.jumbo_mode = 1;
+		mppa_ethernet[0]->tx.fifo_if[nocIf].lane[eth_if].
+			eth_fifo[fifo_id].eth_fifo_ctrl._.jumbo_mode = 1;
 	}
-	mppa_ethernet[0]->tx.fifo_if[nocIf].lane[eth_if].eth_fifo[fifo_id].eth_fifo_ctrl._.drop_en = 1;
+	mppa_ethernet[0]->tx.fifo_if[nocIf].lane[eth_if].
+		eth_fifo[fifo_id].eth_fifo_ctrl._.drop_en = 1;
 	mppa_noc_dnoc_rx_configuration_t conf = {
 		.buffer_base = (unsigned long)(void*)
-		&mppa_ethernet[0]->tx.fifo_if[nocIf].lane[eth_if].eth_fifo[fifo_id].push_data,
+		&mppa_ethernet[0]->tx.fifo_if[nocIf].lane[eth_if].
+		eth_fifo[fifo_id].push_data,
 		.buffer_size = 8,
 		.current_offset = 0,
 		.event_counter = 0,

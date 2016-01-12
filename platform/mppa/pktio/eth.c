@@ -83,6 +83,7 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth)
 			.min_rx = eth->rx_config.min_port,
 			.max_rx = eth->rx_config.max_port,
 			.loopback = eth->loopback,
+			.jumbo = eth->jumbo,
 			.rx_enabled = 1,
 			.tx_enabled = 1,
 		}
@@ -136,6 +137,8 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 	int port_id, slot_id;
 	int loopback = 0;
 	int nofree = 0;
+	int jumbo = 0;
+
 	/*
 	 * Check device name and extract slot/port
 	 */
@@ -189,6 +192,9 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 		} else if (!strncmp(pptr, "loop", strlen("loop"))){
 			pptr += strlen("loop");
 			loopback = 1;
+		} else if (!strncmp(pptr, "jumbo", strlen("jumbo"))){
+			pptr += strlen("jumbo");
+			jumbo = 1;
 		} else if (!strncmp(pptr, "nofree", strlen("nofree"))){
 			pptr += strlen("nofree");
 			nofree = 1;
@@ -223,6 +229,7 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 	eth->port_id = port_id;
 	eth->pool = pool;
 	eth->loopback = loopback;
+	eth->jumbo = jumbo;
 	eth->tx_config.nofree = nofree;
 	eth->tx_config.add_end_marker = 0;
 

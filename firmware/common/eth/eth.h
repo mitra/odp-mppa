@@ -40,10 +40,14 @@ typedef struct {
 	int rx_tag;
 
 	eth_cluster_lane_status_t opened;
-	int enabled;
-	int rx_enabled; /* Pktio wants to receive packets from ethernet */
-	int tx_enabled; /* Pktio wants to send packets to ethernet */
+	struct {
+		int enabled : 1;
+		int rx_enabled : 1; /* Pktio wants to receive packets from ethernet */
+		int tx_enabled : 1; /* Pktio wants to send packets to ethernet */
+		int jumbo : 1; /* Jumbo supported */
+	};
 } eth_cluster_status_t;
+
 typedef struct {
 	enum {
 		ETH_LANE_OFF,
@@ -66,6 +70,7 @@ static inline void _eth_cluster_status_init(eth_cluster_status_t * cluster)
 	cluster->enabled = 0;
 	cluster->rx_enabled = 0;
 	cluster->tx_enabled = 0;
+	cluster->jumbo = 0;
 }
 
 static inline void _eth_status_init(eth_status_t * status)
