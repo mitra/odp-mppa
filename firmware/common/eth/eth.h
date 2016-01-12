@@ -26,6 +26,12 @@ void ethtool_cleanup_cluster(unsigned remoteClus, unsigned eth_if);
 int ethtool_enable_cluster(unsigned remoteClus, unsigned eth_if);
 int ethtool_disable_cluster(unsigned remoteClus, unsigned eth_if);
 
+typedef enum {
+	ETH_CLUS_STATUS_OFF,
+	ETH_CLUS_STATUS_ON,
+	ETH_CLUS_STATUS_40G
+} eth_cluster_lane_status_t;
+
 typedef struct {
 	int nocIf;
 	int txId;
@@ -33,6 +39,7 @@ typedef struct {
 	int max_rx;
 	int rx_tag;
 
+	eth_cluster_lane_status_t opened;
 	int enabled;
 	int rx_enabled; /* Pktio wants to receive packets from ethernet */
 	int tx_enabled; /* Pktio wants to send packets to ethernet */
@@ -55,6 +62,7 @@ static inline void _eth_cluster_status_init(eth_cluster_status_t * cluster)
 	cluster->min_rx = 0;
 	cluster->max_rx = -1;
 	cluster->rx_tag = -1;
+	cluster->opened = ETH_CLUS_STATUS_OFF;
 	cluster->enabled = 0;
 	cluster->rx_enabled = 0;
 	cluster->tx_enabled = 0;

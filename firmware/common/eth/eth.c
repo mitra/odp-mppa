@@ -55,12 +55,22 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg)
 		goto err;
 	}
 
-	if(status[eth_if].cluster[remoteClus].txId >= 0) {
-		fprintf(stderr, "[ETH] Error: Lane %d is already opened for cluster %d\n",
-			eth_if, remoteClus);
-		goto err;
+	if (data.ifId == 4) {
+		/* 40G port. We need to check all lanes */
+		for (int i = 0; i < N_ETH_LANE; ++i) {
+			if(status[i].cluster[remoteClus].opened != ETH_CLUS_STATUS_OFF) {
+				fprintf(stderr, "[ETH] Error: Lane %d is already opened for cluster %d\n",
+						i, remoteClus);
+				goto err;
+			}
+		}
+	} else {
+		if(status[eth_if].cluster[remoteClus].opened != ETH_CLUS_STATUS_OFF) {
+			fprintf(stderr, "[ETH] Error: Lane %d is already opened for cluster %d\n",
+					eth_if, remoteClus);
+			goto err;
+		}
 	}
-
 	int externalAddress = __k1_get_cluster_id() + nocIf;
 #ifdef K1B_EXPLORER
 	externalAddress = __k1_get_cluster_id() + (nocIf % 4);
@@ -79,6 +89,13 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg)
 	if (ethtool_enable_cluster(remoteClus, eth_if))
 		goto err;
 
+	if (data.ifId == 4) {
+		for (int i = 0; i < N_ETH_LANE; ++i) {
+			status[i].cluster[remoteClus].opened = ETH_CLUS_STATUS_40G;
+		}
+	} else {
+		status[eth_if].cluster[remoteClus].opened = ETH_CLUS_STATUS_ON;
+	}
 	ack.cmd.eth_open.tx_if = externalAddress;
 	ack.cmd.eth_open.tx_tag = status[eth_if].cluster[remoteClus].rx_tag;
 	ack.cmd.eth_open.mtu = 1500;
@@ -98,16 +115,30 @@ odp_rpc_cmd_ack_t  eth_close(unsigned remoteClus, odp_rpc_t *msg)
 {
 	odp_rpc_cmd_ack_t ack = { .status = 0 };
 	odp_rpc_cmd_eth_clos_t data = { .inl_data = msg->inl_data };
-	const int nocTx = status[data.ifId].cluster[remoteClus].txId;
 	const unsigned int eth_if = data.ifId % 4; /* 4 is actually 0 in 40G mode */
 
-	if(nocTx < 0) {
-		ack.status = -1;
-		return ack;
+	if (data.ifId == 4) {
+		if(status[eth_if].cluster[remoteClus].opened != ETH_CLUS_STATUS_40G) {
+			ack.status = -1;
+			return ack;
+		}
+	} else {
+		if(status[eth_if].cluster[remoteClus].opened != ETH_CLUS_STATUS_ON) {
+			ack.status = -1;
+			return ack;
+		}
 	}
 
 	ethtool_disable_cluster(remoteClus, eth_if);
 	ethtool_cleanup_cluster(remoteClus, eth_if);
+
+	if (data.ifId == 4) {
+		for (int i = 0; i < N_ETH_LANE; ++i) {
+			_eth_cluster_status_init(&status[i].cluster[remoteClus]);
+		}
+	} else {
+		_eth_cluster_status_init(&status[eth_if].cluster[remoteClus]);
+	}
 
 	return ack;
 }
