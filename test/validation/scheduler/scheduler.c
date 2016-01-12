@@ -157,7 +157,7 @@ void scheduler_test_wait_time(void)
 	start_time = odp_time_local();
 	for (i = 1; i < 6; i++) {
 		odp_schedule(&queue, wait_time);
-		printf("%d..", i);
+		/* printf("%d..", i); */
 	}
 	end_time = odp_time_local();
 
