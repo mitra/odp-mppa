@@ -64,10 +64,14 @@ int odp_rpc_client_get_default_server(void)
 	if (rpc_default_server_id >= 0)
 		return rpc_default_server_id;
 
-	rpc_default_server_id = __k1_spawner_id() / 128 - 1;
+	rpc_default_server_id = 0;
+	if (__k1_spawn_type() == __MPPA_MPPA_SPAWN)
+		rpc_default_server_id = __k1_spawner_id() / 128 - 1;
+
 	if (getenv("SYNC_IODDR_ID")) {
 		rpc_default_server_id = atoi(getenv("SYNC_IODDR_ID"));
 	}
+
 	return rpc_default_server_id;
 }
 
