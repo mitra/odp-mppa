@@ -27,7 +27,7 @@
 _ODP_STATIC_ASSERT(MAX_ETH_PORTS * MAX_ETH_SLOTS <= MAX_RX_ETH_IF,
 		   "MAX_RX_ETH_IF__ERROR");
 
-#define N_RX_P_ETH 12
+#define N_RX_P_ETH 20
 #define NOC_ETH_UC_COUNT 2
 
 #include <mppa_noc.h>
