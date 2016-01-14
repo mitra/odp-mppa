@@ -278,11 +278,8 @@ static int cluster_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 	uintptr_t ucode;
 
 	memset(pkt_cluster, 0, sizeof(*pkt_cluster));
-#if MOS_UC_VERSION == 1
-	ucode = (uintptr_t)ucode_eth;
-#else
 	ucode = (uintptr_t)ucode_eth_v2;
-#endif
+
 	pkt_cluster->clus_id = cluster_id;
 	pkt_cluster->pool = pool;
 	pkt_cluster->tx_config.nofree = nofree;

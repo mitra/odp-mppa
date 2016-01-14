@@ -42,9 +42,6 @@ typedef struct {
 	unsigned int dnoc_tx_id;
 	unsigned int dnoc_uc_id;
 	odp_atomic_u64_t head;
-#if MOS_UC_VERSION == 1
-	odp_atomic_u64_t commit_head;
-#endif
 	tx_uc_job_ctx_t job_ctxs[MAX_JOB_PER_UC];
 } tx_uc_ctx_t;
 

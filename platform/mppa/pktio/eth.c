@@ -33,7 +33,6 @@ _ODP_STATIC_ASSERT(MAX_ETH_PORTS * MAX_ETH_SLOTS <= MAX_RX_ETH_IF,
 #include <mppa_noc.h>
 #include <mppa_routing.h>
 
-#include "ucode_fw/ucode_eth.h"
 #include "ucode_fw/ucode_eth_v2.h"
 
 /**
@@ -215,11 +214,7 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 #endif
 
 	uintptr_t ucode;
-#if MOS_UC_VERSION == 1
-	ucode = (uintptr_t)ucode_eth;
-#else
 	ucode = (uintptr_t)ucode_eth_v2;
-#endif
 
 	pkt_eth_t *eth = &pktio_entry->s.pkt_eth;
 	/*

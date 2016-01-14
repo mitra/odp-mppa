@@ -50,26 +50,15 @@ uint64_t tx_uc_alloc_uc_slots(tx_uc_ctx_t *ctx,
 void tx_uc_commit(tx_uc_ctx_t *ctx, uint64_t slot,
 		  unsigned int count)
 {
-#if MOS_UC_VERSION == 1
-	while (odp_atomic_load_u64(&ctx->commit_head) != slot)
-		odp_spin();
-#endif
-
 	__builtin_k1_wpurge();
 	__builtin_k1_fence ();
 
-#if MOS_UC_VERSION == 1
-	for (unsigned i = 0; i < count; ++i)
-		mOS_ucore_commit(ctx->dnoc_tx_id);
-	odp_atomic_fetch_add_u64(&ctx->commit_head, count);
-#else
 	for (unsigned i = 0, pos = slot % MAX_JOB_PER_UC; i < count;
 	     ++i, pos = (pos + 1) % MAX_JOB_PER_UC) {
 		mOS_uc_transaction_t * const trs =
 			&_scoreboard_start.SCB_UC.trs [ctx->dnoc_uc_id][pos];
 		mOS_ucore_commit(ctx->dnoc_tx_id, trs);
 	}
-#endif
 }
 
 int tx_uc_init(tx_uc_ctx_t *uc_ctx_table, int n_uc_ctx,
@@ -88,9 +77,6 @@ int tx_uc_init(tx_uc_ctx_t *uc_ctx_table, int n_uc_ctx,
 		if (uc_ctx_table[i].init)
 			continue;
 		odp_atomic_init_u64(&uc_ctx_table[i].head, 0);
-#if MOS_UC_VERSION == 1
-		odp_atomic_init_u64(&uc_ctx_table[i].commit_head, 0);
-#endif
 		/* DNoC */
 		ret = mppa_noc_dnoc_tx_alloc_auto(DNOC_CLUS_IFACE_ID,
 						  &uc_ctx_table[i].dnoc_tx_id,
@@ -116,16 +102,14 @@ int tx_uc_init(tx_uc_ctx_t *uc_ctx_table, int n_uc_ctx,
 		if (ret != MPPA_NOC_RET_SUCCESS)
 			return 1;
 
-#if MOS_UC_VERSION == 2
 		for (int j = 0; j < MOS_NB_UC_TRS; j++) {
 			mOS_uc_transaction_t  * trs =
 				& _scoreboard_start.SCB_UC.trs[uc_ctx_table[i].dnoc_uc_id][j];
 			trs->notify._word = 0;
 			trs->desc.tx_set = 1 << uc_ctx_table[i].dnoc_tx_id;
-			trs->desc.param_count = 8;
-			trs->desc.pointer_count = 4;
+			trs->desc.param_set = 0xff;
+			trs->desc.pointer_set = 0xf;
 		}
-#endif
 		uc_ctx_table[i].add_header = add_header;
 		uc_ctx_table[i].init = 1;
 	}
@@ -184,12 +168,6 @@ static int _tx_uc_send_packets(const pkt_tx_uc_config *tx_config,
 
 	trs->path.array[ctx->dnoc_tx_id].header = tx_config->header;
 	trs->path.array[ctx->dnoc_tx_id].config = tx_config->config;
-#if MOS_UC_VERSION == 1
-	trs->notify._word = 0;
-	trs->desc.tx_set = 1 << ctx->dnoc_tx_id;
-	trs->desc.param_set = 0xff;
-	trs->desc.pointer_set = (0x1 <<  pkt_count) - 1;
-#endif
 
 	job->pkt_count = pkt_count;
 
@@ -281,12 +259,6 @@ static int _tx_uc_send_aligned_packets(const pkt_tx_uc_config *tx_config,
 
 	trs->path.array[ctx->dnoc_tx_id].header = tx_config->header;
 	trs->path.array[ctx->dnoc_tx_id].config = tx_config->config;
-#if MOS_UC_VERSION == 1
-	trs->notify._word = 0;
-	trs->desc.tx_set = 1 << ctx->dnoc_tx_id;
-	trs->desc.param_set = 0xff;
-	trs->desc.pointer_set = (0x1 <<  pkt_count) - 1;
-#endif
 
 	job->pkt_count = pkt_count;
 
@@ -334,12 +306,6 @@ void tx_uc_flush(tx_uc_ctx_t *ctx)
 		for (unsigned i = 0; i < 8; ++i ){
 			trs->parameter.array[i] = 0;
 		}
-		trs->notify._word = 0;
-		trs->desc.tx_set = 0;
-#if MOS_UC_VERSION == 1
-		trs->desc.param_set = 0xff;
-		trs->desc.pointer_set = 0;
-#endif
 		job->pkt_count = 0;
 		job->nofree = 1;
 	}

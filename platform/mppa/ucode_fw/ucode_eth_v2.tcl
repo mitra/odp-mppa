@@ -21,9 +21,6 @@ dma_description "p3: address of packet 4"
 
 
 dma_label high_speed_loop
-dma_send_event
-dma_wait_token
-dma_write_bundle
 
 for {set i 0} {$i < 4} {incr i} {
 	set POINTER rd$i
@@ -31,6 +28,10 @@ for {set i 0} {$i < 4} {incr i} {
 	set SIZE8 r[expr $i * 2 + 1]
 	source ucode_eth_main.tcl
 }
+
+dma_wait_token
+dma_send_event
+dma_write_bundle
 
 dma_goto high_speed_loop
 dma_write_bundle

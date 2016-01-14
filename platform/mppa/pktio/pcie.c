@@ -21,7 +21,7 @@
 #include "odp_rpc_internal.h"
 #include "odp_rx_internal.h"
 #include "odp_tx_uc_internal.h"
-#include "ucode_fw/ucode_pcie.h"
+#include "ucode_fw/ucode_pcie_v2.h"
 
 
 #define MAX_PCIE_SLOTS 2
@@ -199,12 +199,7 @@ static int pcie_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 
 
 	uintptr_t ucode;
-#if MOS_UC_VERSION == 1
-	ucode = (uintptr_t)ucode_pcie;
-#else
 	ucode = (uintptr_t)ucode_pcie_v2;
-#endif
-
 
 	pkt_pcie_t *pcie = &pktio_entry->s.pkt_pcie;
 
