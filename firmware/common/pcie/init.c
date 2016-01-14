@@ -83,7 +83,7 @@ int pcie_init(int if_count)
 		if_cfgs[i].flags = MPPA_PCIE_ETH_CONFIG_RING_AUTOLOOP;
 		if_cfgs[i].if_id = i;
 		memcpy(if_cfgs[i].mac_addr, "\x02\xde\xad\xbe\xef", 5);
-		if_cfgs[i].mac_addr[MAC_ADDR_LEN - 1] = i;
+		if_cfgs[i].mac_addr[MAC_ADDR_LEN - 1] = i + ((__k1_get_cluster_id() - 128) << 1);
 	}
 
 	netdev_init(if_count, if_cfgs);
