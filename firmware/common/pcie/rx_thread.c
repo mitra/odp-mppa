@@ -57,7 +57,7 @@ static int reload_rx(rx_iface_t *iface, int rx_id)
 	/* Add previous buffer to full list */
 	buffer_ring_push_multi(&g_full_buf_pool[pcie_eth_if], &old_buf, 1, &left);
 
-	printf("Reloading rx %d of if %d with buffer %p\n",
+	dbg_printf("Reloading rx %d of if %d with buffer %p\n",
 		   rx_id, iface->iface_id, new_buf);
 
 	return 0;
