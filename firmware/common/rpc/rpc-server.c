@@ -126,14 +126,20 @@ static int get_if_rx_id(unsigned interface_id)
 	}
 	return -1;
 }
+
+static int dma_id;
 int odp_rpc_server_poll_msg(odp_rpc_t **msg, uint8_t **payload)
 {
 	const int base_if = (__bsp_flavour == BSP_ETH_530) ? 4 : 0;
 	int idx;
 
 	for (idx = 0; idx < BSP_NB_DMA_IO; ++idx) {
-		int if_id = idx + base_if;
+		int if_id = dma_id + base_if;
 		int tag = get_if_rx_id(if_id);
+
+		dma_id++;
+		if(dma_id == BSP_NB_DMA_IO)
+			dma_id = 0;
 		if(tag < 0)
 			continue;
 
