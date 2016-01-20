@@ -351,7 +351,7 @@ void initialize_intf(char *intf)
 	odp_queue_param_t qparam;
 	int ret;
 	uint8_t src_mac[ODPH_ETHADDR_LEN];
-	char src_mac_str[MAX_STRING];
+	/* char src_mac_str[MAX_STRING]; */
 	odp_pktio_param_t pktio_param;
 
 	odp_pktio_param_init(&pktio_param);
@@ -407,12 +407,12 @@ void initialize_intf(char *intf)
 		exit(EXIT_FAILURE);
 	}
 
-	printf("Created pktio:%02" PRIu64 ", queue mode (ATOMIC queues)\n"
-	       "          default pktio%02" PRIu64 "-INPUT queue:%" PRIu64 "\n"
-	       "          source mac address %s\n",
-	       odp_pktio_to_u64(pktio), odp_pktio_to_u64(pktio),
-	       odp_queue_to_u64(inq_def),
-	       mac_addr_str(src_mac_str, src_mac));
+	/* printf("Created pktio:%02" PRIu64 ", queue mode (ATOMIC queues)\n" */
+	/*        "          default pktio%02" PRIu64 "-INPUT queue:%" PRIu64 "\n" */
+	/*        "          source mac address %s\n", */
+	/*        odp_pktio_to_u64(pktio), odp_pktio_to_u64(pktio), */
+	/*        odp_queue_to_u64(inq_def), */
+	/*        mac_addr_str(src_mac_str, src_mac)); */
 
 	/* Resolve any routes using this interface for output */
 	resolve_fwd_db(intf, outq_def, src_mac);
@@ -765,7 +765,7 @@ void *pktio_thread(void *arg EXAMPLE_UNUSED)
 
 	thr = odp_thread_id();
 
-	printf("Pktio thread [%02i] starts\n", thr);
+	/* printf("Pktio thread [%02i] starts\n", thr); */
 
 	odp_barrier_wait(&sync_barrier);
 
@@ -923,7 +923,7 @@ main(int argc, char *argv[])
 		EXAMPLE_ERR("Error: ODP local init failed.\n");
 		exit(EXIT_FAILURE);
 	}
-	my_sleep(__k1_get_cluster_id());
+	my_sleep(__k1_get_cluster_id() / 4);
 
 	/* Reserve memory for args from shared mem */
 	shm = odp_shm_reserve("shm_args", sizeof(args_t), ODP_CACHE_LINE_SIZE,
@@ -958,9 +958,9 @@ main(int argc, char *argv[])
 	num_workers = odp_cpumask_default_worker(&cpumask, num_workers);
 	(void)odp_cpumask_to_str(&cpumask, cpumaskstr, sizeof(cpumaskstr));
 
-	printf("num worker threads: %i\n", num_workers);
-	printf("first CPU:          %i\n", odp_cpumask_first(&cpumask));
-	printf("cpu mask:           %s\n", cpumaskstr);
+	/* printf("num worker threads: %i\n", num_workers); */
+	/* printf("first CPU:          %i\n", odp_cpumask_first(&cpumask)); */
+	/* printf("cpu mask:           %s\n", cpumaskstr); */
 
 	/* Create a barrier to synchronize thread startup */
 	odp_barrier_init(&sync_barrier, num_workers);
@@ -980,10 +980,10 @@ main(int argc, char *argv[])
 	}
 
 	/* Populate our IPsec cache */
-	printf("Using %s mode for crypto API\n\n",
-	       (CRYPTO_API_SYNC == args->appl.mode) ? "SYNC" :
-	       (CRYPTO_API_ASYNC_IN_PLACE == args->appl.mode) ?
-	       "ASYNC_IN_PLACE" : "ASYNC_NEW_BUFFER");
+	/* printf("Using %s mode for crypto API\n\n", */
+	/*        (CRYPTO_API_SYNC == args->appl.mode) ? "SYNC" : */
+	/*        (CRYPTO_API_ASYNC_IN_PLACE == args->appl.mode) ? */
+	/*        "ASYNC_IN_PLACE" : "ASYNC_NEW_BUFFER"); */
 	ipsec_init_post(args->appl.mode);
 
 	/* Initialize interfaces (which resolves FWD DB entries */
@@ -1181,7 +1181,7 @@ static void parse_args(int argc, char *argv[], appl_args_t *appl_args)
 static void print_info(char *progname, appl_args_t *appl_args)
 {
 	int i;
-
+	return;
 	printf("\n"
 	       "ODP system info\n"
 	       "---------------\n"
