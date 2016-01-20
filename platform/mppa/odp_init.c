@@ -9,32 +9,42 @@
 #include <odp/debug.h>
 #include <odp_debug_internal.h>
 #include <odp_rpc_internal.h>
+#include <errno.h>
 
 #include <HAL/hal/hal.h>
 
-int cluster_iopcie_sync(void);
-
 struct odp_global_data_s odp_global_data;
-int cluster_iopcie_sync(void)
+static int cluster_iopcie_sync(int exit)
 {
 	unsigned cluster_id = __k1_get_cluster_id();
 	odp_rpc_t *ack_msg;
-
 	odp_rpc_t cmd = {
-		.pkt_type = ODP_RPC_CMD_BAS_SYNC,
+		.pkt_type = exit ? ODP_RPC_CMD_BAS_EXIT : ODP_RPC_CMD_BAS_SYNC,
 		.data_len = 0,
 		.flags = 0,
 	};
+	odp_rpc_cmd_ack_t ack;
 	const unsigned int rpc_server_id = odp_rpc_client_get_default_server();
+	uint64_t timeout = 120 * RPC_TIMEOUT_1S;
+	int iter = 0;
+	do {
+		odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(rpc_server_id, cluster_id),
+				 odp_rpc_get_ioddr_tag_id(rpc_server_id, cluster_id),
+				 &cmd, NULL);
 
-	odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(rpc_server_id, cluster_id),
-			 odp_rpc_get_ioddr_tag_id(rpc_server_id, cluster_id),
-			 &cmd, NULL);
+		if (odp_rpc_wait_ack(&ack_msg, NULL, timeout) != 1) {
+			printf("Timeout %d\n", iter);
+			return -1;
+		}
+		/* We had an answer. No need to timeout anymore */
+		timeout = 3600 * RPC_TIMEOUT_1S;
+		ack.inl_data = ack_msg->inl_data;
+		iter++;
+	} while(ack.status == EAGAIN);
 
-	if (odp_rpc_wait_ack(&ack_msg, NULL, 5 * RPC_TIMEOUT_1S) != 1)
-		return -1;
-
-	return 0;
+	if(ack.status != 0)
+		printf("Bad ret %d\n", ack.status);
+	return ack.status;
 }
 
 int odp_init_global(const odp_init_t *params,
@@ -92,7 +102,7 @@ int odp_init_global(const odp_init_t *params,
 
 	/* We need to sync only when spawning from another IO */
 	if (__k1_spawn_type() == __MPPA_MPPA_SPAWN) {
-		if (cluster_iopcie_sync()) {
+		if (cluster_iopcie_sync(0)) {
 			ODP_ERR("ODP failed to sync with boot cluster.\n");
 			return -1;
 		}
@@ -140,7 +150,7 @@ int odp_term_global(void)
 #endif
 	/* We need to sync only when spawning from another IO */
 	if (__k1_spawn_type() == __MPPA_MPPA_SPAWN)
-		cluster_iopcie_sync();
+		cluster_iopcie_sync(1);
 
 	if (odp_rpc_client_term()) {
 		ODP_ERR("ODP RPC tem failed.\n");
