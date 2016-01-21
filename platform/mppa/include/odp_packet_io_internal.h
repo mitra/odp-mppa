@@ -74,9 +74,11 @@ typedef struct {
 	int mtu;
 
 	odp_spinlock_t wlock;
-	odp_spinlock_t rlock;
 	rx_config_t rx_config;
 	pkt_tx_uc_config tx_config;
+
+	mppa_cnoc_config_t config;
+	mppa_cnoc_header_t header;
 } pkt_cluster_t;
 
 typedef struct {
