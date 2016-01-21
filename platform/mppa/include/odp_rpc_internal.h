@@ -25,7 +25,7 @@
 #endif
 
 #define RPC_BASE_RX 10
-#define RPC_MAX_PAYLOAD 128 /* max payload in bytes */
+#define RPC_MAX_PAYLOAD 256 /* max payload in bytes */
 
 #define ETH_ALEN 6
 
