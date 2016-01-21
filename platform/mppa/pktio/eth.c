@@ -127,6 +127,155 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth)
 	return 0;
 }
 
+#define PARSE_HASH_ERR(msg) do { error_msg = msg; goto error_parse; } while (0) ;
+
+// cmp_mask and hash_mask are bytemask
+typedef struct rule_entry {
+	uint16_t offset;    // @
+	uint8_t  cmp_mask;  // +
+	uint64_t cmp_value; // =
+	uint8_t  hash_mask; // #
+} rule_entry_t;
+
+typedef struct rule {
+	rule_entry_t entries[10];
+	uint8_t nb_entries;
+	int priority;
+} rule_t;
+
+static const char* parse_hashpolicy(const char* pptr) {
+	const char *start_ptr = pptr;
+	int rule_id = -1;
+	int entry_id = 0;
+	bool opened_rule = false;
+	bool opened_entry = false;
+	const char *error_msg;
+	char *eptr;
+
+	rule_t rules[8] = {{.entries = {{0}}, .nb_entries = 0, .priority = 0}};
+
+	while ( true ) {
+		switch ( *pptr ) {
+			case '[': // open rule
+				if ( opened_rule == true )
+					PARSE_HASH_ERR("open rule");
+				rule_id++;
+				entry_id = -1;
+				opened_rule = true;
+				pptr++;
+				break;
+			case '{': // open rule entry
+				if ( opened_entry == true || opened_rule == false)
+					PARSE_HASH_ERR("open entry");
+				entry_id++;
+				opened_entry = true;
+				pptr++;
+				break;
+			case ']': // close rule
+				if ( opened_entry == true || opened_rule == false )
+					PARSE_HASH_ERR("close rule");
+				opened_rule = false;
+				pptr++;
+				break;
+			case '}': // close rule entry
+				if ( opened_entry == false || opened_rule == false)
+					PARSE_HASH_ERR("close entry");
+				opened_entry = false;
+				rules[rule_id].nb_entries = entry_id + 1;
+				pptr++;
+				break;
+			case '@': // offset
+				if ( opened_entry == false )
+					PARSE_HASH_ERR("offset entry");
+				pptr++;
+				int offset = strtoul(pptr, &eptr, 0);
+				if(pptr == eptr)
+					PARSE_HASH_ERR("bad offset");
+				rules[rule_id].entries[entry_id].offset = offset;
+				pptr = eptr;
+				break;
+			case '+': // cmp_mask
+				if ( opened_entry == false )
+					PARSE_HASH_ERR("cmp_mask entry");
+				pptr++;
+				int cmp_mask = strtoul(pptr, &eptr, 0);
+				if(pptr == eptr)
+					PARSE_HASH_ERR("bad comparison mask");
+				if ( cmp_mask > 0xff )
+					PARSE_HASH_ERR("cmp mask must be on 8 bits");
+				rules[rule_id].entries[entry_id].cmp_mask = cmp_mask;
+				pptr = eptr;
+				break;
+			case '=': // cmp_value
+				if ( opened_entry == false )
+					PARSE_HASH_ERR("cmp_value entry");
+				pptr++;
+				int cmp_value = strtoul(pptr, &eptr, 0);
+				if(pptr == eptr)
+					PARSE_HASH_ERR("bad comparison mask");
+				rules[rule_id].entries[entry_id].cmp_value = cmp_value;
+				pptr = eptr;
+				break;
+			case '#': // hash_mask
+				if ( opened_entry == false )
+					PARSE_HASH_ERR("hash_mask entry");
+				pptr++;
+				int hash_mask = strtoul(pptr, &eptr, 0);
+				if(pptr == eptr)
+					PARSE_HASH_ERR("bad hash mask");
+				if ( hash_mask > 0xff )
+					PARSE_HASH_ERR("hash mask must be on 8 bits");
+				rules[rule_id].entries[entry_id].hash_mask = hash_mask;
+				pptr = eptr;
+				break;
+			case ':':
+			case '\0':
+				if ( opened_entry == true || opened_rule == true )
+					PARSE_HASH_ERR("should not end");
+				goto end;
+			default:
+				PARSE_HASH_ERR("unexpected character");
+		}
+	}
+
+end:
+	for ( int _rule_id = 0; _rule_id <= rule_id; ++_rule_id ) {
+		for ( int _entry_id = 0; _entry_id < rules[_rule_id].nb_entries; ++_entry_id) {
+			if ( rules[_rule_id].entries[_entry_id].cmp_mask == 0 &&
+					rules[_rule_id].entries[_entry_id].cmp_value != 0 ) {
+				ODP_ERR("rule %d entry %d: "
+								"mask 0x%x value %"PRIu64"\n"
+								"compare value can't be set when compare mask is 0\n",
+								_rule_id, _entry_id,
+								rules[_rule_id].entries[_entry_id].cmp_mask,
+								rules[_rule_id].entries[_entry_id].cmp_value );
+				return NULL;
+			}
+			ODP_DBG("Rule[%d] Entry[%d]: offset %d cmp_mask 0x%x cmp_value %"PRIu64" hash_mask 0x%x> ",
+					_rule_id, _entry_id,
+					rules[_rule_id].entries[_entry_id].offset,
+					rules[_rule_id].entries[_entry_id].cmp_mask,
+					rules[_rule_id].entries[_entry_id].cmp_value,
+					rules[_rule_id].entries[_entry_id].hash_mask);
+		}
+	}
+
+	return pptr;
+
+error_parse: ;
+	int error_index = pptr - start_ptr;
+	while( *pptr != ':' && *pptr != '\0' ) {
+		pptr++;
+	}
+	char *error_str = strndup(start_ptr, pptr - start_ptr + 1);
+	assert( error_str != NULL );
+	ODP_ERR("Error in parsing hashpolicy: %s\n", error_msg);
+	ODP_ERR("%s\n", error_str);
+	ODP_ERR("%*s%s\n", error_index, " ", "^");
+	free(error_str);
+	return NULL;
+}
+
 static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 		    const char *devname, odp_pool_t pool)
 {
@@ -188,6 +337,12 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 				return -1;
 			}
 			pptr = eptr;
+		} else if (!strncmp(pptr, "hashpolicy=", strlen("hashpolicy="))){
+			pptr += strlen("hashpolicy=");
+			pptr = parse_hashpolicy(pptr);
+			if ( pptr == NULL ) {
+				return -1;
+			}
 		} else if (!strncmp(pptr, "loop", strlen("loop"))){
 			pptr += strlen("loop");
 			loopback = 1;
