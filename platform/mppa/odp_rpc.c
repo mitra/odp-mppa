@@ -190,6 +190,10 @@ int odp_rpc_send_msg(uint16_t local_interface, uint16_t dest_id,
 		     uint16_t dest_tag, odp_rpc_t * cmd,
 		     void * payload)
 {
+	if ( cmd->data_len > RPC_MAX_PAYLOAD ) {
+		fprintf(stderr, "Error, msg payload %d > max payload %d\n", cmd->data_len, RPC_MAX_PAYLOAD);
+		return 1;
+	}
 	mppa_noc_ret_t ret;
 	mppa_routing_ret_t rret;
 	unsigned tx_port;
@@ -296,6 +300,10 @@ int odp_rpc_wait_ack(odp_rpc_t ** cmd, void ** payload, uint64_t timeout)
 	*cmd = msg;
 
 	if (payload && msg->data_len) {
+		if ( msg->data_len > RPC_MAX_PAYLOAD ) {
+			fprintf(stderr, "Error, msg payload %d > max payload %d\n", msg->data_len, RPC_MAX_PAYLOAD);
+			return 1;
+		}
 		INVALIDATE_AREA(&odp_rpc_ack_buf.payload, msg->data_len);
 		*payload = odp_rpc_ack_buf.payload;
 	}
