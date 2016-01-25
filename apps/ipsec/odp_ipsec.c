@@ -347,6 +347,7 @@ void initialize_intf(char *intf)
 	odp_pktio_t pktio;
 	odp_queue_t outq_def;
 	odp_queue_t inq_def;
+	char intf_name[256];
 	char inq_name[ODP_QUEUE_NAME_LEN];
 	odp_queue_param_t qparam;
 	int ret;
@@ -414,8 +415,15 @@ void initialize_intf(char *intf)
 	/*        odp_queue_to_u64(inq_def), */
 	/*        mac_addr_str(src_mac_str, src_mac)); */
 
+	char* end = strchr(intf, ':');
+	if (end) {
+		memcpy(intf_name, intf, end - intf);
+		intf_name[end-intf] = 0;
+	} else {
+		strcpy(intf_name, intf);
+	}
 	/* Resolve any routes using this interface for output */
-	resolve_fwd_db(intf, outq_def, src_mac);
+	resolve_fwd_db(intf_name, outq_def, src_mac);
 }
 
 /**
