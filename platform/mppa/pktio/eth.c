@@ -129,7 +129,7 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth)
 
 #define PARSE_HASH_ERR(msg) do { error_msg = msg; goto error_parse; } while (0) ;
 
-static const char* parse_hashpolicy(const char* pptr) {
+static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t *rules) {
 	const char *start_ptr = pptr;
 	int rule_id = -1;
 	int entry_id = 0;
@@ -137,8 +137,6 @@ static const char* parse_hashpolicy(const char* pptr) {
 	bool opened_entry = false;
 	const char *error_msg;
 	char *eptr;
-
-	rule_t rules[8] = {{.entries = {{0}}, .nb_entries = 0, .priority = 0}};
 
 	while ( true ) {
 		switch ( *pptr ) {
@@ -235,6 +233,7 @@ end:
 								_rule_id, _entry_id,
 								rules[_rule_id].entries[_entry_id].cmp_mask,
 								rules[_rule_id].entries[_entry_id].cmp_value );
+				*nb_rules = 0;
 				return NULL;
 			}
 			ODP_DBG("Rule[%d] Entry[%d]: offset %d cmp_mask 0x%x cmp_value %"PRIu64" hash_mask 0x%x> ",
@@ -246,6 +245,7 @@ end:
 		}
 	}
 
+	*nb_rules = rule_id + 1;
 	return pptr;
 
 error_parse: ;
@@ -259,6 +259,7 @@ error_parse: ;
 	ODP_ERR("%s\n", error_str);
 	ODP_ERR("%*s%s\n", error_index, " ", "^");
 	free(error_str);
+	*nb_rules = 0;
 	return NULL;
 }
 
@@ -273,6 +274,8 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 	int nofree = 0;
 	int jumbo = 0;
 
+	pkt_rule_t *rules = NULL;
+	int nb_rules = 0;
 	/*
 	 * Check device name and extract slot/port
 	 */
@@ -324,8 +327,17 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 			}
 			pptr = eptr;
 		} else if (!strncmp(pptr, "hashpolicy=", strlen("hashpolicy="))){
+			rules = calloc(1, sizeof(rules));
+			if ( rules == NULL ) {
+				ODP_ERR("hashpolicy alloc failed\n");
+				return -1;
+			}
 			pptr += strlen("hashpolicy=");
-			pptr = parse_hashpolicy(pptr);
+			pptr = parse_hashpolicy(pptr, &nb_rules, rules);
+			if ( nb_rules > 1 ) {
+				ODP_ERR("At most one rule is allowed\n");
+				return -1;
+			}
 			if ( pptr == NULL ) {
 				return -1;
 			}
@@ -381,6 +393,9 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 	}
 
 	ret = eth_rpc_send_eth_open(&pktio_entry->s.param, eth);
+	if ( rules ) {
+		free(rules);
+	}
 
 	if (pktio_entry->s.param.out_mode != ODP_PKTOUT_MODE_DISABLED) {
 		tx_uc_init(g_eth_tx_uc_ctx, NOC_ETH_UC_COUNT, ucode, 0);
