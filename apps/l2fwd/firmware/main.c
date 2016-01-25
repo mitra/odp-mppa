@@ -54,6 +54,7 @@ int main(int argc, char *const argv[])
 				"odp_l2fwd.kelf",
 				"-i", "e0:tags=120,e1:tags=120",
 				"-m", "0",
+				"-s", "0",
 				"-c", "10", NULL
 			};
 
