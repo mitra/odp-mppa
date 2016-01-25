@@ -129,20 +129,6 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth)
 
 #define PARSE_HASH_ERR(msg) do { error_msg = msg; goto error_parse; } while (0) ;
 
-// cmp_mask and hash_mask are bytemask
-typedef struct rule_entry {
-	uint16_t offset;    // @
-	uint8_t  cmp_mask;  // +
-	uint64_t cmp_value; // =
-	uint8_t  hash_mask; // #
-} rule_entry_t;
-
-typedef struct rule {
-	rule_entry_t entries[10];
-	uint8_t nb_entries;
-	int priority;
-} rule_t;
-
 static const char* parse_hashpolicy(const char* pptr) {
 	const char *start_ptr = pptr;
 	int rule_id = -1;

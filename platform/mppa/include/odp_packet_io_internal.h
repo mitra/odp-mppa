@@ -86,6 +86,20 @@ typedef struct {
 	odp_bool_t promisc;		/**< promiscuous mode state */
 } pkt_loop_t;
 
+// cmp_mask and hash_mask are bytemask
+typedef struct {
+	uint64_t cmp_value; // =
+	uint16_t offset;    // @
+	uint8_t  cmp_mask;  // +
+	uint8_t  hash_mask; // #
+} pkt_rule_entry_t;
+
+typedef struct {
+	pkt_rule_entry_t entries[10];
+	uint8_t nb_entries;
+	uint8_t priority;
+} pkt_rule_t;
+
 typedef struct {
 	odp_pool_t pool;                /**< pool to alloc packets from */
 	uint8_t mac_addr[ETH_ALEN];     /**< Interface Mac address */
