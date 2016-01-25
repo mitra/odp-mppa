@@ -109,6 +109,11 @@ int create_sa_db_entry(char *input, odp_bool_t cipher)
 						ODP_CIPHER_ALG_AES128_CBC;
 					entry->block_len  = 16;
 					entry->iv_len	  = 16;
+				} else if (0 == strcmp(token, "aesgcm")) {
+					entry->alg.u.cipher =
+						ODP_CIPHER_ALG_AES128_GCM;
+					entry->block_len  = 16;
+					entry->iv_len	  = 12;
 				} else {
 					entry->alg.u.cipher =
 						ODP_CIPHER_ALG_NULL;
@@ -122,6 +127,10 @@ int create_sa_db_entry(char *input, odp_bool_t cipher)
 					entry->alg.u.auth =
 						ODP_AUTH_ALG_SHA256_128;
 					entry->icv_len	  = 16;
+				} else if (!strcmp(token, "aesgcm")) {
+					entry->alg.u.auth =
+						ODP_AUTH_ALG_AES128_GCM;
+					entry->icv_len	  = 12;
 				} else {
 					entry->alg.u.auth = ODP_AUTH_ALG_NULL;
 				}

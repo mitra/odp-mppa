@@ -32,6 +32,7 @@ extern "C" {
 #define KEY_BITS_MD5_96     128  /**< MD5_96 auth key length in bits */
 #define KEY_BITS_SHA256_128 256  /**< SHA256_128 auth key length in bits */
 #define KEY_BITS_AES128     128  /**< AES128 auth key length in bits */
+#define KEY_BITS_AES128_GCM 128  /**< AES128_GCM auth key length in bits */
 
 /**< Number of bits represnted by a string of hexadecimal characters */
 #define KEY_STR_BITS(str) (4 * strlen(str))
@@ -112,6 +113,14 @@ int parse_key_string(char *keystring,
 				printf("Error: invalid aes128 key length: %s\n", keystring);
 				abort();
 			}
+		} else if (alg->u.cipher == ODP_CIPHER_ALG_AES128_GCM) {
+			if (KEY_BITS_AES128_GCM == key_bits_in) {
+				key->length = key_bits_in / 8;
+			}
+			else{
+				printf("Error: invalid aes-gcm key length: %s\n", keystring);
+				abort();
+			}
 		}
 	}
 	else {
@@ -129,8 +138,15 @@ int parse_key_string(char *keystring,
 				 printf("Error: invalid md5 key length: %s\n", keystring);
 				 abort();
 			 }
+		} else if (alg->u.auth == ODP_AUTH_ALG_AES128_GCM) {
+			 if (KEY_BITS_AES128_GCM == key_bits_in) {
+				 key->length = key_bits_in / 8;
+			 } else {
+				 printf("Error: invalid aes-gcm key length: %s\n", keystring);
+				 abort();
+			 }
 		}
-	}
+}
 
 	for (idx = 0; idx < key->length; idx++) {
 		temp[0] = *keystring++;
