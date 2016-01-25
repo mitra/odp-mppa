@@ -894,8 +894,8 @@ void *pktio_thread(void *arg EXAMPLE_UNUSED)
 			rc = PKT_DONE;
 			stop_counter(CNT_TRANSMIT);
 
-			for (int i = ret; i < n_crypt; ++i)
-				odp_packet_free(crypt_pkts[i]);
+			if (ret < n_crypt)
+				odp_packet_free_multi(crypt_pkts + ret, n_crypt - ret);
 		}
 		stop_counter(CNT_GLOBAL);
 
