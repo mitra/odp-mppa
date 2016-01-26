@@ -79,6 +79,7 @@ typedef union {
 		uint8_t rx_enabled : 1;
 		uint8_t tx_enabled : 1;
 		uint8_t jumbo : 1;
+		uint8_t nb_rules : 4;
 	};
 	odp_rpc_inl_data_t inl_data;
 } odp_rpc_cmd_eth_open_t;

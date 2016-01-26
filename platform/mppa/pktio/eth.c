@@ -65,7 +65,7 @@ static int eth_destroy(void)
 	return 0;
 }
 
-static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth)
+static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth, int nb_rules, pkt_rule_t *rules)
 {
 	unsigned cluster_id = __k1_get_cluster_id();
 	odp_rpc_t *ack_msg;
@@ -85,6 +85,7 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth)
 			.jumbo = eth->jumbo,
 			.rx_enabled = 1,
 			.tx_enabled = 1,
+			.nb_rules = nb_rules,
 		}
 	};
 	if (params) {
@@ -94,7 +95,7 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth)
 			open_cmd.tx_enabled = 0;
 	}
 	odp_rpc_t cmd = {
-		.data_len = 0,
+		.data_len = nb_rules * sizeof(pkt_rule_t),
 		.pkt_type = ODP_RPC_CMD_ETH_OPEN,
 		.inl_data = open_cmd.inl_data,
 		.flags = 0,
@@ -102,7 +103,7 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth)
 
 	odp_rpc_do_query(odp_rpc_get_ioeth_dma_id(eth->slot_id, cluster_id),
 			 odp_rpc_get_ioeth_tag_id(eth->slot_id, cluster_id),
-			 &cmd, NULL);
+			 &cmd, rules);
 
 	ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * RPC_TIMEOUT_1S);
 	if (ret < 0) {
@@ -392,7 +393,8 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 			return -1;
 	}
 
-	ret = eth_rpc_send_eth_open(&pktio_entry->s.param, eth);
+	ret = eth_rpc_send_eth_open(&pktio_entry->s.param, eth, nb_rules, rules);
+
 	if ( rules ) {
 		free(rules);
 	}
