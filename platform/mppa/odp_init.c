@@ -62,6 +62,14 @@ int odp_init_global(const odp_init_t *params,
 			odp_global_data.abort_fn = params->abort_fn;
 	}
 
+	if (platform_params != NULL) {
+		if (platform_params->n_rx_thr) {
+			odp_global_data.n_rx_thr =
+				platform_params->n_rx_thr > MAX_RX_THR ?
+				MAX_RX_THR : platform_params->n_rx_thr;
+		}
+	}
+
 	if (odp_time_global_init()) {
 		ODP_ERR("ODP time init failed.\n");
 		return -1;

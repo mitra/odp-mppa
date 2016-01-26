@@ -21,6 +21,8 @@ extern "C" {
  * @internal platform specific data
  */
 typedef struct odp_platform_init_t {
+	unsigned n_rx_thr;              /**< Number of PE dedicated to handle
+					 *   incoming Rx packets */
 } odp_platform_init_t;
 
 #ifdef __cplusplus
