@@ -109,7 +109,7 @@ int boot_cluster(int clus_id, const char bin_file[], const char * argv[] ) {
 				  NULL,
 				  MPPA_POWER_SHUFFLING_DISABLED);
 	if (clus->pid < 0) {
-		fprintf(stderr, "Failed to spawn cluster %d\n", clus->pid);
+		fprintf(stderr, "Failed to spawn cluster %d\n", clus_id);
 		return -1;
 	}
 	return 0;
