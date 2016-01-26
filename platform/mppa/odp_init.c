@@ -9,6 +9,7 @@
 #include <odp/debug.h>
 #include <odp_debug_internal.h>
 #include <odp_rpc_internal.h>
+#include <odp_rx_internal.h>
 #include <errno.h>
 
 #include <HAL/hal/hal.h>
@@ -52,6 +53,7 @@ int odp_init_global(const odp_init_t *params,
 {
 	odp_global_data.log_fn = odp_override_log;
 	odp_global_data.abort_fn = odp_override_abort;
+	odp_global_data.n_rx_thr = DEF_N_RX_THR;
 
 	if (params != NULL) {
 		if (params->log_fn != NULL)

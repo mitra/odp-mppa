@@ -99,7 +99,7 @@ typedef struct rx_thread {
 
 	rx_tag_t tag[N_RX];        /**<  */
 	rx_ifce_t ifce[MAX_RX_IF];
-	rx_th_t th[N_RX_THR];
+	rx_th_t th[MAX_RX_THR];
 
 	int destroy;
 } rx_thread_t;
@@ -464,12 +464,14 @@ int rx_thread_link_open(rx_config_t *rx_config, int n_ports, int rr_policy)
 	/*
 	 * Compute event mask to detect events on our own tags later
 	 */
-	const unsigned nrx_per_th = (n_ports + N_RX_THR - 1) / N_RX_THR;
-	uint64_t ev_masks[N_RX_THR][N_EV_MASKS];
+	const unsigned nrx_per_th = (n_ports + odp_global_data.n_rx_thr - 1) /
+		odp_global_data.n_rx_thr;
+	uint64_t ev_masks[odp_global_data.n_rx_thr][N_EV_MASKS];
 	int i;
+	uint32_t th_id;
 
 	for (i = 0; i < 4; ++i) {
-		for (int th_id = 0; th_id < N_RX_THR; ++th_id) {
+		for (th_id = 0; th_id < odp_global_data.n_rx_thr; ++th_id) {
 			ifce->ev_masks[i] = 0ULL;
 			ev_masks[th_id][i] = 0ULL;
 		}
@@ -477,8 +479,10 @@ int rx_thread_link_open(rx_config_t *rx_config, int n_ports, int rr_policy)
 
 	if(rr_policy < 0) {
 		const uint64_t full_mask = 0xffffffffffffffffULL;
-		/* Each thread has a contiguous 1 / N_RX_THR nth of the thread pool */
-		for (int th_id = 0; th_id < N_RX_THR; ++th_id) {
+
+		/* Each thread has a contiguous 1 / odp_global_data.n_rx_thr
+		 * nth of the thread pool */
+		for (th_id = 0; th_id < odp_global_data.n_rx_thr; ++th_id) {
 			int min_port = th_id * nrx_per_th + rx_config->min_port;
 			int max_port = (th_id + 1) * nrx_per_th +
 				rx_config->min_port - 1;
@@ -508,16 +512,17 @@ int rx_thread_link_open(rx_config_t *rx_config, int n_ports, int rr_policy)
 			}
 		}
 	} else {
-		/* Each thread picks rr_policy Rx every N_RX_THR */
-		for (int port = rx_config->min_port, th_id = 0; port <= rx_config->max_port; ++port, ++th_id){
-			int th = (th_id / rr_policy) % N_RX_THR;
+		/* Each thread picks rr_policy Rx every odp_global_data.n_rx_thr */
+		for (int port = rx_config->min_port, th_id = 0;
+		     port <= rx_config->max_port; ++port, ++th_id){
+			int th = (th_id / rr_policy) % odp_global_data.n_rx_thr;
 
 			const unsigned word = port / (8 * sizeof(ev_masks[0][0]));
 			const unsigned offset = port % ( 8 * sizeof(ev_masks[0][0]));
 			ev_masks[th][word] |= 0x1ULL << offset;
 		}
 		for (i = 0; i < 4; ++i) {
-			for (int th_id = 0; th_id < N_RX_THR; ++th_id) {
+			for (th_id = 0; th_id < odp_global_data.n_rx_thr; ++th_id) {
 				ifce->ev_masks[i] |= ev_masks[th_id][i];
 			}
 		}
@@ -569,7 +574,7 @@ int rx_thread_link_open(rx_config_t *rx_config, int n_ports, int rr_policy)
 			rx_hdl.drop_pkt_len = hdr->frame_len;
 		}
 
-		for (int i = 0; i < N_RX_THR; ++i) {
+		for (uint32_t i = 0; i < odp_global_data.n_rx_thr; ++i) {
 			rx_th_t *th = &rx_hdl.th[i];
 
 			th->pools[ifce->pool_id].n_rx += nrx_per_th;
@@ -613,7 +618,7 @@ int rx_thread_link_close(uint8_t pktio_id)
 
 		int n_ports = ifce->rx_config.max_port -
 			ifce->rx_config.min_port + 1;
-		const unsigned nrx_per_th = n_ports / N_RX_THR;
+		const unsigned nrx_per_th = n_ports / odp_global_data.n_rx_thr;
 
 		for (int i = ifce->rx_config.min_port;
 		     i <= ifce->rx_config.max_port; ++i)
@@ -623,7 +628,7 @@ int rx_thread_link_close(uint8_t pktio_id)
 		ifce->rx_config.min_port = -1;
 		ifce->rx_config.max_port = -1;
 
-		for (int i = 0; i < N_RX_THR; ++i) {
+		for (uint32_t i = 0; i < odp_global_data.n_rx_thr; ++i) {
 			rx_th_t *th = &rx_hdl.th[i];
 
 			th->pools[ifce->pool_id].n_rx -= nrx_per_th;
@@ -685,7 +690,7 @@ int rx_thread_init(void)
 	odp_atomic_init_u64(&rx_hdl.update_id, 0ULL);
 	rx_hdl.destroy = 0;
 	__k1_wmb();
-	for (int i = 0; i < N_RX_THR; ++i) {
+	for (uint32_t i = 0; i < odp_global_data.n_rx_thr; ++i) {
 		/* Start threads */
 
 #ifdef K1_NODEOS
@@ -736,7 +741,7 @@ int rx_thread_destroy(void)
 	odp_atomic_add_u64(&rx_hdl.update_id, 1ULL);
 	odp_rwlock_write_unlock(&rx_hdl.lock);
 
-	for (int i = 0; i < N_RX_THR; ++i) {
+	for (uint32_t i = 0; i < odp_global_data.n_rx_thr; ++i) {
 #ifdef K1_NODEOS
 		pthread_join(rx_hdl.th[i].thr, NULL);
 #else
