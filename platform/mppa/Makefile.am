@@ -64,6 +64,7 @@ odpplatinclude_HEADERS = \
 		  $(srcdir)/include/odp/plat/crypto_types.h \
 		  $(srcdir)/include/odp/plat/endian.h \
 		  $(srcdir)/include/odp/plat/event_types.h \
+		  $(srcdir)/include/odp/plat/init_types.h \
 		  $(srcdir)/include/odp/plat/packet_types.h \
 		  $(srcdir)/include/odp/plat/packet_io_types.h \
 		  $(srcdir)/include/odp/plat/pool_types.h \
