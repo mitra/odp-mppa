@@ -152,7 +152,8 @@ $(eval $(1)-ENV := CC="$($(1)_CC)" CFLAGS="$($(1)_CFLAGS)" \
 
 app-$(1)-configure: apps/$(1)/Makefile
 app-$(1)-install: app-$(1)-build
-	cd $(ARCH_DIR)/apps/$(1) && $(MAKE) -f $(TOP_DIR)/apps/$(1)/Makefile install APST_DIR=$(APST_DIR)
+	cd $(ARCH_DIR)/apps/$(1) && $(MAKE) -f $(TOP_DIR)/apps/$(1)/Makefile install \
+	APST_DIR=$(APST_DIR) ODP_TOOLCHAIN_DIR=$(K1ST_DIR)/
 
 app-$(1)-long:
 app-$(1)-valid:
