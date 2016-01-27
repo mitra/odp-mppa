@@ -1,4 +1,4 @@
-SRCS := ucode_eth.tcl ucode_pcie.tcl odp_ucode_linear.tcl ucode_eth_v2.tcl
+SRCS := ucode_eth.tcl ucode_pcie.tcl odp_ucode_linear.tcl ucode_eth_v2.tcl ucode_pcie_v2.tcl
 UCS  := $(patsubst %.tcl, %.c, $(SRCS))
 all: $(UCS)
 

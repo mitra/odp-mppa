@@ -14,9 +14,7 @@ const pktio_if_ops_t * const pktio_if_ops[]  = {
 	&loopback_pktio_ops,
 	&drop_pktio_ops,
 	&magic_pktio_ops,
-#if MOS_UC_VERSION == 1
 	&cluster_pktio_ops,
-#endif
 	&eth_pktio_ops,
 	&pcie_pktio_ops,
 	NULL

@@ -21,7 +21,7 @@
 #include "odp_rpc_internal.h"
 #include "odp_rx_internal.h"
 #include "odp_tx_uc_internal.h"
-#include "ucode_fw/ucode_pcie.h"
+#include "ucode_fw/ucode_pcie_v2.h"
 
 
 #define MAX_PCIE_SLOTS 2
@@ -112,7 +112,8 @@ static int pcie_rpc_send_pcie_open(pkt_pcie_t *pcie)
 	}
 
 	pcie->tx_if = ack.cmd.pcie_open.tx_if;
-	pcie->tx_tag = ack.cmd.pcie_open.tx_tag;
+	pcie->min_tx_tag = ack.cmd.pcie_open.min_tx_tag;
+	pcie->max_tx_tag = ack.cmd.pcie_open.max_tx_tag;
 	memcpy(pcie->mac_addr, ack.cmd.pcie_open.mac, ETH_ALEN);
 	pcie->mtu = ack.cmd.pcie_open.mtu;
 
@@ -199,12 +200,7 @@ static int pcie_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 
 
 	uintptr_t ucode;
-#if MOS_UC_VERSION == 1
-	ucode = (uintptr_t)ucode_pcie;
-#else
 	ucode = (uintptr_t)ucode_pcie_v2;
-#endif
-
 
 	pkt_pcie_t *pcie = &pktio_entry->s.pkt_pcie;
 
@@ -251,7 +247,7 @@ static int pcie_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 		pcie->tx_config.config._.bw_slow_delay     = 0x00;
 
 		pcie->tx_config.header._.multicast = 0;
-		pcie->tx_config.header._.tag = pcie->tx_tag;
+		pcie->tx_config.header._.tag = pcie->min_tx_tag;
 		pcie->tx_config.header._.valid = 1;
 	}
 
@@ -360,6 +356,10 @@ static int pcie_send(pktio_entry_t *pktio_entry, odp_packet_t pkt_table[],
 {
 	pkt_pcie_t *pcie = &pktio_entry->s.pkt_pcie;
 	tx_uc_ctx_t *ctx = pcie_get_ctx(pcie);
+
+	pcie->tx_config.header._.tag += 1;
+	if ( pcie->tx_config.header._.tag > pcie->max_tx_tag )
+		pcie->tx_config.header._.tag = pcie->min_tx_tag;
 
 	return tx_uc_send_aligned_packets(&pcie->tx_config, ctx,
 					  pkt_table, len, PKTIO_PKT_MTU);

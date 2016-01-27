@@ -29,6 +29,7 @@
 
 static tx_uc_ctx_t g_c2c_tx_uc_ctx[NOC_C2C_UC_COUNT] = {{0}};
 static int g_cnoc_tx_id = -1;
+static odp_spinlock_t g_cnoc_tx_lock;
 
 static inline tx_uc_ctx_t *c2c_get_ctx(const pkt_cluster_t *clus)
 {
@@ -68,6 +69,7 @@ static int cluster_init_cnoc_tx(void)
 		return 0;
 
 	/* CnoC */
+	odp_spinlock_init(&g_cnoc_tx_lock);
 	ret = mppa_noc_cnoc_tx_alloc_auto(NOC_CLUS_IFACE_ID,
 					  (unsigned *)&g_cnoc_tx_id, MPPA_NOC_BLOCKING);
 	if (ret != MPPA_NOC_RET_SUCCESS)
@@ -76,27 +78,16 @@ static int cluster_init_cnoc_tx(void)
 	return 0;
 }
 
-static int cluster_configure_cnoc_tx(int clus_id, int tag)
+static int cluster_configure_cnoc_tx(pkt_cluster_t *cluster)
 {
 	mppa_noc_ret_t nret;
-	mppa_routing_ret_t rret;
-	mppa_cnoc_config_t config = {0};
-	mppa_cnoc_header_t header = {0};
 
-	rret = mppa_routing_get_cnoc_unicast_route(__k1_get_cluster_id(),
-						   clus_id,
-						   &config, &header);
-	if (rret != MPPA_ROUTING_RET_SUCCESS)
-		return 1;
+	cluster->header._.tag = cluster->remote.cnoc_rx;
+	nret = mppa_noc_cnoc_tx_configure(NOC_CLUS_IFACE_ID,
+					  g_cnoc_tx_id,
+					  cluster->config, cluster->header);
 
-	header._.tag = tag;
-
-	nret = mppa_noc_cnoc_tx_configure(NOC_CLUS_IFACE_ID, g_cnoc_tx_id,
-					  config, header);
-	if (nret != MPPA_NOC_RET_SUCCESS)
-		return 1;
-
-	return 0;
+	return (nret != MPPA_NOC_RET_SUCCESS);
 }
 
 static int cluster_init(void)
@@ -276,13 +267,11 @@ static int cluster_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 
 	pkt_cluster_t * pkt_cluster = &pktio_entry->s.pkt_cluster;
 	uintptr_t ucode;
+	mppa_routing_ret_t rret;
 
 	memset(pkt_cluster, 0, sizeof(*pkt_cluster));
-#if MOS_UC_VERSION == 1
-	ucode = (uintptr_t)ucode_eth;
-#else
 	ucode = (uintptr_t)ucode_eth_v2;
-#endif
+
 	pkt_cluster->clus_id = cluster_id;
 	pkt_cluster->pool = pool;
 	pkt_cluster->tx_config.nofree = nofree;
@@ -291,7 +280,6 @@ static int cluster_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 	pkt_cluster->mtu = odp_buffer_pool_segment_size(pool) -
 		odp_buffer_pool_headroom(pool);
 	odp_spinlock_init(&pkt_cluster->wlock);
-	odp_spinlock_init(&pkt_cluster->rlock);
 
 	if (pktio_entry->s.param.in_mode != ODP_PKTIN_MODE_DISABLED) {
 		/* Setup Rx threads */
@@ -305,6 +293,13 @@ static int cluster_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 			ODP_ERR("Failed to initialize CNoC Rx\n");
 			return -1;
 		}
+
+		rret = mppa_routing_get_cnoc_unicast_route(__k1_get_cluster_id(),
+							   cluster_id,
+							   &pkt_cluster->config,
+							   &pkt_cluster->header);
+		if (rret != MPPA_ROUTING_RET_SUCCESS)
+			return 1;
 
 		ret = rx_thread_link_open(&pkt_cluster->rx_config, nRx, rr_policy);
 		if(ret < 0) {
@@ -415,8 +410,7 @@ static int cluster_mac_addr_get(pktio_entry_t *pktio_entry,
 
 static int cluster_send_recv_pkt_count(pkt_cluster_t *pktio_clus)
 {
-	if (cluster_configure_cnoc_tx(pktio_clus->clus_id,
-				      pktio_clus->remote.cnoc_rx) != 0)
+	if (cluster_configure_cnoc_tx(pktio_clus) != 0)
 		return 1;
 
 	mppa_noc_cnoc_tx_push(NOC_CLUS_IFACE_ID, g_cnoc_tx_id,
@@ -440,13 +434,13 @@ static int cluster_recv(pktio_entry_t *const pktio_entry,
 	if (!n_packet)
 		return 0;
 
-	odp_spinlock_lock(&clus->rlock);
+	odp_spinlock_lock(&g_cnoc_tx_lock);
 	clus->remote.pkt_count += n_packet;
 	if (cluster_send_recv_pkt_count(clus) != 0) {
-		odp_spinlock_unlock(&clus->rlock);
+		odp_spinlock_unlock(&g_cnoc_tx_lock);
 		return 1;
 	}
-	odp_spinlock_unlock(&clus->rlock);
+	odp_spinlock_unlock(&g_cnoc_tx_lock);
 
 	for (int i = 0; i < n_packet; ++i) {
 		odp_packet_t pkt = pkt_table[i];

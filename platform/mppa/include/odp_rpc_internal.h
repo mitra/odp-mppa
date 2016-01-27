@@ -33,7 +33,8 @@ typedef struct {
 typedef enum {
 	ODP_RPC_CMD_BAS_INVL = 0 /**< BASE: Invalid command. Skip */,
 	ODP_RPC_CMD_BAS_PING     /**< BASE: Ping command. server sends back ack = 0 */,
-	ODP_RPC_CMD_BAS_SYNC     /**< SYNC: Sync command. server wait for every clusters to make a sync before sending ack */,
+	ODP_RPC_CMD_BAS_SYNC     /**< SYNC: Sync command. */,
+	ODP_RPC_CMD_BAS_EXIT     /**< SYNC: Sync command. */,
 
 	ODP_RPC_CMD_ETH_OPEN     /**< ETH: Forward Rx traffic to a cluster */,
 	ODP_RPC_CMD_ETH_CLOS     /**< ETH: Stop forwarding Rx trafic to a cluster */,
@@ -154,7 +155,8 @@ typedef union {
 			} eth_open;
 			struct {
 				uint16_t tx_if;	/* IO Cluster id */
-				uint8_t  tx_tag;	/* Tag of the IO Cluster rx */
+				uint8_t  min_tx_tag;	/* Tag of the first IO Cluster rx */
+				uint8_t  max_tx_tag;	/* Tag of the last IO Cluster rx */
 				uint8_t  mac[ETH_ALEN];
 				uint16_t mtu;
 			} pcie_open;

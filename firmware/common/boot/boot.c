@@ -6,6 +6,7 @@
 #include <mppa_noc.h>
 #include <mppa_bsp.h>
 #include <mppa/osconfig.h>
+#include <errno.h>
 
 #include "odp_rpc_internal.h"
 #include "rpc-server.h"
@@ -27,8 +28,7 @@ struct clus_bin_boot {
 	char *bin;
 	const char *argv[MAX_ARGS];
 	int argc;
-	odp_rpc_t msg;
-	int sync_status;
+	enum state sync_status;
 	mppa_power_pid_t pid;
 };
 
@@ -37,7 +37,8 @@ static enum state current_state = STATE_BOOT;
 
 static struct clus_bin_boot clus_bin_boots[BSP_NB_CLUSTER_MAX];
 
-static int io_check_cluster_sync_status(void)
+static int io_check_cluster_sync_status(odp_rpc_t *msg,
+					enum state target_state)
 {
 	unsigned int clus;
 	odp_rpc_cmd_ack_t ack = {.status = 0 };
@@ -45,23 +46,16 @@ static int io_check_cluster_sync_status(void)
 	unsigned n_synced = 0;
 	/* Check that all clusters have synced */
 	for (clus = 0; clus < BSP_NB_CLUSTER_MAX; clus++) {
-		if (clus_bin_boots[clus].sync_status == 1)
+		if (clus_bin_boots[clus].sync_status == target_state)
 			n_synced++;;
 	}
 	if (n_synced != clus_count)
-		return 0;
+		ack.status = EAGAIN;
+	else
+		current_state = target_state;
 
-	/* If so ack them */
-	for (clus = 0; clus < BSP_NB_CLUSTER_MAX; clus++) {
-		if (clus_bin_boots[clus].sync_status == 0)
-			continue;
+	odp_rpc_server_ack(msg, ack);
 
-		clus_bin_boots[clus].sync_status = 0;
-		/* printf("sending ack to %d\n", clus); */
-		odp_rpc_server_ack(&clus_bin_boots[clus].msg, ack);
-	}
-
-	current_state += 1;
 
 	return 1;
 }
@@ -73,9 +67,13 @@ static int sync_rpc_handler(unsigned remoteClus, odp_rpc_t *msg,
 	switch (msg->pkt_type) {
 	case ODP_RPC_CMD_BAS_SYNC:
 		/* printf("received sync req from clus %d\n", remoteClus); */
-		clus_bin_boots[remoteClus].msg = *msg;
-		clus_bin_boots[remoteClus].sync_status = 1;
-		io_check_cluster_sync_status();
+		clus_bin_boots[remoteClus].sync_status = STATE_RUN;
+		io_check_cluster_sync_status(msg, STATE_RUN);
+		return 0;
+	case ODP_RPC_CMD_BAS_EXIT:
+		/* printf("received sync req from clus %d\n", remoteClus); */
+		clus_bin_boots[remoteClus].sync_status = STATE_STOP;
+		io_check_cluster_sync_status(msg, STATE_STOP);
 		if (current_state == STATE_STOP)
 			exit(0);
 		return 0;

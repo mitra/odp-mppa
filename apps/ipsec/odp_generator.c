@@ -652,17 +652,6 @@ static void print_global_stats(int num_workers)
 	}
 }
 
-static char const * const my_argv[] = {
-	"odp_generator.kelf",
-	"-I", "e0:loop:nofree",
-	"--srcmac", "08:00:27:76:b5:e0",
-	"--dstmac", "00:00:00:00:80:01",
-	"--srcip",  "192.168.111.2",
-	"--dstip", "192.168.222.2",
-	"-m", "u",
-	"-i", "0", "-w", "2", "-p", "256", NULL
-};
-
 /**
  * ODP packet example main function
  */
@@ -680,8 +669,6 @@ int main(int argc, char * argv[])
 	odp_timer_pool_t tp;
 	odp_pool_t tmop;
 
-	argv=(char**)my_argv;
-	argc=sizeof(my_argv)/sizeof(my_argv[0]);
 	/* Init ODP before calling anything else */
 	if (odp_init_global(NULL, NULL)) {
 		EXAMPLE_ERR("Error: ODP global init failed.\n");
@@ -692,7 +679,7 @@ int main(int argc, char * argv[])
 		EXAMPLE_ERR("Error: ODP local init failed.\n");
 		exit(EXIT_FAILURE);
 	}
-	my_sleep(16 + __k1_get_cluster_id() / 4);
+	my_sleep(40 + __k1_get_cluster_id() / 4);
 
 	/* init counters */
 	odp_atomic_init_u64(&counters.seq, 0);
@@ -1045,6 +1032,7 @@ static void parse_args(int argc, char *argv[], appl_args_t *appl_args)
 
 		case 'p':
 			appl_args->payload = atoi(optarg);
+			printf("PAYLOAD = %i\n", appl_args->payload);
 			break;
 
 		case 'n':

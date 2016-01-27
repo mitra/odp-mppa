@@ -35,14 +35,6 @@ extern "C" {
 #define ETH_ALEN 6
 #endif
 
-/** Number of threads dedicated for Ethernet */
-#if defined(K1B_EXPLORER)
-#define N_RX_THR 1
-#else
-#define N_RX_THR 2
-#endif
-#define MOS_UC_VERSION 1
-
 /* Forward declaration */
 struct pktio_if_ops;
 
@@ -75,9 +67,11 @@ typedef struct {
 	int mtu;
 
 	odp_spinlock_t wlock;
-	odp_spinlock_t rlock;
 	rx_config_t rx_config;
 	pkt_tx_uc_config tx_config;
+
+	mppa_cnoc_config_t config;
+	mppa_cnoc_header_t header;
 } pkt_cluster_t;
 
 typedef struct {
@@ -132,7 +126,9 @@ typedef struct {
 	/* Tx data */
 	uint16_t tx_if;                 /**< Remote DMA interface to forward
 					 *   to Eth Egress */
-	uint16_t tx_tag;                /**< Remote DMA tag to forward to
+	uint16_t min_tx_tag;            /**< Remote DMA first tag to forward to
+					 *   Eth Egress */
+	uint16_t max_tx_tag;            /**< Remote DMA last tag to forward to
 					 *   Eth Egress */
 
 	pkt_tx_uc_config tx_config;

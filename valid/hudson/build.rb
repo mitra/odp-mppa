@@ -53,9 +53,10 @@ else
         long = Target.new("long", repo, [])
         apps = Target.new("apps", repo, [])
 end
+dkms = Target.new("dkms", repo, [])
 package = Target.new("package", repo, [install, apps])
 
-b = Builder.new("odp", options, [clean, build, valid, long, apps, package, install])
+b = Builder.new("odp", options, [clean, build, valid, long, apps, dkms, package, install])
 
 b.logsession = "odp"
 
@@ -239,6 +240,80 @@ b.target("clean") do
 
     cd odp_path
     b.run(:cmd => "make clean", :env => env)
+end
+
+b.target("dkms") do
+
+  b.logtitle = "Report for mppaeth driver dkms packaging"
+
+  cd odp_path
+
+  src_tar_name = "mppaeth-src"
+  mkdir_p src_tar_name
+
+  b.run(:cmd => "cd mppaeth && make clean")
+
+  cd odp_path
+  b.run("cp -rfL mppaeth/* #{src_tar_name}/")
+	b.run("mkdir -p #{src_tar_name}/package/lib/firmware/kalray")
+  b.run("cd #{src_tar_name} && tar zcf ../#{src_tar_name}.tgz ./*")
+  src_tar_package = File.expand_path("#{src_tar_name}.tgz")
+  cd odp_path
+  b.run("rm -rf #{src_tar_name}")
+
+  mppa_pcie_ver=`rpm -qp --qf '%{VERSION}-%{RELEASE}' $K1_TOOLCHAIN_DIR/../../../k1-mppapcie-dkms-*.rpm`
+  depends = []
+  depends.push b.depends_info_struct.new("k1-mppapcie-dkms","=", mppa_pcie_ver)
+
+  unload_script =        "# Unload the mppaeth module if it is loaded\n" +
+    "MPPAETH_IS_LOADED=$(/bin/grep -c \"^mppaeth\" /proc/modules)\n" +
+    "if [ \"${MPPAETH_IS_LOADED}\" -gt 0 ]\n" +
+    "then\n" +
+    "	echo \"mppaeth module is loaded, unloading it\" \n" +
+    "	sudo /sbin/rmmod \"mppaeth\" \n" +
+    "	if [ $? -ne 0 ]\n" +
+    "	then\n" +
+    "		echo \"[FAIL]\"\n" +
+    "		exit 1\n" +
+    "	fi\n" +
+    "	echo \"[OK]\"\n" +
+    "fi\n"
+
+  load_script =    ""
+
+  # Versioning is performed now using tag of the form: release-1.0.0
+  (version,buildID,sha1) = repo.describe()
+
+  # Version of tools is passed from options["version"]
+  package_description = "MPPA Eth package (version:#{version} releaseID=#{buildID} sha1:#{sha1})\n"
+  package_description += "This package contains Kalray's mppa ethernet driver module."
+
+  release_info = b.release_info(version,buildID)
+
+  pack_name = "k1-mppaeth-dkms"
+
+  pinfo = b.package_info(pack_name, release_info,
+                         package_description, depends,
+                         "/kernel/../extra")
+
+  pinfo.preinst_script = unload_script
+  pinfo.postinst_script = load_script
+  pinfo.preun_script = unload_script
+  pinfo.postun_script = ""
+  pinfo.installed_files = "%attr(0755,root,root) /lib/firmware/\n%attr(0755,root,root)"
+
+  b.create_dkms_package(src_tar_package,pinfo,["mppaeth"],)
+
+  # Test installation of the driver from the package
+  if $execution_platform == "hw" then
+    cd workspace
+    package = b.find_package(pack_name,"#{release_info.version}-#{release_info.full_buildID}");
+    package_version = b.get_package_version(package[pack_name]);
+    b.run(:cmd => "echo \"mppaeth package file #{package[pack_name]} version: #{package_version} full_version #{release_info.full_version}\"", :verbose => true);
+    b.run(:cmd => "#{workspace}/metabuild/bin/packages.rb --nodeps install --list #{pack_name} --vers #{package_version}", :verbose => true);
+    b.run(:cmd => "sudo rmmod mppaeth && sudo modprobe mppaeth", :env => $extra_env,:verbose => true);
+  end
+
 end
 
 

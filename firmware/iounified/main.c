@@ -6,7 +6,7 @@
 
 #include "odp_rpc_internal.h"
 #include "rpc-server.h"
-#include "mppa_pcie_noc.h"
+#include "pcie.h"
 
 int main()
 {
@@ -18,12 +18,8 @@ int main()
 		fprintf(stderr, "[RPC] Error: Failed to start server\n");
 		exit(EXIT_FAILURE);
 	}
-	ret = mppa_pcie_eth_noc_init();
-	if (ret) {
-		fprintf(stderr, "[NoC] Error: Failed to init NoC\n");
-		exit(EXIT_FAILURE);
-	}
-	ret = mppa_pcie_eth_init(MPPA_PCIE_ETH_IF_MAX);
+
+	ret = pcie_init(MPPA_PCIE_ETH_IF_MAX);
 	if (ret != 0) {
 		fprintf(stderr, "Failed to initialize PCIe eth interface\n");
 		exit(1);

@@ -19,6 +19,16 @@ extern "C" {
 #define MAX_RX_C2C_IF 16
 #define MAX_RX_IF (MAX_RX_ETH_IF + MAX_RX_PCIE_IF + MAX_RX_C2C_IF)
 
+/** Maximum number of threads dedicated for Ethernet */
+#define MAX_RX_THR 6
+
+/** Default number of Rx threads */
+#if defined(K1B_EXPLORER)
+#define DEF_N_RX_THR 1
+#else
+#define DEF_N_RX_THR 2
+#endif
+
 typedef enum {
 	RX_IF_TYPE_ETH,
 	RX_IF_TYPE_PCI
