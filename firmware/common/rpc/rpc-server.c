@@ -17,6 +17,7 @@
 odp_rpc_handler_t __rpc_handlers[MAX_RPC_HANDLERS];
 int __n_rpc_handlers;
 static uint64_t __rpc_ev_masks[BSP_NB_DMA_IO_MAX][4];
+static uint64_t __rpc_fair_masks[BSP_NB_DMA_IO_MAX][4];
 
 static struct {
 	void    *recv_buf;
@@ -116,24 +117,34 @@ static int get_if_rx_id(unsigned interface_id)
 
 	mppa_noc_dnoc_rx_bitmask_t bitmask = mppa_noc_dnoc_rx_get_events_bitmask(interface_id);
 	for (i = 0; i < 3; ++i) {
-		bitmask.bitmask[i] &= __rpc_ev_masks[interface_id][i];
+		bitmask.bitmask[i] &= __rpc_fair_masks[interface_id][i];
 		if (bitmask.bitmask[i]) {
 			int rx_id = __k1_ctzdl(bitmask.bitmask[i]) + i * 8 * sizeof(bitmask.bitmask[i]);
 			int ev_counter = mppa_noc_dnoc_rx_lac_event_counter(interface_id, rx_id);
+
+			__rpc_fair_masks[interface_id][i] ^= (1ULL << rx_id);
 			assert(ev_counter > 0);
 			return rx_id;
 		}
 	}
+	for (i = 0; i < 3; ++i)
+		__rpc_fair_masks[interface_id][i] = __rpc_ev_masks[interface_id][i];
 	return -1;
 }
+
+static int dma_id;
 int odp_rpc_server_poll_msg(odp_rpc_t **msg, uint8_t **payload)
 {
 	const int base_if = (__bsp_flavour == BSP_ETH_530) ? 4 : 0;
 	int idx;
 
 	for (idx = 0; idx < BSP_NB_DMA_IO; ++idx) {
-		int if_id = idx + base_if;
+		int if_id = dma_id + base_if;
 		int tag = get_if_rx_id(if_id);
+
+		dma_id++;
+		if(dma_id == BSP_NB_DMA_IO)
+			dma_id = 0;
 		if(tag < 0)
 			continue;
 

@@ -12,6 +12,7 @@ extern "C" {
 #endif
 
 #ifndef NO_CRYPTO
+#include <openssl/aes.h>
 #include <openssl/des.h>
 #include <openssl/aes.h>
 #endif

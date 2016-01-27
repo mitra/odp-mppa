@@ -347,11 +347,12 @@ void initialize_intf(char *intf)
 	odp_pktio_t pktio;
 	odp_queue_t outq_def;
 	odp_queue_t inq_def;
+	char intf_name[256];
 	char inq_name[ODP_QUEUE_NAME_LEN];
 	odp_queue_param_t qparam;
 	int ret;
 	uint8_t src_mac[ODPH_ETHADDR_LEN];
-	char src_mac_str[MAX_STRING];
+	/* char src_mac_str[MAX_STRING]; */
 	odp_pktio_param_t pktio_param;
 
 	odp_pktio_param_init(&pktio_param);
@@ -407,15 +408,22 @@ void initialize_intf(char *intf)
 		exit(EXIT_FAILURE);
 	}
 
-	printf("Created pktio:%02" PRIu64 ", queue mode (ATOMIC queues)\n"
-	       "          default pktio%02" PRIu64 "-INPUT queue:%" PRIu64 "\n"
-	       "          source mac address %s\n",
-	       odp_pktio_to_u64(pktio), odp_pktio_to_u64(pktio),
-	       odp_queue_to_u64(inq_def),
-	       mac_addr_str(src_mac_str, src_mac));
+	/* printf("Created pktio:%02" PRIu64 ", queue mode (ATOMIC queues)\n" */
+	/*        "          default pktio%02" PRIu64 "-INPUT queue:%" PRIu64 "\n" */
+	/*        "          source mac address %s\n", */
+	/*        odp_pktio_to_u64(pktio), odp_pktio_to_u64(pktio), */
+	/*        odp_queue_to_u64(inq_def), */
+	/*        mac_addr_str(src_mac_str, src_mac)); */
 
+	char* end = strchr(intf, ':');
+	if (end) {
+		memcpy(intf_name, intf, end - intf);
+		intf_name[end-intf] = 0;
+	} else {
+		strcpy(intf_name, intf);
+	}
 	/* Resolve any routes using this interface for output */
-	resolve_fwd_db(intf, outq_def, src_mac);
+	resolve_fwd_db(intf_name, outq_def, src_mac);
 }
 
 /**
@@ -751,6 +759,9 @@ static int num_workers;
  *
  * @return NULL (should never return)
  */
+
+static uint64_t pkt__[16];
+
 static
 void *pktio_thread(void *arg EXAMPLE_UNUSED)
 {
@@ -758,9 +769,11 @@ void *pktio_thread(void *arg EXAMPLE_UNUSED)
 	odp_event_t ev;
 	pkt_disposition_e rc;
 
+	uint64_t totpkt = 0;
+
 	thr = odp_thread_id();
 
-	printf("Pktio thread [%02i] starts\n", thr);
+	/* printf("Pktio thread [%02i] starts\n", thr); */
 
 	odp_barrier_wait(&sync_barrier);
 
@@ -776,6 +789,8 @@ void *pktio_thread(void *arg EXAMPLE_UNUSED)
 				start_counter(CNT_RECV);
 				n_pkt = odp_pktio_recv(pktios[0], pkts, 4);
 				stop_counter(CNT_RECV);
+				totpkt += n_pkt;
+				__builtin_k1_sdu(&pkt__[thr], totpkt);
 			} while(n_pkt == 0);
 			count(CNT_PKT_RX);
 
@@ -879,8 +894,8 @@ void *pktio_thread(void *arg EXAMPLE_UNUSED)
 			rc = PKT_DONE;
 			stop_counter(CNT_TRANSMIT);
 
-			for (int i = ret; i < n_crypt; ++i)
-				odp_packet_free(crypt_pkts[i]);
+			if (ret < n_crypt)
+				odp_packet_free_multi(crypt_pkts + ret, n_crypt - ret);
 		}
 		stop_counter(CNT_GLOBAL);
 
@@ -916,7 +931,7 @@ main(int argc, char *argv[])
 		EXAMPLE_ERR("Error: ODP local init failed.\n");
 		exit(EXIT_FAILURE);
 	}
-	my_sleep(__k1_get_cluster_id());
+	my_sleep(__k1_get_cluster_id() / 4);
 
 	/* Reserve memory for args from shared mem */
 	shm = odp_shm_reserve("shm_args", sizeof(args_t), ODP_CACHE_LINE_SIZE,
@@ -951,9 +966,9 @@ main(int argc, char *argv[])
 	num_workers = odp_cpumask_default_worker(&cpumask, num_workers);
 	(void)odp_cpumask_to_str(&cpumask, cpumaskstr, sizeof(cpumaskstr));
 
-	printf("num worker threads: %i\n", num_workers);
-	printf("first CPU:          %i\n", odp_cpumask_first(&cpumask));
-	printf("cpu mask:           %s\n", cpumaskstr);
+	/* printf("num worker threads: %i\n", num_workers); */
+	/* printf("first CPU:          %i\n", odp_cpumask_first(&cpumask)); */
+	/* printf("cpu mask:           %s\n", cpumaskstr); */
 
 	/* Create a barrier to synchronize thread startup */
 	odp_barrier_init(&sync_barrier, num_workers);
@@ -973,10 +988,10 @@ main(int argc, char *argv[])
 	}
 
 	/* Populate our IPsec cache */
-	printf("Using %s mode for crypto API\n\n",
-	       (CRYPTO_API_SYNC == args->appl.mode) ? "SYNC" :
-	       (CRYPTO_API_ASYNC_IN_PLACE == args->appl.mode) ?
-	       "ASYNC_IN_PLACE" : "ASYNC_NEW_BUFFER");
+	/* printf("Using %s mode for crypto API\n\n", */
+	/*        (CRYPTO_API_SYNC == args->appl.mode) ? "SYNC" : */
+	/*        (CRYPTO_API_ASYNC_IN_PLACE == args->appl.mode) ? */
+	/*        "ASYNC_IN_PLACE" : "ASYNC_NEW_BUFFER"); */
 	ipsec_init_post(args->appl.mode);
 
 	/* Initialize interfaces (which resolves FWD DB entries */
@@ -1006,6 +1021,20 @@ main(int argc, char *argv[])
 		} while (!done);
 		printf("All received\n");
 	} else {
+		if (__k1_get_cluster_id() == 2) {
+			uint64_t prev = 0;
+			uint64_t prevcy = 0;
+			while (1) {
+				my_sleep(1);
+				int i;
+				uint64_t curpkt = 0;
+				for (i=0; i<16; i++) curpkt += __builtin_k1_ldu(&pkt__[i]);
+				uint64_t cy = __k1_read_dsu_timestamp();
+				printf("STATS: %llu pkts in %llu cycles\n", curpkt-prev, cy-prevcy);
+				prev = curpkt;
+				prevcy = cy;
+			}
+		}
 		odph_linux_pthread_join(thread_tbl, num_workers);
 	}
 
@@ -1160,7 +1189,7 @@ static void parse_args(int argc, char *argv[], appl_args_t *appl_args)
 static void print_info(char *progname, appl_args_t *appl_args)
 {
 	int i;
-
+	return;
 	printf("\n"
 	       "ODP system info\n"
 	       "---------------\n"
