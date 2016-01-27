@@ -129,8 +129,17 @@ static void alg_test(odp_crypto_op_t op,
 	CU_ASSERT(result.ok);
 	CU_ASSERT(result.pkt == pkt);
 
-	if (cipher_alg != ODP_CIPHER_ALG_NULL)
+	if (cipher_alg != ODP_CIPHER_ALG_NULL) { 
 		CU_ASSERT(!memcmp(data_addr, ciphertext, ciphertext_len));
+    if (memcmp(data_addr, ciphertext, ciphertext_len)) {
+      printf("data:\n");
+      unsigned j;
+      for (j = 0; j < ciphertext_len; ++j) printf("%02x ", data_addr[j]);
+      printf("\ncipher: \n");
+      for (j = 0; j < ciphertext_len; ++j) printf("%02x ", ciphertext[j]);
+      printf("\n\n");
+    };
+  };
 
 	if (op == ODP_CRYPTO_OP_ENCODE && auth_alg != ODP_AUTH_ALG_NULL)
 		CU_ASSERT(!memcmp(data_addr + op_params.hash_result_offset,

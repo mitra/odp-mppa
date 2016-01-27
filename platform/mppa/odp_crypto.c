@@ -358,8 +358,16 @@ odp_crypto_alg_err_t aes_gcm_encrypt(odp_crypto_op_params_t *params,
 
 	/* Encrypt it */
 	EVP_CIPHER_CTX *ctx = session->cipher.data.aes_gcm.ctx;
-	int cipher_len = 0;
+	unsigned int cipher_len = 0;
 
+  cipher_len = plain_len;
+  mppa_aes_gcm_encrypt(ctx, plaindata, &cipher_len, tag, iv_enc, aad_head, plaindata - aad_head, plaindata);
+	if (aad_head + auth_len > plaindata + plain_len) {
+    (void) aad_tail;
+    return ODP_CRYPTO_ALG_ERR_DATA_SIZE;
+  }
+
+#if 0
 	EVP_EncryptInit_ex(ctx, NULL, NULL, NULL, iv_enc);
 
 	/* Authenticate header data (if any) without encrypting them */
@@ -380,6 +388,8 @@ odp_crypto_alg_err_t aes_gcm_encrypt(odp_crypto_op_params_t *params,
 
 	EVP_EncryptFinal_ex(ctx, plaindata + cipher_len, &cipher_len);
 	EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, 16, tag);
+#endif
+
 
 	return ODP_CRYPTO_ALG_ERR_NONE;
 }
