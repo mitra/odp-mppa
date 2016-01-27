@@ -3,7 +3,6 @@ O ?= ./output
 project-name := odp
 
 TOPDIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
-ODP_SRC_DIR ?= $(TOPDIR)/..
 ODP_ARCH ?= k1b-kalray-mos
 
 ODP_TOOLCHAIN_DIR ?= $(K1_TOOLCHAIN_DIR)

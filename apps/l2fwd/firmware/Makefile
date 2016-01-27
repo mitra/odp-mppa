@@ -1,6 +1,6 @@
 SRCDIR   := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 SRCDIRS  := $(SRCDIR)
-FIRMDIR := $(realpath $(SRCDIR)/../../../firmware)
+FIRMDIR := $(realpath $(ODP_TOOLCHAIN_DIR)/share/odp/build/firmware)
 
 _LDFLAGS = -lmppapower -lmppanoc -lmpparouting
 

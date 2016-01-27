@@ -1,7 +1,8 @@
 APP_DIR   := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 TEST_NAME := $(lastword $(subst /, ,$(APP_DIR)))
 
-include $(APP_DIR)/../Makefile.apps
+ODP_TOOLCHAIN_DIR ?= $(K1_TOOLCHAIN_DIR)
+include $(ODP_TOOLCHAIN_DIR)/share/odp/build/apps/Makefile.apps
 
 cflags += -I$(APP_DIR)
 
@@ -21,7 +22,7 @@ $(TEST_NAME)-scripts := run.sh
 pre-build-hooks := build-firmware
 clean-hooks := clean-firmware
 
-include $(TOPDIR)/../mk/Makefile.kalray
+include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray
 
 build-firmware:
 	+mkdir -p ./firmware-ab01 && cd ./firmware-ab01 && \
