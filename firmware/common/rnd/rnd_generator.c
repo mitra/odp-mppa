@@ -7,7 +7,6 @@
 
 #include "lib_trng.h"
 #include "odp_rpc_internal.h"
-#include "odp_macros_internal.h"
 #include "rpc-server.h"
 
 #define TRNG_AB01_PARAM_NOISE 12
@@ -78,7 +77,9 @@ odp_rnd_gen_get(char *buf, unsigned len) {
 			return 0;
 		}
 		mppa_trng_ack_data();
-		unsigned copy_len = MIN(len - curr_len, sizeof(random_data.data));
+		unsigned copy_len = len - curr_len;
+		if (copy_len > sizeof(random_data.data))
+			copy_len = sizeof(random_data.data);
 		memcpy(buf, random_data.data, copy_len);
 		buf += copy_len;
 		curr_len += copy_len;

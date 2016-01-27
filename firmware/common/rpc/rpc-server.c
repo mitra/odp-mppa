@@ -5,7 +5,6 @@
 #include <HAL/hal/hal.h>
 
 #include <odp_rpc_internal.h>
-#include <odp/plat/atomic_types.h>
 
 #include <mppa_bsp.h>
 #include <mppa_routing.h>
