@@ -6,7 +6,8 @@ TOPDIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 ODP_SRC_DIR ?= $(TOPDIR)/..
 ODP_ARCH ?= k1b-kalray-mos
 
-include $(ODP_SRC_DIR)/mk/platforms.inc
+ODP_TOOLCHAIN_DIR ?= $(K1_TOOLCHAIN_DIR)
+include $(ODP_TOOLCHAIN_DIR)/share/odp/build/mk/platforms.inc
 
 INCLUDE_DIR=$($(ODP_ARCH)_INC_DIR)
 # Kalray internal system name
@@ -37,16 +38,10 @@ ifeq ($(MAKELEVEL),0)
 $(info --- Building for arch $(arch), os $(OS_NAME), board $(BOARD_NAME) ---)
 endif
 
-ifeq ($(USE_PACKAGES),1)
-  ODP_INSTALL_DIR = $(K1_TOOLCHAIN_DIR)
-else
- ODP_INSTALL_DIR = $(ODP_SRC_DIR)/install/local/k1tools/
-endif
+FIRMWARE_DIR = $(ODP_TOOLCHAIN_DIR)/share/odp/firmware/
 
-FIRMWARE_DIR = $(ODP_INSTALL_DIR)/share/odp/firmware/
-
-cluster-cflags := -I$(ODP_INSTALL_DIR)/$(INCLUDE_DIR)/include
-cluster-lflags := -L$(ODP_INSTALL_DIR)/lib/$(ODP_ARCH)/
+cluster-cflags := -I$(ODP_TOOLCHAIN_DIR)/$(INCLUDE_DIR)/include
+cluster-lflags := -L$(ODP_TOOLCHAIN_DIR)/lib/$(ODP_ARCH)/
 cluster-lflags += -lodphelper -lodp -lcrypto  $(LIB_NOC_LFLAGS) $($(ODP_ARCH)_LDFLAGS) -Wl,--gc-sections
 
 # Empty direct assignement to allows += to work in included Makefiles

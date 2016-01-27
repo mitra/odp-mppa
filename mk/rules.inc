@@ -159,7 +159,8 @@ app-$(1)-valid:
 
 app-$(1)-build: apps/$(1)/Makefile
 	mkdir -p $(ARCH_DIR)/apps/$(1)
-	cd $(ARCH_DIR)/apps/$(1) && $(MAKE) -f $(TOP_DIR)/apps/$(1)/Makefile all
+	cd $(ARCH_DIR)/apps/$(1) && $(MAKE) -f $(TOP_DIR)/apps/$(1)/Makefile \
+	ODP_TOOLCHAIN_DIR=$(K1ST_DIR)/ all
 app-$(1)-clean:
 	rm -Rf $(ARCH_DIR)/apps/$(1)
 endef
