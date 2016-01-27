@@ -26,7 +26,7 @@ RULE_LIST := $(RULE_LIST_SERIAL) $(RULE_LIST_PARALLEL)
 ARCH_COMPONENTS := odp cunit
 COMPONENTS := extra doc $(ARCH_COMPONENTS) firmware
 CHECK_LIST :=
-FIRMWARE_FILES := $(shell find firmware/common -type f) firmware/Makefile
+FIRMWARE_FILES := $(shell find firmware/common -type f -or -type l) firmware/Makefile
 install_DEPS := build
 firmware-install_DEPS := firmware-common-install
 
