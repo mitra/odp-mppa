@@ -129,7 +129,7 @@ firmware-$(FIRMWARE)-$(1): $(foreach CONFIG, $($(FIRMWARE)_CONFIGS), firmware-$(
 CHECK_LIST += $(foreach CONFIG, $($(FIRMWARE)_CONFIGS), firmware-$(FIRMWARE)-$(CONFIG)-$(1))
 )
 
-firmware-$(1): $(foreach FIRMWARE, $(FIRMWARES), firmware-$(FIRMWARE)-$(1))
+firmware-$(1): $(foreach FIRMWARE, $(FIRMWARES), firmware-$(FIRMWARE)-$(1)) $(firmware-$(1)_DEPS)
 CHECK_LIST += $(foreach FIRMWARE, $(FIRMWARES), firmware-$(FIRMWARE)-$(1))
 
 apps-$(1): $(foreach APP, $(APPS), app-$(APP)-$(1))
@@ -152,14 +152,16 @@ $(eval $(1)-ENV := CC="$($(1)_CC)" CFLAGS="$($(1)_CFLAGS)" \
 
 app-$(1)-configure: apps/$(1)/Makefile
 app-$(1)-install: app-$(1)-build
-	cd $(ARCH_DIR)/apps/$(1) && $(MAKE) -f $(TOP_DIR)/apps/$(1)/Makefile install APST_DIR=$(APST_DIR)
+	cd $(ARCH_DIR)/apps/$(1) && $(MAKE) -f $(TOP_DIR)/apps/$(1)/Makefile install \
+	APST_DIR=$(APST_DIR) ODP_TOOLCHAIN_DIR=$(K1ST_DIR)/
 
 app-$(1)-long:
 app-$(1)-valid:
 
 app-$(1)-build: apps/$(1)/Makefile
 	mkdir -p $(ARCH_DIR)/apps/$(1)
-	cd $(ARCH_DIR)/apps/$(1) && $(MAKE) -f $(TOP_DIR)/apps/$(1)/Makefile all
+	cd $(ARCH_DIR)/apps/$(1) && $(MAKE) -f $(TOP_DIR)/apps/$(1)/Makefile \
+	ODP_TOOLCHAIN_DIR=$(K1ST_DIR)/ all
 app-$(1)-clean:
 	rm -Rf $(ARCH_DIR)/apps/$(1)
 endef

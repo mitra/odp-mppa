@@ -157,6 +157,7 @@ odp_crypto_alg_err_t sha256_gen(odp_crypto_op_params_t *params,
 	icv  += params->hash_result_offset;
 
 	/* Hash it */
+#if 0
 	HMAC(EVP_sha256(),
 	     session->auth.data.sha256.key,
 	     32,
@@ -164,6 +165,17 @@ odp_crypto_alg_err_t sha256_gen(odp_crypto_op_params_t *params,
 	     len,
 	     hash,
 	     NULL);
+#else
+  unsigned int md_len;
+
+  hmac_sha256_opt(
+	     session->auth.data.sha256.key,
+	     32,
+	     data,
+	     len,
+	     hash,
+	     &md_len);
+#endif
 
 	/* Copy to the output location */
 	memcpy(icv, hash, session->auth.data.sha256.bytes);
@@ -193,6 +205,7 @@ odp_crypto_alg_err_t sha256_check(odp_crypto_op_params_t *params,
 	memset(hash_out, 0, sizeof(hash_out));
 
 	/* Hash it */
+#if 0
 	HMAC(EVP_sha256(),
 	     session->auth.data.sha256.key,
 	     32,
@@ -200,6 +213,16 @@ odp_crypto_alg_err_t sha256_check(odp_crypto_op_params_t *params,
 	     len,
 	     hash_out,
 	     NULL);
+#else
+  unsigned int md_len;
+  hmac_sha256_opt(
+	     session->auth.data.sha256.key,
+	     32,
+	     data,
+	     len,
+	     hash_out,
+	     &md_len);
+#endif
 
 	/* Verify match */
 	if (0 != memcmp(hash_in, hash_out, bytes))

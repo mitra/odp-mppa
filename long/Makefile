@@ -79,4 +79,4 @@ sim-runner-opts := --mboard=developer --march=bostan
 SUB_DIRS := $(wildcard */Makefile) 
 include $(SUB_DIRS)
 
-include $(CURDIR)/../mk/Makefile.kalray
+include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray

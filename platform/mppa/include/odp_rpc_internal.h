@@ -1,7 +1,24 @@
 #ifndef __FIRMWARE__IOETH__RPC__H__
 #define __FIRMWARE__IOETH__RPC__H__
 
+#ifndef RPC_FIRMWARE
 #include <odp/debug.h>
+#else
+#define _ODP_STATIC_ASSERT(x, y)
+#endif
+
+#ifndef INVALIDATE_AREA
+#define INVALIDATE_AREA(p, s) do {									\
+		const char *__ptr;									\
+		for (__ptr = (char*)(p); __ptr < ((char*)(p)) + (s); __ptr += _K1_DCACHE_LINE_SIZE) {	\
+			__k1_dcache_invalidate_line((__k1_uintptr_t) __ptr);				\
+		}											\
+		__k1_dcache_invalidate_line((__k1_uintptr_t) __ptr);					\
+	}while(0)
+#endif
+#ifndef INVALIDATE
+#define INVALIDATE(p) INVALIDATE_AREA((p), sizeof(*p))
+#endif
 
 #ifndef BSP_NB_DMA_IO_MAX
 #define BSP_NB_DMA_IO_MAX 8
