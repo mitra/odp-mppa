@@ -5,6 +5,14 @@ APP_DIR   := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 ####################################
 TEST_NAME := TemplateProject
 
+####################################
+# Select one of these platforms    #
+####################################
+ODP_ARCH := k1b-kalray-mos
+#ODP_ARCH := k1b-kalray-nodeos
+#ODP_ARCH := k1b-kalray-mos_simu
+#ODP_ARCH := k1b-kalray-nodeos_simu
+
 ODP_TOOLCHAIN_DIR ?= $(K1_TOOLCHAIN_DIR)
 include $(ODP_TOOLCHAIN_DIR)/share/odp/build/apps/Makefile.apps
 
