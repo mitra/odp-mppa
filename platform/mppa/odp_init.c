@@ -4,6 +4,8 @@
  * SPDX-License-Identifier:     BSD-3-Clause
  */
 
+#include <mppa_bsp.h>
+
 #include <odp/init.h>
 #include <odp_internal.h>
 #include <odp/debug.h>
@@ -51,6 +53,8 @@ static int cluster_iopcie_sync(int exit)
 int odp_init_global(const odp_init_t *params,
 		    const odp_platform_init_t *platform_params ODP_UNUSED)
 {
+	// FIXME: remove me once it has been integrated in mOS
+	mppa_bsp_init();
 	odp_global_data.log_fn = odp_override_log;
 	odp_global_data.abort_fn = odp_override_abort;
 	odp_global_data.n_rx_thr = DEF_N_RX_THR;
