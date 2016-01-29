@@ -778,7 +778,7 @@ void *pktio_thread(void *arg EXAMPLE_UNUSED)
 	odp_barrier_wait(&sync_barrier);
 
 	for(;;) {
-		if(thr % 2 == 0 && thr  <= 8){
+		if(thr % 2 == 0 && thr  <= 4){
 			int n_pkt;
 			odp_packet_t pkts[PKT_BURST_SIZE];
 			odp_packet_t crypt_pkts[PKT_BURST_SIZE];
