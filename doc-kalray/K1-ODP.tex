@@ -48,6 +48,17 @@ Dataflow, MPPAIPC, Examples
 \tableofcontents
 
 \newpage
+\section{Introduction}
+
+This documents briefly describes how to use ODP for the MPPA platform.
+
+ODP-MPPA is currently based on ODP 1.6.
+
+Additional generic documentation can be found on ODP website and in
+\begin{lstlisting}
+/usr/local/k1tools/doc/ODP/mppa/
+\end{lstlisting}
+
 \section{Requirements}
 
 Working with K1-ODP requires two sets of packages:
@@ -75,11 +86,6 @@ In this version, two ports are available:
 
 This port targets one Bostan MPPA cluster on hardware.
 
-In the current version, this port supports these interfaces:
-\begin{itemize}
-\item[-]{\texttt{loop}: Software loopback.}
-\end{itemize}
-
 \subsection{k1b-kalray-mos}
 
 Same target as \texttt{k1b-kalray-nodeos}, but running directly on
@@ -93,18 +99,76 @@ Using the simulator, this ports allows simulated ODP applications to
 have transparent access to the x86 network interfaces.
 
 In the current version, this port supports these interfaces:
-\begin{itemize}
-\item[-]{\texttt{loop}: Software loopback.}
-\item[-]{\texttt{magic:<ifname>}: Transparent access to the host
-  \texttt{<ifname>} interface.}
-\end{itemize}
 
 \subsection{k1b-kalray-mos\_simu}
 
 Same target as \texttt{k1b-kalray-nodeos\_simu}, but running directly on
 Kalray Hypervisor
 
-\section{Compiling}
+\section{Packet IO Interfaces}
+
+K1-ODP provides multiple pktio types that can be used to communicate
+with Ethernet ports, or clusters.
+
+\begin{itemize}
+\item[-]{\texttt{loop}: Software loopback interface}
+\item[-]{\texttt{e<X>}: 40G Ethernet interface of IOETH \texttt{<X>}}
+\item[-]{\texttt{e<X>p<Y>}: 1/10G Ethernet interface \texttt{<Y>} of
+  IOETH \texttt{<X>}}
+\item[-]{\texttt{cluster<X>}: Interface to cluster \texttt{<X>}}
+\item[-]{\texttt{magic:<if>}: Link to the x86 interface
+  \texttt{<if>}. This is only available on simu platforms}
+\end{itemize}
+
+\subsection{Customizing Ethernet interface behaviour}
+
+It is possible to configure the way ODP handles Ethernet interfaces.
+This is done by passing options through the pktio name:
+\begin{lstlisting}
+e0p0:<option1>:<option2>
+\end{lstlisting}
+
+\subsubsection{Rx resources}
+
+By default Ethernet packets from a lane are distributed among 20 NoC Rx on each
+cluster that opens this lane.
+When working with 40G lane, or with high PPS situations, this is often
+not sufficient to handle the high performance requirement.
+To configure this value, the option tags can be used:
+\begin{lstlisting}
+e0:tags=120
+\end{lstlisting}
+
+Not that it is not possuble to use more than 120 tags per pktio nor
+250 tags for all pktios.
+
+\subsubsection{Jumbo}
+
+Jumbo frames are not allowed by default. To enable them, the option
+\texttt{jumbo} must be used.
+Note that the option must be the same (on or off) for all the cluster
+that use an Ethernet interface
+
+\begin{lstlisting}
+e0:jumbo
+\end{lstlisting}
+
+\subsubsection{Loopback}
+
+It is possible to put an Ethernet lane in loopback mode. In this mode,
+it is not required for a cable to be plugged in, nor for the board to
+have a physical connector connected to the lane.
+When loopback mode is enabled, all the packets sent to this lane by
+the clusters are looped back into the HW Dispatcher and sent back to
+the cluster that opened this pktio.
+
+Note that the option must be the same (on or off) for all the cluster
+that use an Ethernet interface
+\begin{lstlisting}
+e0:loop
+\end{lstlisting}
+
+\section{Compiling and Running}
 
 Some compiler flags must be passed to the compiler when trying to
 build an ODP application.
@@ -136,5 +200,11 @@ simulation using this command:
 \begin{lstlisting}
 k1-cluster   --functional  --mboard=developer --march=bostan --user-syscall=/usr/local/k1tools/lib64/libodp_syscall.so -- <executable name> <args>
 \end{lstlisting}
+
+\section{Limitations}
+
+\begin{itemize}
+\item[-]{The current ODP version does not support ordered queues}
+\end{itemize}
 
 \end{document}

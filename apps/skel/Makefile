@@ -1,18 +1,41 @@
 APP_DIR   := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
-TEST_NAME := $(lastword $(subst /, ,$(APP_DIR)))
+
+####################################
+# Configure your project name here #
+####################################
+TEST_NAME := TemplateProject
+
+####################################
+# Select one of these platforms    #
+####################################
+ODP_ARCH := k1b-kalray-mos
+#ODP_ARCH := k1b-kalray-nodeos
+#ODP_ARCH := k1b-kalray-mos_simu
+#ODP_ARCH := k1b-kalray-nodeos_simu
 
 ODP_TOOLCHAIN_DIR ?= $(K1_TOOLCHAIN_DIR)
 include $(ODP_TOOLCHAIN_DIR)/share/odp/build/apps/Makefile.apps
 
+####################################
+# Configure your flags here        #
+####################################
 cflags += -I$(APP_DIR)
+ldflags +=
 
-odp_l2fwd-srcs := $(wildcard $(APP_DIR)/odp_l2fwd*.[ch])
-odp_l2fwd-nameinmpk := odp_l2fwd.kelf
-cluster-bin += odp_l2fwd
+####################################
+# Create cluster binaries and pick #
+# the source and header it uses    #
+####################################
+odp_example-srcs := $(APP_DIR)/example.c
+odp_example-nameinmpk := odp_example.kelf
+cluster-bin += odp_example
 
+####################################
+#  GENERIC RULES. DO NOT EDIT !!   #
+####################################
 $(realpath .)/firmware-ab01/firmware.kelf-nameinmpk := firmware-ab01.kelf
 $(realpath .)/firmware-konic80/firmware.kelf-nameinmpk := firmware-konic80.kelf
-$(TEST_NAME)-objs := odp_l2fwd $(realpath .)/firmware-ab01/firmware.kelf $(realpath .)/firmware-konic80/firmware.kelf
+$(TEST_NAME)-objs := $(cluster-bin) $(realpath .)/firmware-ab01/firmware.kelf $(realpath .)/firmware-konic80/firmware.kelf
 mppa-bin += $(TEST_NAME)
 
 $(TEST_NAME)-multibinary := $(TEST_NAME).mpk

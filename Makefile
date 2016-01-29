@@ -26,8 +26,10 @@ RULE_LIST := $(RULE_LIST_SERIAL) $(RULE_LIST_PARALLEL)
 ARCH_COMPONENTS := odp cunit
 COMPONENTS := extra doc $(ARCH_COMPONENTS) firmware
 CHECK_LIST :=
-
+FIRMWARE_FILES := $(shell find firmware/common -type f -or -type l) firmware/Makefile
+TEMPLATE_FILES := $(shell find apps/skel -type f -or -type l)
 install_DEPS := build
+firmware-install_DEPS := firmware-common-install
 
 include mk/platforms.inc
 include mk/rules.inc
@@ -82,7 +84,7 @@ extra-clean:
 extra-configure:
 extra-build: $(INST_DIR)/lib64/libodp_syscall.so
 extra-valid:
-extra-install: $(INST_DIR)/lib64/libodp_syscall.so example-install
+extra-install: $(INST_DIR)/lib64/libodp_syscall.so example-install $(K1ST_DIR)/share/odp/build/mk/platforms.inc $(K1ST_DIR)/share/odp/build/apps/Makefile.apps template-install
 extra-long:
 
 ifneq (,$(findstring x86_64,$(CONFIGS)))
@@ -97,8 +99,16 @@ example-install:
 endif
 $(INST_DIR)/lib64/libodp_syscall.so: $(TOP_DIR)/syscall/run.sh
 	+$< $(INST_DIR)/local/k1tools/
-
-
+$(K1ST_DIR)/share/odp/build/mk/platforms.inc: $(TOP_DIR)/mk/platforms.inc
+	install -D $< $@
+$(K1ST_DIR)/share/odp/build/apps/Makefile.apps: $(TOP_DIR)/apps/Makefile.apps
+	install -D $< $@
+firmware-common-install: $(patsubst %, $(K1ST_DIR)/share/odp/build/%, $(FIRMWARE_FILES))
+$(patsubst %, $(K1ST_DIR)/share/odp/build/%, $(FIRMWARE_FILES)):  $(K1ST_DIR)/share/odp/build/%: %
+	install -D $< $@
+template-install: $(patsubst apps/skel/%, $(K1ST_DIR)/share/odp/skel/%, $(TEMPLATE_FILES))
+$(patsubst apps/skel/%, $(K1ST_DIR)/share/odp/skel/%, $(TEMPLATE_FILES)): $(K1ST_DIR)/share/odp/skel/%: apps/skel/%
+	install -D $< $@
 #
 # Generate rule wrappers that pull all CONFIGS for a given (firmware/Arch componen)|RULE
 #
