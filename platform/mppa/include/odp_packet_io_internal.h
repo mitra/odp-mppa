@@ -86,18 +86,32 @@ typedef struct {
 	odp_bool_t promisc;		/**< promiscuous mode state */
 } pkt_loop_t;
 
+enum {
+	PKT_RULE_OPEN_SIGN =       '[',
+	PKT_RULE_CLOSE_SIGN =      ']',
+	PKT_RULE_PRIO_SIGN =       'P',
+	PKT_ENTRY_OPEN_SIGN =      '{',
+	PKT_ENTRY_CLOSE_SIGN =     '}',
+	PKT_ENTRY_OFFSET_SIGN =    '@',
+	PKT_ENTRY_CMP_VALUE_SIGN = '=',
+	PKT_ENTRY_CMP_MASK_SIGN =  '/',
+	PKT_ENTRY_HASH_MASK_SIGN = '#',
+};
+
 // cmp_mask and hash_mask are bytemask
 typedef struct {
-	uint64_t cmp_value; // =
-	uint16_t offset;    // @
-	uint8_t  cmp_mask;  // +
-	uint8_t  hash_mask; // #
+	uint64_t cmp_value;
+	uint16_t offset;
+	uint8_t  cmp_mask;
+	uint8_t  hash_mask;
 } pkt_rule_entry_t;
 
+// a set of rules is like: hashpolicy=[P0{@6#0xfc}{@12/0xf0=32}][P2{@0/0xff=123456}{@20#0xff}]
+// P (for priority) is optional, [0..7]
 typedef struct {
 	pkt_rule_entry_t entries[10];
-	uint8_t nb_entries;
-	uint8_t priority;
+	uint8_t nb_entries : 4;
+	uint8_t priority   : 4;
 } pkt_rule_t;
 
 typedef struct {

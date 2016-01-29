@@ -141,7 +141,7 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t 
 
 	while ( true ) {
 		switch ( *pptr ) {
-			case '[': // open rule
+			case PKT_RULE_OPEN_SIGN:
 				if ( opened_rule == true )
 					PARSE_HASH_ERR("open rule");
 				rule_id++;
@@ -149,27 +149,27 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t 
 				opened_rule = true;
 				pptr++;
 				break;
-			case '{': // open rule entry
+			case PKT_ENTRY_OPEN_SIGN:
 				if ( opened_entry == true || opened_rule == false)
 					PARSE_HASH_ERR("open entry");
 				entry_id++;
 				opened_entry = true;
 				pptr++;
 				break;
-			case ']': // close rule
+			case PKT_RULE_CLOSE_SIGN:
 				if ( opened_entry == true || opened_rule == false )
 					PARSE_HASH_ERR("close rule");
 				opened_rule = false;
 				pptr++;
 				break;
-			case '}': // close rule entry
+			case PKT_ENTRY_CLOSE_SIGN:
 				if ( opened_entry == false || opened_rule == false)
 					PARSE_HASH_ERR("close entry");
 				opened_entry = false;
 				rules[rule_id].nb_entries = entry_id + 1;
 				pptr++;
 				break;
-			case '@': // offset
+			case PKT_ENTRY_OFFSET_SIGN:
 				if ( opened_entry == false )
 					PARSE_HASH_ERR("offset entry");
 				pptr++;
@@ -179,7 +179,7 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t 
 				rules[rule_id].entries[entry_id].offset = offset;
 				pptr = eptr;
 				break;
-			case '+': // cmp_mask
+			case PKT_ENTRY_CMP_MASK_SIGN:
 				if ( opened_entry == false )
 					PARSE_HASH_ERR("cmp_mask entry");
 				pptr++;
@@ -191,7 +191,7 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t 
 				rules[rule_id].entries[entry_id].cmp_mask = cmp_mask;
 				pptr = eptr;
 				break;
-			case '=': // cmp_value
+			case PKT_ENTRY_CMP_VALUE_SIGN:
 				if ( opened_entry == false )
 					PARSE_HASH_ERR("cmp_value entry");
 				pptr++;
@@ -201,7 +201,7 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t 
 				rules[rule_id].entries[entry_id].cmp_value = cmp_value;
 				pptr = eptr;
 				break;
-			case '#': // hash_mask
+			case PKT_ENTRY_HASH_MASK_SIGN:
 				if ( opened_entry == false )
 					PARSE_HASH_ERR("hash_mask entry");
 				pptr++;
