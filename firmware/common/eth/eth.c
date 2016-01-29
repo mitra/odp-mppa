@@ -4,7 +4,11 @@
 #include <assert.h>
 #include <HAL/hal/hal.h>
 
+#include <mppa_eth_io_utils.h>
+
+#include <odp_macros_internal.h>
 #include <odp_rpc_internal.h>
+#include <odp_packet_io_internal.h>
 #include <mppa_eth_core.h>
 #include <mppa_eth_loadbalancer_core.h>
 #include <mppa_eth_phy.h>
@@ -12,6 +16,7 @@
 #include <mppa_routing.h>
 #include <mppa_noc.h>
 
+#include "utils.h"
 #include "io_utils.h"
 #include "rpc-server.h"
 #include "eth.h"
@@ -38,7 +43,67 @@ static inline int get_eth_dma_id(unsigned cluster_id){
 	}
 }
 
-odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg)
+static uint32_t registered_clusters[N_ETH_LANE] = {0};
+
+static int eth_apply_rules(int lane_id, pkt_rule_t *rules, int nb_rules, int cluster_id) {
+	DMSG("Applying %d rules for cluster %d\n", nb_rules, cluster_id);
+	if ( registered_clusters[lane_id] & (1 << cluster_id) ) {
+		fprintf(stderr, "cluster %d already registered on lane %d\n", cluster_id, lane_id);
+		return -1;
+	}
+	registered_clusters[lane_id] |= 1 << cluster_id;
+	for ( int rule_id = 0; rule_id < nb_rules; ++rule_id) {
+		for ( int entry_id = 0; entry_id < rules[rule_id].nb_entries; ++entry_id) {
+			DMSG("Rule[%d] Entry[%d]: offset %d cmp_mask 0x%x cmp_value %"PRIu64" hash_mask 0x%x>\n",
+					rule_id, entry_id,
+					rules[rule_id].entries[entry_id].offset,
+					rules[rule_id].entries[entry_id].cmp_mask,
+					rules[rule_id].entries[entry_id].cmp_value,
+					rules[rule_id].entries[entry_id].hash_mask);
+			mppa_eth_lb_cfg_rule(rule_id, entry_id,
+					rules[rule_id].entries[entry_id].offset,
+					rules[rule_id].entries[entry_id].cmp_mask,
+					rules[rule_id].entries[entry_id].cmp_value,
+					rules[rule_id].entries[entry_id].hash_mask);
+			mppa_eth_lb_cfg_min_max_swap(rule_id, (entry_id >> 1), 0);
+		}
+		mppa_eth_lb_cfg_extract_table_mode(rule_id, 1, MPPA_ETHERNET_DISPATCH_POLICY_HASH);
+	}
+
+	// dispatch hash lut between registered clusters
+	uint32_t clusters = registered_clusters[lane_id];
+	int nb_registered = __k1_cbs(clusters);
+	int chunks[nb_registered];
+	for ( int j = 0; j < nb_registered; ++j ) {
+		chunks[j] = MPPABETHLB_LUT_ARRAY_SIZE / nb_registered +
+			( ( j < ( MPPABETHLB_LUT_ARRAY_SIZE % nb_registered ) ) ? 1 : 0 );
+	}
+
+	for ( int i = 0, j = 0; i < MPPABETHLB_LUT_ARRAY_SIZE ; i+= chunks[j], j++ ) {
+		int registered_cluster = __k1_ctz(clusters);
+		clusters &= ~(1 << registered_cluster);
+		int tx_id = status[lane_id].cluster[registered_cluster].txId;
+		int noc_if = status[lane_id].cluster[registered_cluster].nocIf;
+		DMSG("config lut[%3d-%3d] -> C%2d: %d %d %d %d\n", 
+				i, i + chunks[j] - 1,
+				registered_cluster,
+				lane_id,
+				tx_id,
+				ETH_DEFAULT_CTX,
+				noc_if - 4);
+		for ( int lut_id = i; lut_id < i + chunks[j] ; ++lut_id ) {
+			mppa_eth_lb_cfg_luts(lane_id,
+					lut_id,
+					tx_id,
+					ETH_DEFAULT_CTX,
+					noc_if - 4);
+		}
+	}
+
+	return 0;
+}
+
+odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload)
 {
 	odp_rpc_cmd_ack_t ack = { .status = 0};
 	odp_rpc_cmd_eth_open_t data = { .inl_data = msg->inl_data };
@@ -115,6 +180,11 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg)
 	ack.cmd.eth_open.mac[ETH_ALEN-1] = 1 << eth_if;
 	ack.cmd.eth_open.mac[ETH_ALEN-2] = __k1_get_cluster_id();
 
+	if ( data.nb_rules > 0 ) {
+		if ( eth_apply_rules(eth_if, (pkt_rule_t*)payload, data.nb_rules, remoteClus))
+			goto err;
+	}
+
 	return ack;
 
  err:
@@ -183,10 +253,9 @@ static int eth_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload
 {
 	odp_rpc_cmd_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
 
-	(void)payload;
 	switch (msg->pkt_type){
 	case ODP_RPC_CMD_ETH_OPEN:
-		ack = eth_open(remoteClus, msg);
+		ack = eth_open(remoteClus, msg, payload);
 		break;
 	case ODP_RPC_CMD_ETH_CLOS:
 		ack = eth_close(remoteClus, msg);
