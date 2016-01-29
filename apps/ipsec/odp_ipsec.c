@@ -36,6 +36,7 @@
 #include <odp_ipsec_stream.h>
 
 #define MAX_WORKERS     32   /**< maximum number of worker threads */
+#define PKT_BURST_SIZE 8
 
 static int my_nanosleep(struct timespec *ts){
 	uint64_t freq = 600000000ULL;
@@ -778,19 +779,19 @@ void *pktio_thread(void *arg EXAMPLE_UNUSED)
 	odp_barrier_wait(&sync_barrier);
 
 	for(;;) {
-		if(thr % 5 == 0){
+		if(thr % 2 == 0 && thr  <= 8){
 			int n_pkt;
-			odp_packet_t pkts[4];
-			odp_packet_t crypt_pkts[4];
+			odp_packet_t pkts[PKT_BURST_SIZE];
+			odp_packet_t crypt_pkts[PKT_BURST_SIZE];
+			odp_packet_t drop_pkts[PKT_BURST_SIZE];
 			int n_crypt = 0;
 			int pkt_off = 0;
+			int n_drop = 0;
 
 			do {
 				start_counter(CNT_RECV);
-				n_pkt = odp_pktio_recv(pktios[0], pkts, 4);
+				n_pkt = odp_pktio_recv(pktios[0], pkts, PKT_BURST_SIZE);
 				stop_counter(CNT_RECV);
-				totpkt += n_pkt;
-				__builtin_k1_sdu(&pkt__[thr], totpkt);
 			} while(n_pkt == 0);
 			count(CNT_PKT_RX);
 
@@ -821,7 +822,7 @@ void *pktio_thread(void *arg EXAMPLE_UNUSED)
 			end:
 				/* Check for drop */
 				if (PKT_DROP == rc) {
-					odp_packet_free(pkts[i]);
+					drop_pkts[n_drop++] = pkts[i];
 					count(CNT_PKT_DROP);
 				}
 				else {
@@ -837,21 +838,25 @@ void *pktio_thread(void *arg EXAMPLE_UNUSED)
 			if (n_crypt) {
 				odp_queue_enq_multi(seqnumq, (odp_event_t*)crypt_pkts, n_crypt);
 			}
+			if (n_drop)
+				odp_packet_free_multi(drop_pkts, n_drop);
 
 
 		} else {
 			odp_bool_t skip = FALSE;
 			pkt_ctx_t   ctx;
 			odp_crypto_op_result_t result;
-			odp_packet_t pkts[4];
-			odp_packet_t crypt_pkts[4];
+			odp_packet_t pkts[PKT_BURST_SIZE];
+			odp_packet_t crypt_pkts[PKT_BURST_SIZE];
 			int n_pkt;
 			int n_crypt = 0;
 			int ret = 0;
 			do {
 				start_counter(CNT_DEQ);
-				n_pkt = odp_queue_deq_multi(seqnumq, (odp_event_t*)pkts, 4);
+				n_pkt = odp_queue_deq_multi(seqnumq, (odp_event_t*)pkts, PKT_BURST_SIZE);
 				stop_counter(CNT_DEQ);
+				totpkt += n_pkt;
+				__builtin_k1_sdu(&pkt__[thr], totpkt);
 			} while(n_pkt == 0);
 
 			for (int i = 0; i < n_pkt; ++i){
