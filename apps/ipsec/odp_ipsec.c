@@ -86,7 +86,7 @@ typedef enum {
 	CNT_MAX,
 } counter_type_e;
 
-#ifdef __k1__
+#if 0
 
 
 static counter_val_t counter_values[MAX_WORKERS][CNT_MAX] = { [ 0 ... MAX_WORKERS - 1 ] = {
