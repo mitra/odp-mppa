@@ -198,7 +198,7 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t 
 				int cmp_mask = strtoul(pptr, &eptr, 0);
 				if(pptr == eptr)
 					PARSE_HASH_ERR("bad comparison mask");
-				if ( cmp_mask > 0xff )
+				if ( cmp_mask & ~0xff )
 					PARSE_HASH_ERR("cmp mask must be on 8 bits");
 				rules[rule_id].entries[entry_id].cmp_mask = cmp_mask;
 				pptr = eptr;
@@ -220,7 +220,7 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t 
 				int hash_mask = strtoul(pptr, &eptr, 0);
 				if(pptr == eptr)
 					PARSE_HASH_ERR("bad hash mask");
-				if ( hash_mask > 0xff )
+				if ( hash_mask & ~0xff )
 					PARSE_HASH_ERR("hash mask must be on 8 bits");
 				rules[rule_id].entries[entry_id].hash_mask = hash_mask;
 				pptr = eptr;
@@ -342,6 +342,10 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 			}
 			pptr = eptr;
 		} else if (!strncmp(pptr, "hashpolicy=", strlen("hashpolicy="))){
+			if ( rules ) {
+				ODP_ERR("hashpolicy can only be set once\n");
+				return -1;
+			}
 			rules = calloc(1, sizeof(rules));
 			if ( rules == NULL ) {
 				ODP_ERR("hashpolicy alloc failed\n");
