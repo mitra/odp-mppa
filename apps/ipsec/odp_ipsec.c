@@ -36,7 +36,7 @@
 #include <odp_ipsec_stream.h>
 
 #define MAX_WORKERS     32   /**< maximum number of worker threads */
-#define PKT_BURST_SIZE 8
+#define PKT_BURST_SIZE 16
 
 static int my_nanosleep(struct timespec *ts){
 	uint64_t freq = 600000000ULL;
@@ -177,8 +177,8 @@ static args_t *args;
  * Buffer pool for packet IO
  */
 #ifdef __k1__
-#define SHM_PKT_POOL_BUF_COUNT 500
-#define SHM_PKT_POOL_BUF_SIZE  1600
+#define SHM_PKT_POOL_BUF_COUNT 1500
+#define SHM_PKT_POOL_BUF_SIZE  500
 #else
 #define SHM_PKT_POOL_BUF_COUNT 1024
 #define SHM_PKT_POOL_BUF_SIZE  4096
