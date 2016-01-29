@@ -149,6 +149,18 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t 
 				opened_rule = true;
 				pptr++;
 				break;
+			case PKT_RULE_PRIO_SIGN:
+				if ( !( opened_rule == true && opened_entry == false && entry_id == -1 ) )
+					PARSE_HASH_ERR("misplaced priority sign");
+				pptr++;
+				int priority = strtoul(pptr, &eptr, 0);
+				if(pptr == eptr)
+					PARSE_HASH_ERR("bad priority value");
+				if ( priority & ~0x7 )
+					PARSE_HASH_ERR("priority must be in [0..7] range");
+				rules[rule_id].priority = priority;
+				pptr = eptr;
+				break;
 			case PKT_ENTRY_OPEN_SIGN:
 				if ( opened_entry == true || opened_rule == false)
 					PARSE_HASH_ERR("open entry");
@@ -237,8 +249,10 @@ end:
 				*nb_rules = 0;
 				return NULL;
 			}
-			ODP_DBG("Rule[%d] Entry[%d]: offset %d cmp_mask 0x%x cmp_value %"PRIu64" hash_mask 0x%x> ",
-					_rule_id, _entry_id,
+			ODP_DBG("Rule[%d] (P%d) Entry[%d]: offset %d cmp_mask 0x%x cmp_value %"PRIu64" hash_mask 0x%x> ",
+					_rule_id,
+					rules[_rule_id].priority,
+					entry_id,
 					rules[_rule_id].entries[_entry_id].offset,
 					rules[_rule_id].entries[_entry_id].cmp_mask,
 					rules[_rule_id].entries[_entry_id].cmp_value,

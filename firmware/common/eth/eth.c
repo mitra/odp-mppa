@@ -54,8 +54,10 @@ static int eth_apply_rules(int lane_id, pkt_rule_t *rules, int nb_rules, int clu
 	registered_clusters[lane_id] |= 1 << cluster_id;
 	for ( int rule_id = 0; rule_id < nb_rules; ++rule_id) {
 		for ( int entry_id = 0; entry_id < rules[rule_id].nb_entries; ++entry_id) {
-			DMSG("Rule[%d] Entry[%d]: offset %d cmp_mask 0x%x cmp_value %"PRIu64" hash_mask 0x%x>\n",
-					rule_id, entry_id,
+			DMSG("Rule[%d] (P%d) Entry[%d]: offset %d cmp_mask 0x%x cmp_value %"PRIu64" hash_mask 0x%x>\n",
+					rule_id,
+					rules[rule_id].priority,
+					entry_id,
 					rules[rule_id].entries[entry_id].offset,
 					rules[rule_id].entries[entry_id].cmp_mask,
 					rules[rule_id].entries[entry_id].cmp_value,
@@ -67,7 +69,7 @@ static int eth_apply_rules(int lane_id, pkt_rule_t *rules, int nb_rules, int clu
 					rules[rule_id].entries[entry_id].hash_mask);
 			mppa_eth_lb_cfg_min_max_swap(rule_id, (entry_id >> 1), 0);
 		}
-		mppa_eth_lb_cfg_extract_table_mode(rule_id, 1, MPPA_ETHERNET_DISPATCH_POLICY_HASH);
+		mppa_eth_lb_cfg_extract_table_mode(rule_id, rules[rule_id].priority, MPPA_ETHERNET_DISPATCH_POLICY_HASH);
 	}
 
 	// dispatch hash lut between registered clusters
