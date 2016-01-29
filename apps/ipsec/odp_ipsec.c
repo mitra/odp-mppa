@@ -36,6 +36,7 @@
 #include <odp_ipsec_stream.h>
 
 #define MAX_WORKERS     32   /**< maximum number of worker threads */
+#define PKT_BURST_SIZE 16
 
 static int my_nanosleep(struct timespec *ts){
 	uint64_t freq = 600000000ULL;
@@ -86,7 +87,7 @@ typedef enum {
 	CNT_MAX,
 } counter_type_e;
 
-#ifdef __k1__
+#if 0
 
 
 static counter_val_t counter_values[MAX_WORKERS][CNT_MAX] = { [ 0 ... MAX_WORKERS - 1 ] = {
@@ -176,8 +177,8 @@ static args_t *args;
  * Buffer pool for packet IO
  */
 #ifdef __k1__
-#define SHM_PKT_POOL_BUF_COUNT 500
-#define SHM_PKT_POOL_BUF_SIZE  1600
+#define SHM_PKT_POOL_BUF_COUNT 1500
+#define SHM_PKT_POOL_BUF_SIZE  500
 #else
 #define SHM_PKT_POOL_BUF_COUNT 1024
 #define SHM_PKT_POOL_BUF_SIZE  4096
@@ -440,9 +441,6 @@ pkt_disposition_e do_input_verify(odp_packet_t pkt)
 	if (odp_unlikely(odp_packet_has_error(pkt)))
 		return PKT_DROP;
 
-	if (!odp_packet_has_eth(pkt))
-		return PKT_DROP;
-
 	if (!odp_packet_has_ipv4(pkt))
 		return PKT_DROP;
 
@@ -458,12 +456,12 @@ pkt_disposition_e do_input_verify(odp_packet_t pkt)
  * @return PKT_CONTINUE if route found else PKT_DROP
  */
 static
-pkt_disposition_e do_route_fwd_db(odp_packet_t pkt)
+pkt_disposition_e do_route_fwd_db(odp_packet_t pkt, fwd_db_entry_t *entry)
 {
 	odph_ipv4hdr_t *ip = (odph_ipv4hdr_t *)odp_packet_l3_ptr(pkt, NULL);
-	fwd_db_entry_t *entry;
 
-	entry = find_fwd_db_entry(odp_be_to_cpu_32(ip->dst_addr));
+	if (!entry)
+		entry = find_fwd_db_entry(odp_be_to_cpu_32(ip->dst_addr));
 
 	if (entry) {
 		odph_ethhdr_t *eth =
@@ -481,13 +479,15 @@ pkt_disposition_e do_route_fwd_db(odp_packet_t pkt)
 static int require_ipsec_out(odp_packet_t pkt)
 {
 	odph_ipv4hdr_t *ip = (odph_ipv4hdr_t *)odp_packet_l3_ptr(pkt, NULL);
+	ipsec_cache_entry_t *entry =
+		find_ipsec_cache_entry_out(odp_be_to_cpu_32(ip->src_addr),
+					   odp_be_to_cpu_32(ip->dst_addr),
+					   ip->proto);
+	if(do_route_fwd_db(pkt, entry != NULL ? entry->fwd_entry : NULL) == PKT_CONTINUE)
+		return entry != NULL; /* Return 1 for crypto, 0 for non crypto */
 
-	/* Find record */
-	if (find_ipsec_cache_entry_out(odp_be_to_cpu_32(ip->src_addr),
-				       odp_be_to_cpu_32(ip->dst_addr),
-				       ip->proto))
-	    return 1;
-	return 0;
+	/* Drop pkt */
+	return -1;
 }
 
 /**
@@ -778,19 +778,19 @@ void *pktio_thread(void *arg EXAMPLE_UNUSED)
 	odp_barrier_wait(&sync_barrier);
 
 	for(;;) {
-		if(thr % 5 == 0){
+		if(thr % 2 == 0 && thr  <= 4){
 			int n_pkt;
-			odp_packet_t pkts[4];
-			odp_packet_t crypt_pkts[4];
+			odp_packet_t pkts[PKT_BURST_SIZE];
+			odp_packet_t crypt_pkts[PKT_BURST_SIZE];
+			odp_packet_t drop_pkts[PKT_BURST_SIZE];
 			int n_crypt = 0;
 			int pkt_off = 0;
-
+			int n_drop = 0;
+			int ret = 0;
 			do {
 				start_counter(CNT_RECV);
-				n_pkt = odp_pktio_recv(pktios[0], pkts, 4);
+				n_pkt = odp_pktio_recv(pktios[0], pkts, PKT_BURST_SIZE);
 				stop_counter(CNT_RECV);
-				totpkt += n_pkt;
-				__builtin_k1_sdu(&pkt__[thr], totpkt);
 			} while(n_pkt == 0);
 			count(CNT_PKT_RX);
 
@@ -803,25 +803,21 @@ void *pktio_thread(void *arg EXAMPLE_UNUSED)
 				if(rc != PKT_CONTINUE)
 					goto end;
 
-				start_counter(CNT_ROUTE_LOOKUP);
-				rc = do_route_fwd_db(pkts[i]);
-				stop_counter(CNT_ROUTE_LOOKUP);
-
-				if(rc != PKT_CONTINUE)
-					goto end;
-
 				start_counter(CNT_CHECK_CRYPTO_OUT);
-				if (require_ipsec_out(pkts[i])){
+				ret = require_ipsec_out(pkts[i]);
+				if (ret == 1) {
 					crypt_pkts[n_crypt++] = pkts[i];
 					continue;
-				} else {
+				} else if (!ret){
 					rc = PKT_CONTINUE;
+				} else {
+					rc = PKT_DROP;
 				}
 				stop_counter(CNT_CHECK_CRYPTO_OUT);
 			end:
 				/* Check for drop */
 				if (PKT_DROP == rc) {
-					odp_packet_free(pkts[i]);
+					drop_pkts[n_drop++] = pkts[i];
 					count(CNT_PKT_DROP);
 				}
 				else {
@@ -837,21 +833,25 @@ void *pktio_thread(void *arg EXAMPLE_UNUSED)
 			if (n_crypt) {
 				odp_queue_enq_multi(seqnumq, (odp_event_t*)crypt_pkts, n_crypt);
 			}
+			if (n_drop)
+				odp_packet_free_multi(drop_pkts, n_drop);
 
 
 		} else {
 			odp_bool_t skip = FALSE;
 			pkt_ctx_t   ctx;
 			odp_crypto_op_result_t result;
-			odp_packet_t pkts[4];
-			odp_packet_t crypt_pkts[4];
+			odp_packet_t pkts[PKT_BURST_SIZE];
+			odp_packet_t crypt_pkts[PKT_BURST_SIZE];
 			int n_pkt;
 			int n_crypt = 0;
 			int ret = 0;
 			do {
 				start_counter(CNT_DEQ);
-				n_pkt = odp_queue_deq_multi(seqnumq, (odp_event_t*)pkts, 4);
+				n_pkt = odp_queue_deq_multi(seqnumq, (odp_event_t*)pkts, PKT_BURST_SIZE);
 				stop_counter(CNT_DEQ);
+				totpkt += n_pkt;
+				__builtin_k1_sdu(&pkt__[thr], totpkt);
 			} while(n_pkt == 0);
 
 			for (int i = 0; i < n_pkt; ++i){
@@ -889,9 +889,13 @@ void *pktio_thread(void *arg EXAMPLE_UNUSED)
 			}
 
 			start_counter(CNT_TRANSMIT);
-			ret = 0;/* odp_queue_enq_multi((odp_queue_t)odp_packet_user_ptr(pkts[0]), */
-				/* 		  (odp_event_t*)crypt_pkts, n_crypt); */
-			rc = PKT_DONE;
+			if (n_crypt < 0) {
+				ret = odp_queue_enq_multi((odp_queue_t)odp_packet_user_ptr(crypt_pkts[0]),
+							  (odp_event_t*)crypt_pkts, n_crypt);
+			} else {
+				ret = 0;
+			}
+				rc = PKT_DONE;
 			stop_counter(CNT_TRANSMIT);
 
 			if (ret < n_crypt)
@@ -919,9 +923,9 @@ main(int argc, char *argv[])
 	odp_cpumask_t cpumask;
 	char cpumaskstr[ODP_CPUMASK_STR_SIZE];
 	odp_pool_param_t params;
-
+	odp_platform_init_t platform_params = { .n_rx_thr = 1 };
 	/* Init ODP before calling anything else */
-	if (odp_init_global(NULL, NULL)) {
+	if (odp_init_global(NULL, &platform_params)) {
 		EXAMPLE_ERR("Error: ODP global init failed.\n");
 		exit(EXIT_FAILURE);
 	}
