@@ -441,9 +441,6 @@ pkt_disposition_e do_input_verify(odp_packet_t pkt)
 	if (odp_unlikely(odp_packet_has_error(pkt)))
 		return PKT_DROP;
 
-	if (!odp_packet_has_eth(pkt))
-		return PKT_DROP;
-
 	if (!odp_packet_has_ipv4(pkt))
 		return PKT_DROP;
 
@@ -459,12 +456,12 @@ pkt_disposition_e do_input_verify(odp_packet_t pkt)
  * @return PKT_CONTINUE if route found else PKT_DROP
  */
 static
-pkt_disposition_e do_route_fwd_db(odp_packet_t pkt)
+pkt_disposition_e do_route_fwd_db(odp_packet_t pkt, fwd_db_entry_t *entry)
 {
 	odph_ipv4hdr_t *ip = (odph_ipv4hdr_t *)odp_packet_l3_ptr(pkt, NULL);
-	fwd_db_entry_t *entry;
 
-	entry = find_fwd_db_entry(odp_be_to_cpu_32(ip->dst_addr));
+	if (!entry)
+		entry = find_fwd_db_entry(odp_be_to_cpu_32(ip->dst_addr));
 
 	if (entry) {
 		odph_ethhdr_t *eth =
@@ -482,13 +479,15 @@ pkt_disposition_e do_route_fwd_db(odp_packet_t pkt)
 static int require_ipsec_out(odp_packet_t pkt)
 {
 	odph_ipv4hdr_t *ip = (odph_ipv4hdr_t *)odp_packet_l3_ptr(pkt, NULL);
+	ipsec_cache_entry_t *entry =
+		find_ipsec_cache_entry_out(odp_be_to_cpu_32(ip->src_addr),
+					   odp_be_to_cpu_32(ip->dst_addr),
+					   ip->proto);
+	if(do_route_fwd_db(pkt, entry != NULL ? entry->fwd_entry : NULL) == PKT_CONTINUE)
+		return entry != NULL; /* Return 1 for crypto, 0 for non crypto */
 
-	/* Find record */
-	if (find_ipsec_cache_entry_out(odp_be_to_cpu_32(ip->src_addr),
-				       odp_be_to_cpu_32(ip->dst_addr),
-				       ip->proto))
-	    return 1;
-	return 0;
+	/* Drop pkt */
+	return -1;
 }
 
 /**
@@ -787,7 +786,7 @@ void *pktio_thread(void *arg EXAMPLE_UNUSED)
 			int n_crypt = 0;
 			int pkt_off = 0;
 			int n_drop = 0;
-
+			int ret = 0;
 			do {
 				start_counter(CNT_RECV);
 				n_pkt = odp_pktio_recv(pktios[0], pkts, PKT_BURST_SIZE);
@@ -804,19 +803,15 @@ void *pktio_thread(void *arg EXAMPLE_UNUSED)
 				if(rc != PKT_CONTINUE)
 					goto end;
 
-				start_counter(CNT_ROUTE_LOOKUP);
-				rc = do_route_fwd_db(pkts[i]);
-				stop_counter(CNT_ROUTE_LOOKUP);
-
-				if(rc != PKT_CONTINUE)
-					goto end;
-
 				start_counter(CNT_CHECK_CRYPTO_OUT);
-				if (require_ipsec_out(pkts[i])){
+				ret = require_ipsec_out(pkts[i]);
+				if (ret == 1) {
 					crypt_pkts[n_crypt++] = pkts[i];
 					continue;
-				} else {
+				} else if (!ret){
 					rc = PKT_CONTINUE;
+				} else {
+					rc = PKT_DROP;
 				}
 				stop_counter(CNT_CHECK_CRYPTO_OUT);
 			end:
