@@ -21,7 +21,7 @@ int main()
 	}
 
 	if ( __k1_get_cluster_id() == 128 ) {
-		boot_set_nb_clusters(16);
+		boot_set_nb_clusters(12);
 		printf("Spawning clusters\n");
 		{
 			static char const * _argv[] = {
@@ -40,6 +40,7 @@ int main()
 
 			for (int i = 0; i < 16; i++) {
 				if ( i % 4 == 0 ) continue;
+				if ( i % 4 == 3 ) continue;
 				boot_cluster(i, _argv[0], _argv);
 			}
 		}
@@ -52,7 +53,7 @@ int main()
 				"--srcip",  "192.168.111.2",
 				"--dstip", "192.168.222.2",
 				"-m", "u",
-				"-i", "0", "-w", "2", "-p", "320", NULL
+				"-i", "0", "-w", "2", "-p", "256", NULL
 			};
 
 			for (int i = 0; i < 16; i+=4) {
