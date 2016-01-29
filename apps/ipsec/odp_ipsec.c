@@ -923,9 +923,9 @@ main(int argc, char *argv[])
 	odp_cpumask_t cpumask;
 	char cpumaskstr[ODP_CPUMASK_STR_SIZE];
 	odp_pool_param_t params;
-
+	odp_platform_init_t platform_params = { .n_rx_thr = 1 };
 	/* Init ODP before calling anything else */
-	if (odp_init_global(NULL, NULL)) {
+	if (odp_init_global(NULL, &platform_params)) {
 		EXAMPLE_ERR("Error: ODP global init failed.\n");
 		exit(EXIT_FAILURE);
 	}
