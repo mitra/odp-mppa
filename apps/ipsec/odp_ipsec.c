@@ -889,7 +889,7 @@ void *pktio_thread(void *arg EXAMPLE_UNUSED)
 			}
 
 			start_counter(CNT_TRANSMIT);
-			if (n_crypt) {
+			if (n_crypt < 0) {
 				ret = odp_queue_enq_multi((odp_queue_t)odp_packet_user_ptr(crypt_pkts[0]),
 							  (odp_event_t*)crypt_pkts, n_crypt);
 			} else {
