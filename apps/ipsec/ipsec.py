@@ -54,8 +54,8 @@ class MCAnim(object):
 			return
                 pkt, cycles = int(line[3]), int(line[6])
                 pps = float(pkt) * (FREQ * 1e6) / cycles
-                bw = (pps * (320 +42) * 8)
-		pps, bw = 12 * pps, 12 * bw
+                bw = (pps * (256 +42) * 8)
+		pps, bw = 16 * pps, 16 * bw
 		pps, bw = pps/1e6, bw/1e9
 
 		print line, pps, bw
