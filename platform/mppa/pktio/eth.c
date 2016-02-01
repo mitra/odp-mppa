@@ -145,6 +145,8 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t 
 				if ( opened_rule == true )
 					PARSE_HASH_ERR("open rule");
 				rule_id++;
+				if ( rule_id > 7 )
+					PARSE_HASH_ERR("nb rules > 8");
 				entry_id = -1;
 				opened_rule = true;
 				pptr++;
@@ -165,6 +167,8 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t 
 				if ( opened_entry == true || opened_rule == false)
 					PARSE_HASH_ERR("open entry");
 				entry_id++;
+				if ( entry_id > 9 )
+					PARSE_HASH_ERR("nb entries > 10");
 				opened_entry = true;
 				pptr++;
 				break;
@@ -353,10 +357,6 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 			}
 			pptr += strlen("hashpolicy=");
 			pptr = parse_hashpolicy(pptr, &nb_rules, rules);
-			if ( nb_rules > 1 ) {
-				ODP_ERR("At most one rule is allowed\n");
-				return -1;
-			}
 			if ( pptr == NULL ) {
 				return -1;
 			}

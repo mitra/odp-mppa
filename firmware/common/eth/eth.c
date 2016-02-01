@@ -43,31 +43,75 @@ static inline int get_eth_dma_id(unsigned cluster_id){
 
 static uint32_t registered_clusters[N_ETH_LANE] = {0};
 
+static inline pkt_rule_entry_t
+mppabeth_lb_get_rule(void __iomem *lb_addr,
+	unsigned int rule_id,
+	unsigned int entry_id) {
+	pkt_rule_entry_t entry = {0};
+	entry.offset = mppabeth_lb_get_rule_offset(lb_addr, rule_id, entry_id);
+	entry.cmp_mask = mppabeth_lb_get_rule_cmp_mask(lb_addr, rule_id, entry_id);
+	entry.cmp_value = mppabeth_lb_get_rule_expected_value(lb_addr, rule_id, entry_id);
+	entry.hash_mask = mppabeth_lb_get_rule_hashmask(lb_addr, rule_id, entry_id);
+	return entry;
+}
+
+static int compare_rule_entries(pkt_rule_entry_t entry1, pkt_rule_entry_t entry2) {
+	return entry1.offset != entry2.offset ||
+		entry1.cmp_mask != entry2.cmp_mask ||
+		entry1.cmp_value != entry2.cmp_value ||
+		entry1.hash_mask != entry2.hash_mask;
+}
+
+static int check_rules_identical(const pkt_rule_t *rules, int nb_rules) {
+	for ( int rule_id = 0; rule_id < nb_rules; ++rule_id ) {
+		for ( int entry_id = 0; entry_id < rules[rule_id].nb_entries; ++entry_id ) {
+			pkt_rule_entry_t entry = mppabeth_lb_get_rule((void *) &(mppa_ethernet[0]->lb), rule_id, entry_id);
+			if ( compare_rule_entries(rules[rule_id].entries[entry_id], entry ) ) {
+				fprintf(stderr, "Rule[%d] entry[%d] differs from already set rule\n", rule_id, entry_id);
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
 static int eth_apply_rules(int lane_id, pkt_rule_t *rules, int nb_rules, int cluster_id) {
 	DMSG("Applying %d rules for cluster %d\n", nb_rules, cluster_id);
+
 	if ( registered_clusters[lane_id] & (1 << cluster_id) ) {
 		fprintf(stderr, "cluster %d already registered on lane %d\n", cluster_id, lane_id);
 		return -1;
 	}
 	registered_clusters[lane_id] |= 1 << cluster_id;
-	for ( int rule_id = 0; rule_id < nb_rules; ++rule_id) {
-		for ( int entry_id = 0; entry_id < rules[rule_id].nb_entries; ++entry_id) {
-			DMSG("Rule[%d] (P%d) Entry[%d]: offset %d cmp_mask 0x%x cmp_value %"PRIu64" hash_mask 0x%x>\n",
-					rule_id,
-					rules[rule_id].priority,
-					entry_id,
-					rules[rule_id].entries[entry_id].offset,
-					rules[rule_id].entries[entry_id].cmp_mask,
-					rules[rule_id].entries[entry_id].cmp_value,
-					rules[rule_id].entries[entry_id].hash_mask);
-			mppa_eth_lb_cfg_rule(rule_id, entry_id,
-					rules[rule_id].entries[entry_id].offset,
-					rules[rule_id].entries[entry_id].cmp_mask,
-					rules[rule_id].entries[entry_id].cmp_value,
-					rules[rule_id].entries[entry_id].hash_mask);
-			mppa_eth_lb_cfg_min_max_swap(rule_id, (entry_id >> 1), 0);
+
+	// if first rule first entry is null, it means that it is the first clusters registering
+	const pkt_rule_entry_t entry_nul = {0};
+	if ( compare_rule_entries(mppabeth_lb_get_rule((void *) &(mppa_ethernet[0]->lb), 0, 0), entry_nul ) ) {
+		if ( check_rules_identical(rules, nb_rules) ) {
+			fprintf(stderr, "cluster %d registration failed\n", cluster_id);
+			return -1;
 		}
-		mppa_eth_lb_cfg_extract_table_mode(rule_id, rules[rule_id].priority, MPPA_ETHERNET_DISPATCH_POLICY_HASH);
+	}
+	else {
+		for ( int rule_id = 0; rule_id < nb_rules; ++rule_id) {
+			for ( int entry_id = 0; entry_id < rules[rule_id].nb_entries; ++entry_id) {
+				DMSG("Rule[%d] (P%d) Entry[%d]: offset %d cmp_mask 0x%x cmp_value %"PRIu64" hash_mask 0x%x>\n",
+						rule_id,
+						rules[rule_id].priority,
+						entry_id,
+						rules[rule_id].entries[entry_id].offset,
+						rules[rule_id].entries[entry_id].cmp_mask,
+						rules[rule_id].entries[entry_id].cmp_value,
+						rules[rule_id].entries[entry_id].hash_mask);
+				mppa_eth_lb_cfg_rule(rule_id, entry_id,
+						rules[rule_id].entries[entry_id].offset,
+						rules[rule_id].entries[entry_id].cmp_mask,
+						rules[rule_id].entries[entry_id].cmp_value,
+						rules[rule_id].entries[entry_id].hash_mask);
+				mppa_eth_lb_cfg_min_max_swap(rule_id, (entry_id >> 1), 0);
+			}
+			mppa_eth_lb_cfg_extract_table_mode(rule_id, rules[rule_id].priority, MPPA_ETHERNET_DISPATCH_POLICY_HASH);
+		}
 	}
 
 	// dispatch hash lut between registered clusters
