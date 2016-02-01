@@ -164,9 +164,81 @@ the cluster that opened this pktio.
 
 Note that the option must be the same (on or off) for all the cluster
 that use an Ethernet interface
+
 \begin{lstlisting}
 e0:loop
 \end{lstlisting}
+
+\subsubsection{Dispatch}
+
+User can apply dispatch rules to ethernet physical links. According to
+these rules, input ethernet packets will be dispatched to specific
+clusters. It allows for example to guarantee that all packets from an IP
+address are all managed by a single cluster. It is possible to define up
+to 8 rules.
+
+In the current ODP release, there are some limitations:
+\begin{itemize}
+	\item the set of rules must be identical between all pktios for a
+		given an IOETH. It means that interfaces \texttt{e0} and
+		\texttt{e1} can have different set of rules, but \texttt{e0p0}
+		and \texttt{e0p1} must have the same set of rules.
+\end{itemize}
+
+A rule if described as follow:
+\begin{lstlisting}
+e0:hashpolicy=[P_{@_/_=_#_}{@_/_=_#_}...]
+\end{lstlisting}
+\begin{itemize}
+	\item tokens \texttt{[ ]} enclose a rule. A rule is composed by an
+		optional \emph{priority} and 1 to 10 \emph{rule entries}.
+	\item token \texttt{P} is the priority of the current rule. It is
+		optional, must appear just after the \texttt{[} token and must
+		be comprised between 0 and 7. 0 is the most prioritary.
+	\item tokens \texttt{\{ \}} enclose a rule entry. A rule entry is
+		applied on a 64 bit word. A rule entry must be immediatly
+		followed by another rule entry or by a closing rule token
+		\texttt{]}. A rule entry is composed by following items:
+		\begin{itemize}
+			\item \emph{offset}: offset from the base of ethernet packet
+				to extract the 64 bits word.
+			\item \emph{comparison bytemask}: 8 bits \emph{bytemask} for
+				comparing the extracted value with the extracted 64 bit
+				word.
+			\item \emph{comparison value}: expected 64 bit word to be
+				compared with the extracted 64 bits word after applying
+				comparison bytemask.
+			\item \emph{hash bytemask}: 8 bits mask to select the bytes
+				which will be taken into account during the hash
+				computation.
+		\end{itemize}
+\end{itemize}
+
+A rule will be applied for a packet if \emph{all} of its entries match
+this packet. At least one hash bytemask must be specified. This hash
+result will select the target cluster between all of the clusters
+registered on this ethernet interface. User must ensure that there is
+enough entropy with the hashed values to ensure an even dispatch between
+the clusters.
+
+\paragraph{Examples:}
+
+Following rule dispatch all the incoming packets on interface ethernet 0
+hashing the destination MAC address:
+\begin{lstlisting}
+e0:hashpolicy=[{@0#0xfc}]
+\end{lstlisting}
+
+Following rule is in two times: if the incoming packet is an IPV4 packet
+(\texttt{@12/0xc0=0x0800}), it will be dispatched hashing the IP source
+address (\texttt{@26\#0xf0}). If the packet does not match the first rule
+(which has the highest priority 0), it will use the second rule (with
+priority 1), dispatching with the hash of the source MAC address
+(\texttt{@6\#0xfc}):
+\begin{lstlisting}
+e0:hashpolicy=[P0{@12/0xc0=0x0800}{@26#0xf0}][P1{@6#0xfc}]
+\end{lstlisting}
+
 
 \section{Compiling and Running}
 
