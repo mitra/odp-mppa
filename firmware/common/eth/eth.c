@@ -8,7 +8,6 @@
 
 #include <odp_macros_internal.h>
 #include <odp_rpc_internal.h>
-#include <odp_packet_io_internal.h>
 #include <mppa_eth_core.h>
 #include <mppa_eth_loadbalancer_core.h>
 #include <mppa_eth_phy.h>
