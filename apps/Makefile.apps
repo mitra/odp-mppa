@@ -4,7 +4,7 @@ project-name := odp
 
 TOPDIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
 ODP_ARCH ?= k1b-kalray-mos
-
+APST_DIR ?= $(shell pwd)/install
 ODP_TOOLCHAIN_DIR ?= $(K1_TOOLCHAIN_DIR)
 include $(ODP_TOOLCHAIN_DIR)/share/odp/build/mk/platforms.inc
 
