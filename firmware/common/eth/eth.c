@@ -6,7 +6,6 @@
 
 #include <mppa_eth_io_utils.h>
 
-#include <odp_macros_internal.h>
 #include <odp_rpc_internal.h>
 #include <mppa_eth_core.h>
 #include <mppa_eth_loadbalancer_core.h>
