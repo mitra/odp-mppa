@@ -357,10 +357,6 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 			}
 			pptr += strlen("hashpolicy=");
 			pptr = parse_hashpolicy(pptr, &nb_rules, rules);
-			if ( nb_rules > 1 ) {
-				ODP_ERR("At most one rule is allowed\n");
-				return -1;
-			}
 			if ( pptr == NULL ) {
 				return -1;
 			}
