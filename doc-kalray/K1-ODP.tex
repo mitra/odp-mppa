@@ -170,33 +170,53 @@ e0:loop
 
 \section{Compiling and Running}
 
+\subsection{Template Project}
+A template project is available in the K1-ODP installation directory
+\begin{lstlisting}
+/usr/local/k1tools/share/odp/skel
+\end{lstlisting}
+
+To create a new ODP application the easiest way is to copy the
+\texttt{skel} directory and edit the Makefile and source files.
+
+In this case, building and running is easily done by running
+\texttt{make APST\_DIR=/path/to/build/dir} or running the
+\texttt{run.sh} in the \texttt{APST\_DIR/<app\_name>}
+
+
+\subsection{Custom Project}
+
 Some compiler flags must be passed to the compiler when trying to
 build an ODP application.
-
 \begin{lstlisting}
-LDFLAGS += -L$($(K1_TOOLCHAIN_DIR)/lib/<port> -lodp
-\end{lstlisting}
-where port is replaced with one of the available K1-ODP port.
-
-\section{Running}
-
-Running K1-ODP applications is done the same way a standard K1 single
-cluster application would be run.
-
-\subsection{k1b-kalray-nodeos and k1b-kalray-mos}
-Running a \texttt{k1b-kalray-nodeos} application, can be done either
-on hardware using:
-\begin{lstlisting}
-k1-jtag-runner --exec-file "Cluster0:<executable name>" -- <args>
-\end{lstlisting}
-or in simulation using:
-\begin{lstlisting}
- k1-cluster -- <executable name> <args>
+LDFLAGS += -L$($(K1_TOOLCHAIN_DIR)/lib/<port> -lodphelper -lodp -lcrypto -Wl,--gc-sections
 \end{lstlisting}
 
-\subsection{k1b-kalray-nodeos\_simu and k1b-kalray-mos\_simu}
-Running a \texttt{k1b-kalray-nodeos\_simu} application, must be done in
-simulation using this command:
+It is recommended to use the pre-built firmware
+\texttt{iounified.kelf} available with K1-ODP in these cases.
+They can be found in
+\begin{lstlisting}
+/usr/local/k1tools/share/odp/firmware/<platform>/iounified.kelf
+\end{lstlisting}
+
+Running a \texttt{k1b-kalray-nodeos} application, can then be done using:
+\begin{lstlisting}
+k1-jtag-runner --exec-file IODDR0:/path/to/iounified.kelf --exec-file
+IODDR1:/path/to/iounified.kelf --exec-file
+"Cluster<X>:<executable_name>" [--exec-file
+  "Cluster<Y>:<executable_name>" ...] -- <args>
+\end{lstlisting}
+
+\subsection{Simulation}
+
+For the moment, only single cluster ODP application can be run in
+simulation. In this case, only the \texttt{magic:<if\_name>} pktios
+are available.
+
+To build for simulation, either \texttt{k1b-kalray-nodeos\_simu} or
+\texttt{k1b-kalray-mos\_simu} port of K1-ODP should be used.
+
+Then, running the application can be done using this command:
 \begin{lstlisting}
 k1-cluster   --functional  --mboard=developer --march=bostan --user-syscall=/usr/local/k1tools/lib64/libodp_syscall.so -- <executable name> <args>
 \end{lstlisting}
