@@ -30,6 +30,7 @@ typedef struct {
 	odp_packet_t pkt;
 	uint8_t broken;
 	uint8_t pktio_id;
+	uint64_t reconf_id;
 } rx_tag_t;
 
 /** Per If data */
@@ -126,6 +127,7 @@ static int _configure_rx(rx_config_t *rx_config, int rx_id)
 
 	odp_packet_hdr_t *pkt_hdr = odp_packet_hdr(pkt);
 	rx_hdl.tag[rx_id].pkt = pkt;
+	pkt_hdr->buf_hdr.order = rx_hdl.tag[rx_id].reconf_id = rx_id;
 
 	int ret;
 	uint32_t len;
@@ -196,6 +198,7 @@ static int _reload_rx(int th_id, int rx_id)
 
 	odp_packet_t pkt = rx_hdl.tag[rx_id].pkt;
 	odp_packet_t newpkt = ODP_PACKET_INVALID;
+	rx_hdl.tag[rx_id].reconf_id += 256ULL;
 
 	if (odp_unlikely(pkt == ODP_PACKET_INVALID)){
 		if (rx_hdl.tag[rx_id].broken) {
@@ -224,6 +227,7 @@ static int _reload_rx(int th_id, int rx_id)
 
 		newpkt = rx_pool->spares[--rx_pool->n_spares];
 		pkt_hdr = odp_packet_hdr(newpkt);
+		pkt_hdr->buf_hdr.order = rx_hdl.tag[rx_id].reconf_id;
 
 		rx_queue->buffer_base.dword = (unsigned long)
 			((uint8_t *)(pkt_hdr->buf_hdr.addr) +

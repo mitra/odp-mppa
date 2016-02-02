@@ -5,6 +5,7 @@
  */
 #include <odp_buffer_inlines.h>
 #include <odp_buffer_ring_internal.h>
+#include <stdlib.h>
 
 int odp_buffer_ring_get_multi(odp_buffer_ring_t *ring,
 			      odp_buffer_hdr_t *buffers[],
@@ -116,6 +117,28 @@ odp_buffer_hdr_t * odp_buffer_ring_push_list(odp_buffer_ring_t *ring,
 {
 	uint32_t prod_head, prod_next, cons_tail;
 	unsigned n_buffers = *nbufs;
+
+	/* Sort the list first */
+	{
+		odp_buffer_hdr_t *sorted  = buffers;
+		odp_buffer_hdr_t *buf;
+		unsigned count;
+		for (count = 0, buf = sorted->next; buf && count !=0; count+=1, buf = buf->next) {
+			if (odp_unlikely(buf->order < sorted->order)){
+				/* Out of order */
+				odp_buffer_hdr_t **prev = &buffers;
+				odp_buffer_hdr_t *ptr = buffers;
+				/* Remove unsorted elnt */
+				sorted->next = buf->next;
+				/* Find slot */
+				for(ptr = buf; (*prev)->order < buf->order; prev=&ptr->next, ptr = ptr->next){}
+				/* Insert element in its rightful place */
+				*prev = buf;
+				buf->next = ptr;
+			}
+		}
+	}
+
 	do {
 		prod_head =  odp_atomic_load_u32(&ring->prod_head);
 		cons_tail = odp_atomic_load_u32(&ring->cons_tail);
