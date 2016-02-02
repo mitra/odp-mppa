@@ -29,9 +29,9 @@ static int cluster_iopcie_sync(int exit)
 	uint64_t timeout = 120 * RPC_TIMEOUT_1S;
 	int iter = 0;
 	do {
-		odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(rpc_server_id, cluster_id),
-				 odp_rpc_get_ioddr_tag_id(rpc_server_id, cluster_id),
-				 &cmd, NULL);
+		odp_rpc_do_query(rpc_server_id,
+						 odp_rpc_get_io_tag_id(cluster_id),
+						 &cmd, NULL);
 
 		if (odp_rpc_wait_ack(&ack_msg, NULL, timeout) != 1) {
 			printf("Timeout %d\n", iter);

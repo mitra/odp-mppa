@@ -101,9 +101,9 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth, int
 		.flags = 0,
 	};
 
-	odp_rpc_do_query(odp_rpc_get_ioeth_dma_id(eth->slot_id, cluster_id),
-			 odp_rpc_get_ioeth_tag_id(eth->slot_id, cluster_id),
-			 &cmd, rules);
+	odp_rpc_do_query(odp_rpc_get_io_dma_id(eth->slot_id, cluster_id),
+					 odp_rpc_get_io_tag_id(cluster_id),
+					 &cmd, rules);
 
 	ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * RPC_TIMEOUT_1S);
 	if (ret < 0) {
@@ -508,9 +508,9 @@ static int eth_close(pktio_entry_t * const pktio_entry)
 	/* Free packets being sent by DMA */
 	tx_uc_flush(eth_get_ctx(eth));
 
-	odp_rpc_do_query(odp_rpc_get_ioeth_dma_id(slot_id, cluster_id),
-			 odp_rpc_get_ioeth_tag_id(slot_id, cluster_id),
-			 &cmd, NULL);
+	odp_rpc_do_query(odp_rpc_get_io_dma_id(slot_id, cluster_id),
+					 odp_rpc_get_io_tag_id(cluster_id),
+					 &cmd, NULL);
 
 	ret = odp_rpc_wait_ack(&ack_msg, NULL, 5 * RPC_TIMEOUT_1S);
 	if (ret < 0) {

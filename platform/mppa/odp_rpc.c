@@ -63,9 +63,12 @@ int odp_rpc_client_get_default_server(void)
 	if (rpc_default_server_id >= 0)
 		return rpc_default_server_id;
 
-	rpc_default_server_id = 0;
+	int io_id = 0;
 	if (__k1_spawn_type() == __MPPA_MPPA_SPAWN)
-		rpc_default_server_id = __k1_spawner_id() / 128 - 1;
+		io_id = __k1_spawner_id() / 128 - 1;
+
+	rpc_default_server_id = odp_rpc_get_io_dma_id(io_id,
+												  __k1_get_cluster_id());
 
 	if (getenv("SYNC_IODDR_ID")) {
 		rpc_default_server_id = atoi(getenv("SYNC_IODDR_ID"));
@@ -230,7 +233,12 @@ int odp_rpc_send_msg(uint16_t local_interface, uint16_t dest_id,
 	header._.tag = dest_tag;
 	header._.valid = 1;
 
-	int externalAddress = __k1_get_cluster_id() + local_interface;
+	int externalAddress = __k1_get_cluster_id();
+	if (local_interface >= 4) {
+		externalAddress += 32 + (local_interface % 4);
+	} else {
+		externalAddress += local_interface;
+	}
 #ifdef K1B_EXPLORER
 	externalAddress = __k1_get_cluster_id() + (local_interface % 4);
 #endif

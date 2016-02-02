@@ -16,29 +16,16 @@ extern int __n_rpc_handlers;
 
 static inline int get_rpc_tag_id(unsigned cluster_id)
 {
-#if defined(__ioddr__)
-	return odp_rpc_get_ioddr_tag_id(0, cluster_id);
-#elif defined(__ioeth__)
-	return odp_rpc_get_ioeth_tag_id(0, cluster_id);
-#else
-#error "Neither ioddr nor ioeth"
-#endif
+	return odp_rpc_get_io_tag_id(cluster_id);
 }
 
-static inline int get_rpc_dma_id(unsigned cluster_id)
+static inline int get_rpc_local_dma_id(unsigned cluster_id)
 {
-#if defined(__ioddr__)
-	return odp_rpc_get_ioddr_dma_id(0, cluster_id) - 128;
-#elif defined(__ioeth__)
-	int if_id = odp_rpc_get_ioeth_dma_id(0, cluster_id) - 160;
-  #if defined(__k1b__)
+	int if_id = odp_rpc_get_io_dma_id(0, cluster_id) - 160;
 	/* On K1B, DMA 0-3 belong to IODDR */
 	if_id += 4;
-  #endif
+
 	return if_id;
-#else
-#error "Neither ioddr nor ioeth"
-#endif
 }
 
 
