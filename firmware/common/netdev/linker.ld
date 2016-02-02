@@ -57,13 +57,12 @@ SECTIONS
   
   /* The bsp configuration arguments */
   .bsp_config ALIGN(8) :
-  {  	
-    *(.bsp_config_desc) 
+  {
     INTERNAL_RAM_SIZE_VALUE = ABSOLUTE(INTERNAL_RAM_SIZE) ;
     RM_STACK_SIZE_VALUE = ABSOLUTE(RM_STACK_SIZE) ;
     DDR_SIZE_VALUE = ABSOLUTE(RamSize) ;
+    *(.bsp_config_desc)
     *(.bsp_config)
-    *(.bsp_config_text)
   }  > internal_mem
 
   /* This is the value of the GP base */
@@ -154,7 +153,6 @@ SECTIONS
     _heap_start = ABSOLUTE(.);
   } > internal_mem
 
-
   . = DEBUG_BASE;
 
   .heap_end ALIGN(8):
@@ -184,4 +182,9 @@ SECTIONS
     KEEP (*(__k1_tracepoint_data*))
   }
 
+  . = 0x200000;
+  .upper_internal_memory ALIGN(16): 
+  {
+    *(.upper_internal_memory)
+  } > upper_internal_memory
 }
