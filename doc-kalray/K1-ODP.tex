@@ -105,6 +105,31 @@ In the current version, this port supports these interfaces:
 Same target as \texttt{k1b-kalray-nodeos\_simu}, but running directly on
 Kalray Hypervisor
 
+\section{Platform Settings}
+\subsection{Rx Threads}
+ODP internally allocates 2 cores (Rx Threads) per cluster to convert the incoming
+Ethernet, NoC, and PCIe trafic to ODP packets.
+
+The number of Rx Threads can be selected at runtime from 1 to 6,
+depdning on the application requirement. Each thread can handle
+approximately 1.8Mpps. Thus application with low pps requirements can
+save 1 core for computation and on the other hand, high pps
+application should dedicate more cores to Rx Threads to avoid packet
+drop.
+
+The number of threads can be configured by providing a
+\texttt{odp\_platform\_init\_t} structure to
+\texttt{odp\_init\_global} and setting the \texttt{n\_rx\_thr} value.
+
+\begin{lstlisting}
+	odp_platform_init_t platform_params = { .n_rx_thr = 1 };
+
+	if (odp_init_global(NULL, &platform_params)) {
+		fprintf(stderr, "Error: ODP global init failed.\n");
+		exit(EXIT_FAILURE);
+	}
+\end{lstlisting}
+
 \section{Packet IO Interfaces}
 
 K1-ODP provides multiple pktio types that can be used to communicate
@@ -297,6 +322,10 @@ k1-cluster   --functional  --mboard=developer --march=bostan --user-syscall=/usr
 
 \begin{itemize}
 \item[-]{The current ODP version does not support ordered queues}
+\item[-]{In some case where multiple Rx threads are used to handle incoming trafic
+  (default), packets may not be returned in order to the ODP
+  application. If order is required, the number of Rx thread must be
+  set to one.}
 \end{itemize}
 
 \end{document}
