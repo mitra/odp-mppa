@@ -202,19 +202,21 @@ int ethtool_init_lane(unsigned eth_if, int loopback)
 }
 void ethtool_cleanup_cluster(unsigned remoteClus, unsigned eth_if)
 {
-	if (status[eth_if].cluster[remoteClus].rx_tag >= 0)
-		mppa_noc_dnoc_rx_free(status[eth_if].cluster[remoteClus].nocIf,
-				      status[eth_if].cluster[remoteClus].rx_tag);
+	int noc_if = status[eth_if].cluster[remoteClus].nocIf;
+	int tx_id = status[eth_if].cluster[remoteClus].txId;
+	int rx_tag = status[eth_if].cluster[remoteClus].rx_tag;
 
-	if (status[eth_if].cluster[remoteClus].txId >= 0) {
+	if (rx_tag >= 0)
+		mppa_noc_dnoc_rx_free(noc_if, rx_tag);
 
+	if (tx_id >= 0) {
 		mppabeth_lb_cfg_table_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
 							  ETH_MATCHALL_TABLE_ID, eth_if,
-							  status[eth_if].cluster[remoteClus].nocIf,
-							  status[eth_if].cluster[remoteClus].txId,
-							  0);
-		mppa_noc_dnoc_tx_free(status[eth_if].cluster[remoteClus].nocIf,
-				      status[eth_if].cluster[remoteClus].txId);
+							  noc_if,tx_id, 0);
+		mppa_dnoc[noc_if]->tx_chan_route[tx_id].
+			min_max_task_id[ETH_DEFAULT_CTX]._.min_max_task_id_en = 0;
+
+		mppa_noc_dnoc_tx_free(noc_if, tx_id);
 
 	}
 	_eth_cluster_status_init(&(status[eth_if].cluster[remoteClus]));
