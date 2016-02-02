@@ -74,7 +74,9 @@ static int check_rules_identical(const pkt_rule_t *rules, int nb_rules) {
 }
 
 static int eth_apply_rules(int lane_id, pkt_rule_t *rules, int nb_rules, int cluster_id) {
-	DMSG("Applying %d rules for cluster %d\n", nb_rules, cluster_id);
+#ifdef VERBOSE
+	printf("Applying %d rules for cluster %d\n", nb_rules, cluster_id);
+#endif
 
 	if ( registered_clusters[lane_id] & (1 << cluster_id) ) {
 		fprintf(stderr, "cluster %d already registered on lane %d\n", cluster_id, lane_id);
@@ -93,7 +95,8 @@ static int eth_apply_rules(int lane_id, pkt_rule_t *rules, int nb_rules, int clu
 	else {
 		for ( int rule_id = 0; rule_id < nb_rules; ++rule_id) {
 			for ( int entry_id = 0; entry_id < rules[rule_id].nb_entries; ++entry_id) {
-				DMSG("Rule[%d] (P%d) Entry[%d]: offset %d cmp_mask 0x%x cmp_value %"PRIu64" hash_mask 0x%x>\n",
+#ifdef VERBOSE
+				printf("Rule[%d] (P%d) Entry[%d]: offset %d cmp_mask 0x%x cmp_value %"PRIu64" hash_mask 0x%x>\n",
 						rule_id,
 						rules[rule_id].priority,
 						entry_id,
@@ -101,6 +104,7 @@ static int eth_apply_rules(int lane_id, pkt_rule_t *rules, int nb_rules, int clu
 						rules[rule_id].entries[entry_id].cmp_mask,
 						rules[rule_id].entries[entry_id].cmp_value,
 						rules[rule_id].entries[entry_id].hash_mask);
+#endif
 				mppabeth_lb_cfg_rule((void *) &(mppa_ethernet[0]->lb),
 									 rule_id, entry_id,
 									 rules[rule_id].entries[entry_id].offset,
@@ -131,13 +135,11 @@ static int eth_apply_rules(int lane_id, pkt_rule_t *rules, int nb_rules, int clu
 		clusters &= ~(1 << registered_cluster);
 		int tx_id = status[lane_id].cluster[registered_cluster].txId;
 		int noc_if = status[lane_id].cluster[registered_cluster].nocIf;
-		DMSG("config lut[%3d-%3d] -> C%2d: %d %d %d %d\n", 
-				i, i + chunks[j] - 1,
-				registered_cluster,
-				lane_id,
-				tx_id,
-				ETH_DEFAULT_CTX,
-				noc_if - 4);
+#ifdef VERBOSE
+		printf("config lut[%3d-%3d] -> C%2d: %d %d %d %d\n",
+			   i, i + chunks[j] - 1, registered_cluster,
+			   lane_id, tx_id, ETH_DEFAULT_CTX, noc_if - 4);
+#endif
 		for ( int lut_id = i; lut_id < i + chunks[j] ; ++lut_id ) {
 			mppabeth_lb_cfg_luts((void *) &(mppa_ethernet[0]->lb),
 								 lane_id, lut_id, tx_id,
