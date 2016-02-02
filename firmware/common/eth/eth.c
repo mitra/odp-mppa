@@ -103,14 +103,19 @@ static int eth_apply_rules(int lane_id, pkt_rule_t *rules, int nb_rules, int clu
 						rules[rule_id].entries[entry_id].cmp_mask,
 						rules[rule_id].entries[entry_id].cmp_value,
 						rules[rule_id].entries[entry_id].hash_mask);
-				mppa_eth_lb_cfg_rule(rule_id, entry_id,
-						rules[rule_id].entries[entry_id].offset,
-						rules[rule_id].entries[entry_id].cmp_mask,
-						rules[rule_id].entries[entry_id].cmp_value,
-						rules[rule_id].entries[entry_id].hash_mask);
-				mppa_eth_lb_cfg_min_max_swap(rule_id, (entry_id >> 1), 0);
+				mppabeth_lb_cfg_rule((void *) &(mppa_ethernet[0]->lb),
+									 rule_id, entry_id,
+									 rules[rule_id].entries[entry_id].offset,
+									 rules[rule_id].entries[entry_id].cmp_mask,
+									 rules[rule_id].entries[entry_id].cmp_value,
+									 rules[rule_id].entries[entry_id].hash_mask);
+				mppabeth_lb_cfg_min_max_swap((void *) &(mppa_ethernet[0]->lb),
+											 rule_id, (entry_id >> 1), 0);
 			}
-			mppa_eth_lb_cfg_extract_table_mode(rule_id, rules[rule_id].priority, MPPA_ETHERNET_DISPATCH_POLICY_HASH);
+			mppabeth_lb_cfg_extract_table_mode((void *) &(mppa_ethernet[0]->lb),
+											   rule_id,
+											   rules[rule_id].priority,
+											   MPPA_ETHERNET_DISPATCH_POLICY_HASH);
 		}
 	}
 
@@ -136,11 +141,10 @@ static int eth_apply_rules(int lane_id, pkt_rule_t *rules, int nb_rules, int clu
 				ETH_DEFAULT_CTX,
 				noc_if - 4);
 		for ( int lut_id = i; lut_id < i + chunks[j] ; ++lut_id ) {
-			mppa_eth_lb_cfg_luts(lane_id,
-					lut_id,
-					tx_id,
-					ETH_DEFAULT_CTX,
-					noc_if - 4);
+			mppabeth_lb_cfg_luts((void *) &(mppa_ethernet[0]->lb),
+								 lane_id, lut_id, tx_id,
+								 ETH_DEFAULT_CTX,
+								 noc_if - 4);
 		}
 	}
 
