@@ -11,10 +11,39 @@
 #include <mppa_eth_mac.h>
 #include <mppa_routing.h>
 #include <mppa_noc.h>
+#include <mppa_eth_io_utils.h>
 
-#include "io_utils.h"
 #include "rpc-server.h"
 #include "eth.h"
+
+enum mppa_eth_mac_ethernet_mode_e mac_get_default_mode(unsigned lane_id)
+{
+	(void)lane_id;
+	switch (__bsp_flavour) {
+	case BSP_ETH_530:
+	case BSP_EXPLORER:
+		return MPPA_ETH_MAC_ETHMODE_1G;
+		break;
+	case BSP_KONIC80:
+		return MPPA_ETH_MAC_ETHMODE_40G;
+		break;
+	case BSP_DEVELOPER:
+		if (__k1_get_cluster_id() >= 192) {
+			/* IO(DDR|ETH)1 */
+			if(lane_id == 0 || lane_id == 1)
+				return MPPA_ETH_MAC_ETHMODE_10G_BASE_R;
+			if(lane_id == 2 || lane_id == 3)
+				return MPPA_ETH_MAC_ETHMODE_1G;
+		} else {
+			/* IO(DDR|ETH)0 => EXB03 */
+			return MPPA_ETH_MAC_ETHMODE_40G;
+		}
+		break;
+	default:
+		return -1;
+	}
+	return -1;
+}
 
 int ethtool_setup_eth2clus(unsigned remoteClus, int eth_if,
 			   int nocIf, int externalAddress,
@@ -168,7 +197,7 @@ int ethtool_init_lane(unsigned eth_if, int loopback)
 			for (int i = 0; i < N_ETH_LANE; ++i)
 				status[eth_if].initialized = ETH_LANE_LOOPBACK;
 		} else {
-			ret = init_mac(eth_if, -1);
+			ret = mppa_eth_utils_init_mac(eth_if, -1);
 			if(ret) {
 				fprintf(stderr,
 					"[ETH] Error: Failed to initialize lane %d (%d)\n",

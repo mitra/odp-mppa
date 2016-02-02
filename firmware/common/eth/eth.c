@@ -14,8 +14,6 @@
 #include <mppa_routing.h>
 #include <mppa_noc.h>
 
-#include "utils.h"
-#include "io_utils.h"
 #include "rpc-server.h"
 #include "eth.h"
 

@@ -277,6 +277,7 @@ static int cluster_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 	pkt_cluster->tx_config.nofree = nofree;
 	pkt_cluster->tx_config.add_end_marker = 0;
 	pkt_cluster->remote.cnoc_rx = pkt_cluster->local.cnoc_rx = -1;
+	pkt_cluster->remote.min_rx = pkt_cluster->remote.max_rx = -1;
 	pkt_cluster->mtu = odp_buffer_pool_segment_size(pool) -
 		odp_buffer_pool_headroom(pool);
 	odp_spinlock_init(&pkt_cluster->wlock);
@@ -427,6 +428,13 @@ static int cluster_recv(pktio_entry_t *const pktio_entry,
 	int n_packet;
 	pkt_cluster_t *clus = &pktio_entry->s.pkt_cluster;
 
+	if (clus->remote.cnoc_rx < 0) {
+		/* We need to sync with the target first */
+		if (cluster_rpc_send_c2c_query(clus)){
+			return -1;
+		}
+	}
+
 	n_packet = odp_buffer_ring_get_multi(clus->rx_config.ring,
 					     (odp_buffer_hdr_t **)pkt_table,
 					     len, NULL);
@@ -483,7 +491,7 @@ static int cluster_send(pktio_entry_t *const pktio_entry,
 	pkt_cluster_t *pkt_cluster = &pktio_entry->s.pkt_cluster;
 
 	odp_spinlock_lock(&pkt_cluster->wlock);
-	if (pkt_cluster->remote.cnoc_rx < 0) {
+	if (pkt_cluster->remote.min_rx < 0) {
 		/* We need to sync with the target first */
 		if (cluster_rpc_send_c2c_query(pkt_cluster)){
 			odp_spinlock_unlock(&pkt_cluster->wlock);
