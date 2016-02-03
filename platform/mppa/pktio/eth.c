@@ -130,7 +130,8 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth, int
 
 #define PARSE_HASH_ERR(msg) do { error_msg = msg; goto error_parse; } while (0) ;
 
-static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t *rules) {
+static const char* parse_hashpolicy(const char* pptr, int *nb_rules,
+				    pkt_rule_t *rules, int lane) {
 	const char *start_ptr = pptr;
 	int rule_id = -1;
 	int entry_id = 0;
@@ -147,12 +148,16 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t 
 				rule_id++;
 				if ( rule_id > 7 )
 					PARSE_HASH_ERR("nb rules > 8");
+				if ( rule_id > 1 && lane > 3)
+					PARSE_HASH_ERR("nb rules > 2 on 1/10G port");
 				entry_id = -1;
 				opened_rule = true;
 				pptr++;
 				break;
 			case PKT_RULE_PRIO_SIGN:
-				if ( !( opened_rule == true && opened_entry == false && entry_id == -1 ) )
+				if ( !( opened_rule == true &&
+					opened_entry == false &&
+					entry_id == -1 ) )
 					PARSE_HASH_ERR("misplaced priority sign");
 				pptr++;
 				int priority = strtoul(pptr, &eptr, 0);
@@ -356,7 +361,8 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 				return -1;
 			}
 			pptr += strlen("hashpolicy=");
-			pptr = parse_hashpolicy(pptr, &nb_rules, rules);
+			pptr = parse_hashpolicy(pptr, &nb_rules,
+						rules, port_id);
 			if ( pptr == NULL ) {
 				return -1;
 			}
