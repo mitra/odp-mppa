@@ -172,8 +172,8 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules,
 				if ( opened_entry == true || opened_rule == false)
 					PARSE_HASH_ERR("open entry");
 				entry_id++;
-				if ( entry_id > 9 )
-					PARSE_HASH_ERR("nb entries > 10");
+				if ( entry_id > 8 )
+					PARSE_HASH_ERR("nb entries > 9");
 				opened_entry = true;
 				pptr++;
 				break;
