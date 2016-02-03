@@ -83,6 +83,9 @@ static const char * rpc_cmd_names[ODP_RPC_CMD_N_CMD] = {
 	[ODP_RPC_CMD_ETH_OPEN]    = "ETH OPEN",
 	[ODP_RPC_CMD_ETH_CLOS]    = "ETH CLOSE",
 	[ODP_RPC_CMD_ETH_PROMISC] = "ETH PROMISC",
+	[ODP_RPC_CMD_ETH_OPEN_DEF]= "ETH OPEN FALLTHROUGH",
+	[ODP_RPC_CMD_ETH_CLOS_DEF]= "ETH CLOSE FALLTHROUGH",
+	[ODP_RPC_CMD_ETH_DUAL_MAC]= "ETH DUAL MAC",
 	[ODP_RPC_CMD_PCIE_OPEN]   = "PCIE OPEN",
 	[ODP_RPC_CMD_PCIE_CLOS]   = "PCIE CLOSE",
 	[ODP_RPC_CMD_C2C_OPEN]    = "C2C OPEN",
@@ -112,6 +115,7 @@ void odp_rpc_print_msg(const odp_rpc_t * cmd)
 	}
 	switch (cmd->pkt_type){
 	case ODP_RPC_CMD_ETH_OPEN:
+	case ODP_RPC_CMD_ETH_OPEN_DEF:
 		{
 			odp_rpc_cmd_eth_open_t open = { .inl_data = cmd->inl_data };
 			printf("\t\tifId: %d\n"
@@ -123,9 +127,16 @@ void odp_rpc_print_msg(const odp_rpc_t * cmd)
 		}
 		break;
 	case ODP_RPC_CMD_ETH_CLOS:
+	case ODP_RPC_CMD_ETH_CLOS_DEF:
 		{
 			odp_rpc_cmd_eth_clos_t clos = { .inl_data = cmd->inl_data };
 			printf("\t\tifId: %d\n", clos.ifId);
+		}
+		break;
+	case ODP_RPC_CMD_ETH_DUAL_MAC:
+		{
+			odp_rpc_cmd_eth_dual_mac_t dmac = { .inl_data = cmd->inl_data };
+			printf("\t\tenabled: %d\n", dmac.enabled);
 		}
 		break;
 	case ODP_RPC_CMD_ETH_PROMISC:

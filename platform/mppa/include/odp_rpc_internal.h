@@ -78,6 +78,9 @@ typedef enum {
 	ODP_RPC_CMD_ETH_OPEN     /**< ETH: Forward Rx traffic to a cluster */,
 	ODP_RPC_CMD_ETH_CLOS     /**< ETH: Stop forwarding Rx trafic to a cluster */,
 	ODP_RPC_CMD_ETH_PROMISC  /**< ETH: KSet/Clear promisc mode */,
+	ODP_RPC_CMD_ETH_OPEN_DEF /**< ETH: Forward unmatch Rx traffic to a cluster */,
+	ODP_RPC_CMD_ETH_CLOS_DEF /**< ETH: Stop forwarding unmatch Rx traffic to a cluster */,
+	ODP_RPC_CMD_ETH_DUAL_MAC /**< ETH: Enable dual-mac mode (ODP + Linux) */,
 
 	ODP_RPC_CMD_PCIE_OPEN    /**< PCIe: Forward Rx traffic to a cluster */,
 	ODP_RPC_CMD_PCIE_CLOS    /**< PCIe: Stop forwarding Rx trafic to a cluster */,
@@ -108,6 +111,11 @@ typedef union {
 } odp_rpc_cmd_eth_open_t;
 /** @internal Compile time assert */
 _ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_eth_open_t) == sizeof(odp_rpc_inl_data_t), "ODP_RPC_CMD_ETH_OPEN_T__SIZE_ERROR");
+
+typedef odp_rpc_cmd_eth_open_t odp_rpc_cmd_eth_open_def_t;
+/** @internal Compile time assert */
+_ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_eth_open_def_t) == sizeof(odp_rpc_inl_data_t),
+		   "ODP_RPC_CMD_ETH_OPEN_DEF_T__SIZE_ERROR");
 
 typedef union {
 	struct {
@@ -141,9 +149,23 @@ typedef union {
 /** @internal Compile time assert */
 _ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_eth_clos_t) == sizeof(odp_rpc_inl_data_t), "ODP_RPC_CMD_ETH_CLOS_T__SIZE_ERROR");
 
+typedef odp_rpc_cmd_eth_clos_t odp_rpc_cmd_eth_clos_def_t;
+/** @internal Compile time assert */
+_ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_eth_clos_def_t) == sizeof(odp_rpc_inl_data_t),
+		   "ODP_RPC_CMD_ETH_CLOS_DEF_T__SIZE_ERROR");
+
 typedef odp_rpc_cmd_eth_clos_t odp_rpc_cmd_pcie_clos_t;
 /** @internal Compile time assert */
 _ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_pcie_clos_t) == sizeof(odp_rpc_inl_data_t), "ODP_RPC_CMD_PCIE_CLOS_T__SIZE_ERROR");
+
+typedef union {
+	struct {
+		uint8_t enabled : 1;
+	};
+	odp_rpc_inl_data_t inl_data;
+} odp_rpc_cmd_eth_dual_mac_t;
+/** @internal Compile time assert */
+_ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_eth_dual_mac_t) == sizeof(odp_rpc_inl_data_t), "ODP_RPC_CMD_ETH_DUAL_MAC_T__SIZE_ERROR");
 
 typedef union {
 	struct {

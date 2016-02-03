@@ -73,6 +73,8 @@ int ethtool_open_cluster(unsigned remoteClus, unsigned if_id)
 			return -1;
 		status[eth_if].cluster[remoteClus].opened = ETH_CLUS_STATUS_ON;
 	}
+	status[eth_if].refcounts.opened++;
+
 	return 0;
 }
 
@@ -404,7 +406,7 @@ static void update_lut(unsigned if_id)
 	uint32_t clusters = 0;
 	for (int i = 0; i < BSP_NB_CLUSTER_MAX; ++i) {
 		if (status[eth_if].cluster[i].opened != ETH_CLUS_STATUS_OFF &&
-		    status[eth_if].cluster[i].hashpolicy &&
+		    status[eth_if].cluster[i].policy == ETH_CLUS_POLICY_HASH &&
 		    status[eth_if].cluster[i].rx_enabled)
 			clusters |=  1 << i;
 	}
@@ -436,13 +438,32 @@ static void update_lut(unsigned if_id)
 	}
 }
 
+static uint64_t h2n_order(uint64_t host_value, uint8_t cmp_mask)
+{
+	int upper_byte = 7 - (__k1_clz(cmp_mask) - ( 32 - 8 ));
+	union {
+		uint64_t d;
+		uint8_t b[8];
+	} original_value, reordered_value;
+	reordered_value.d = 0ULL;
+	original_value.d = host_value;
+	for ( int src = upper_byte, dst = 0; src >= 0; --src, ++dst ) {
+		reordered_value.b[dst] = original_value.b[src];
+	}
+	return reordered_value.d;
+}
 int ethtool_apply_rules(unsigned remoteClus, unsigned if_id,
 			int nb_rules, const pkt_rule_t rules[nb_rules] )
 {
 	const int eth_if = if_id % 4;
 
-	if (!nb_rules)
+	if (!nb_rules) {
+		if (lb_status.dual_mac)
+			status[eth_if].cluster[remoteClus].policy = ETH_CLUS_POLICY_MAC_MATCH;
+		else
+			status[eth_if].cluster[remoteClus].policy = ETH_CLUS_POLICY_FALLTHROUGH;
 		return 0;
+	}
 
 #ifdef VERBOSE
 	printf("Applying %d rules for cluster %d\n", nb_rules, remoteClus);
@@ -457,39 +478,52 @@ int ethtool_apply_rules(unsigned remoteClus, unsigned if_id,
 			}
 		}
 		/* Configure the LB */
-		for ( int rule_id = 0; rule_id < nb_rules; ++rule_id) {
-			for ( int entry_id = 0; entry_id < rules[rule_id].nb_entries; ++entry_id) {
+		for (int i = 0, hw_rule_id = 0; i < ((lb_status.dual_mac && if_id < 4) ? 4 : 1); ++i) {
+			uint64_t mac = 0;
+
+			for (int rule_id = 0; rule_id < nb_rules; ++rule_id, ++hw_rule_id) {
+				for ( int entry_id = 0; entry_id < rules[rule_id].nb_entries; ++entry_id) {
 #ifdef VERBOSE
-				printf("Rule[%d] (P%d) Entry[%d]: offset %d cmp_mask 0x%02x cmp_value "
-				       "0x%016llx hash_mask 0x%02x>\n",
-				       rule_id,
-				       rules[rule_id].priority,
-				       entry_id,
-				       rules[rule_id].entries[entry_id].offset,
-				       rules[rule_id].entries[entry_id].cmp_mask,
-				       rules[rule_id].entries[entry_id].cmp_value,
-				       rules[rule_id].entries[entry_id].hash_mask);
+					printf("Rule[%d] => [%d] (P%d) Entry[%d]: offset %d cmp_mask 0x%02x cmp_value "
+					       "0x%016llx hash_mask 0x%02x>\n",
+					       rule_id, hw_rule_id,
+					       rules[rule_id].priority,
+					       entry_id,
+					       rules[rule_id].entries[entry_id].offset,
+					       rules[rule_id].entries[entry_id].cmp_mask,
+					       rules[rule_id].entries[entry_id].cmp_value,
+					       rules[rule_id].entries[entry_id].hash_mask);
 #endif
-				mppabeth_lb_cfg_rule((void *) &(mppa_ethernet[0]->lb),
-						     rule_id, entry_id,
-						     rules[rule_id].entries[entry_id].offset,
-						     rules[rule_id].entries[entry_id].cmp_mask,
-						     rules[rule_id].entries[entry_id].cmp_value,
-						     rules[rule_id].entries[entry_id].hash_mask);
-				mppabeth_lb_cfg_min_max_swap((void *) &(mppa_ethernet[0]->lb),
-							     rule_id, (entry_id >> 1), 0);
+					mppabeth_lb_cfg_rule((void *) &(mppa_ethernet[0]->lb),
+							     hw_rule_id, entry_id,
+							     rules[rule_id].entries[entry_id].offset,
+							     rules[rule_id].entries[entry_id].cmp_mask,
+							     rules[rule_id].entries[entry_id].cmp_value,
+							     rules[rule_id].entries[entry_id].hash_mask);
+					mppabeth_lb_cfg_min_max_swap((void *) &(mppa_ethernet[0]->lb),
+								     hw_rule_id, (entry_id >> 1), 0);
+				}
+				if (lb_status.dual_mac) {
+					/* Add a filter to make sure we match the target mac */
+					unsigned entry_id = rules[rule_id].nb_entries;
+					mppabeth_lb_cfg_rule((void *) &(mppa_ethernet[0]->lb),
+							     hw_rule_id, entry_id,
+							     0, 0x3f, h2n_order(mac, 0x3f), 0);
+					mppabeth_lb_cfg_min_max_swap((void *) &(mppa_ethernet[0]->lb),
+								     hw_rule_id, (entry_id >> 1), 0);
+				}
+				mppabeth_lb_cfg_extract_table_mode((void *) &(mppa_ethernet[0]->lb),
+								   hw_rule_id,
+								   rules[rule_id].priority,
+								   MPPA_ETHERNET_DISPATCH_POLICY_HASH);
 			}
-			mppabeth_lb_cfg_extract_table_mode((void *) &(mppa_ethernet[0]->lb),
-							   rule_id,
-							   rules[rule_id].priority,
-							   MPPA_ETHERNET_DISPATCH_POLICY_HASH);
 		}
 		lb_status.enabled = 1;
 	} else if ( check_rules_identical(rules, nb_rules) ) {
 		fprintf(stderr, "[ETH] Error: Non matching hash policy already registered\n");
 		return -1;
 	}
-	status[eth_if].cluster[remoteClus].hashpolicy = 1;
+	status[eth_if].cluster[remoteClus].policy = ETH_CLUS_POLICY_HASH;
 	return 0;
 }
 
@@ -498,7 +532,7 @@ int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id)
 	const int eth_if = if_id % 4;
 	const int noc_if = status[eth_if].cluster[remoteClus].nocIf;
 	const int tx_id = status[eth_if].cluster[remoteClus].txId;
-	const int hashpolicy = status[eth_if].cluster[remoteClus].hashpolicy;
+	const eth_cluster_policy_t policy = status[eth_if].cluster[remoteClus].policy;
 
 	if(noc_if < 0 ||
 	   status[eth_if].cluster[remoteClus].enabled) {
@@ -506,29 +540,56 @@ int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id)
 	}
 
 	status[eth_if].cluster[remoteClus].enabled = 1;
+	status[eth_if].refcounts.policy[policy]++;
+	status[eth_if].refcounts.enabled++;
 
+	if (!status[eth_if].cluster[remoteClus].rx_enabled)
+		return 0;
 
-	if (hashpolicy) {
-		if (!status[eth_if].hash_refcount) {
+	switch(policy){
+	case ETH_CLUS_POLICY_HASH:
+		/* Nothing to do in dual_mac mode, it was handled during LB rules configuration */
+		if (!status[eth_if].rx_refcounts.policy[ETH_CLUS_POLICY_HASH]) {
 			// TODO
 			/* Change rule types from DROP to HASH but we don't actually
 			 * drop FTM */
 		}
-		status[eth_if].hash_refcount++;
-		if (status[eth_if].cluster[remoteClus].rx_enabled)
-			update_lut(if_id);
-	} else {
-		if (!status[eth_if].enabled_refcount) {
+		status[eth_if].rx_refcounts.policy[ETH_CLUS_POLICY_HASH]++;
+		update_lut(if_id);
+		break;
+	case ETH_CLUS_POLICY_FALLTHROUGH:
+		if (!status[eth_if].rx_refcounts.policy[ETH_CLUS_POLICY_FALLTHROUGH]) {
 			mppabeth_lb_cfg_default_dispatch_policy((void *)&(mppa_ethernet[0]->lb),
 								eth_if,
 								MPPABETHLB_DISPATCH_DEFAULT_POLICY_RR);
 		}
-		status[eth_if].enabled_refcount++;
-		if (status[eth_if].cluster[remoteClus].rx_enabled)
-			mppabeth_lb_cfg_default_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
-								    eth_if, noc_if - 4, tx_id,
-								    (1 << ETH_DEFAULT_CTX));
+		status[eth_if].rx_refcounts.policy[ETH_CLUS_POLICY_FALLTHROUGH]++;
+		mppabeth_lb_cfg_default_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
+							    eth_if, noc_if - 4, tx_id,
+					    (1 << ETH_DEFAULT_CTX));
+		break;
+	case ETH_CLUS_POLICY_MAC_MATCH:
+		if (!status[eth_if].rx_refcounts.policy[ETH_CLUS_POLICY_MAC_MATCH]) {
+			const uint64_t mac = 0ULL;
+			/* "MATCH_ALL" Rule */
+			mppabeth_lb_cfg_rule((void *)&(mppa_ethernet[0]->lb),
+					     eth_if, ETH_MATCHALL_RULE_ID,
+					     /* offset */ 0, /* Cmp Mask */0x3f,
+					     /* Espected Value */ h2n_order(mac, 0x3f),
+					     /* Hash. Unused */0);
+			mppabeth_lb_cfg_extract_table_mode((void *)&(mppa_ethernet[0]->lb),
+							   ETH_MATCHALL_TABLE_ID, /* Priority */ 0,
+							   MPPABETHLB_DISPATCH_POLICY_RR);
+		}
+		status[eth_if].rx_refcounts.policy[ETH_CLUS_POLICY_MAC_MATCH]++;
+		mppabeth_lb_cfg_table_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
+							  eth_if, eth_if, noc_if - 4, tx_id,
+							  (1 << ETH_DEFAULT_CTX));
+		break;
+	default:
+		return -1;
 	}
+	status[eth_if].rx_refcounts.enabled++;
 
 	return 0;
 }
@@ -539,40 +600,56 @@ int ethtool_disable_cluster(unsigned remoteClus, unsigned if_id)
 	const int eth_if = if_id % 4;
 	const int noc_if = status[eth_if].cluster[remoteClus].nocIf;
 	const int tx_id = status[eth_if].cluster[remoteClus].txId;
-	const int hashpolicy = status[eth_if].cluster[remoteClus].hashpolicy;
+	const eth_cluster_policy_t policy = status[eth_if].cluster[remoteClus].policy;
 
 	if(status[eth_if].cluster[remoteClus].nocIf < 0 ||
 	   status[eth_if].cluster[remoteClus].enabled == 0) {
 		return -1;
 	}
 	status[eth_if].cluster[remoteClus].enabled = 0;
+	status[eth_if].refcounts.policy[policy]--;
+	status[eth_if].refcounts.enabled--;
 
-	if (hashpolicy) {
-		status[eth_if].hash_refcount--;
-		if (!status[eth_if].hash_refcount) {
+	if (!status[eth_if].cluster[remoteClus].rx_enabled)
+		return 0;
+
+	switch(policy){
+	case ETH_CLUS_POLICY_HASH:
+		status[eth_if].rx_refcounts.policy[ETH_CLUS_POLICY_HASH]--;
+		if (!status[eth_if].rx_refcounts.policy[ETH_CLUS_POLICY_HASH]) {
 			// TODO
 			/* We should pu the rules to DROP mode here but when using
 			 * multiple lanes, it would break other lanes... */
 		}
-
-		if (status[eth_if].cluster[remoteClus].rx_enabled) {
-			update_lut(if_id);
-		}
-
-	} else {
-		status[eth_if].enabled_refcount--;
-		if (!status[eth_if].enabled_refcount) {
+		update_lut(if_id);
+		break;
+	case ETH_CLUS_POLICY_FALLTHROUGH:
+		status[eth_if].rx_refcounts.policy[ETH_CLUS_POLICY_FALLTHROUGH]--;
+		if (!status[eth_if].rx_refcounts.policy[ETH_CLUS_POLICY_FALLTHROUGH]) {
 			mppabeth_lb_cfg_default_dispatch_policy((void *)&(mppa_ethernet[0]->lb),
 								eth_if,
 								MPPABETHLB_DISPATCH_DEFAULT_POLICY_DROP);
 		}
-
-		if (status[eth_if].cluster[remoteClus].rx_enabled) {
-			mppabeth_lb_cfg_default_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
-								    eth_if, noc_if - ETH_BASE_TX,tx_id, 0);
+		/* Clear context from RR mask */
+		mppabeth_lb_cfg_default_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
+							    eth_if, noc_if - ETH_BASE_TX,
+							    tx_id, 0);
+		break;
+	case ETH_CLUS_POLICY_MAC_MATCH:
+		status[eth_if].rx_refcounts.policy[ETH_CLUS_POLICY_MAC_MATCH]--;
+		if (!status[eth_if].rx_refcounts.policy[ETH_CLUS_POLICY_MAC_MATCH]) {
+			mppabeth_lb_cfg_extract_table_mode((void *)&(mppa_ethernet[0]->lb),
+							   eth_if, /* Priority */ 0,
+							   MPPABETHLB_DISPATCH_POLICY_DROP);
 		}
+		mppabeth_lb_cfg_table_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
+							  eth_if, eth_if,
+							  noc_if,tx_id, 0);
+		break;
+	default:
+		return -1;
 	}
-
+	status[eth_if].rx_refcounts.enabled--;
 
 	return 0;
 }
@@ -603,13 +680,13 @@ int ethtool_close_cluster(unsigned remoteClus, unsigned if_id)
 		mppa_noc_dnoc_tx_free(noc_if, tx_id);
 
 	}
-
-	if (status[eth_if].cluster[remoteClus].hashpolicy) {
+	status[eth_if].refcounts.opened--;
+	if (status[eth_if].cluster[remoteClus].policy == ETH_CLUS_POLICY_HASH) {
 		/* If we were the last hash policy. Clear up the tables
 		 * and reset the LB hash data */
 		int hash_global_count = 0;
 		for (int i = 0; i < N_ETH_LANE; ++i) {
-			hash_global_count += status[i].hash_refcount;
+			hash_global_count += status[i].refcounts.policy[ETH_CLUS_POLICY_HASH];
 		}
 		if (!hash_global_count){
 			for (int i = 0; i < MPPABETHLB_XT_TABLE_ARRAY_SIZE; ++i){
@@ -627,5 +704,20 @@ int ethtool_close_cluster(unsigned remoteClus, unsigned if_id)
 	} else {
 		_eth_cluster_status_init(&status[eth_if].cluster[remoteClus]);
 	}
+	return 0;
+}
+
+int ethtool_set_dual_mac(int enable)
+{
+	if (lb_status.dual_mac == enable)
+		return 0;
+
+	for (int i = 0; i < N_ETH_LANE; ++i) {
+		if (status[i].refcounts.opened) {
+			fprintf(stderr, "[ETH] Cannot change dual mac mode when lane are active\n");
+			return -1;
+		}
+	}
+	lb_status.dual_mac = enable;
 	return 0;
 }

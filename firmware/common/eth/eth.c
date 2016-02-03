@@ -33,7 +33,8 @@ static inline int get_eth_dma_id(unsigned cluster_id){
 	}
 }
 
-odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload)
+odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg,
+			    uint8_t *payload, unsigned fallthrough)
 {
 	odp_rpc_cmd_ack_t ack = { .status = 0};
 	odp_rpc_cmd_eth_open_t data = { .inl_data = msg->inl_data };
@@ -72,6 +73,12 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payloa
 
 		}
 	}
+
+	if (fallthrough && !lb_status.dual_mac) {
+		fprintf(stderr, "[ETH] Error: Trying to open in fallthrough with Dual-MAC mode disabled\n");
+		goto err;
+	}
+
 	int externalAddress = odp_rpc_get_cluster_id(nocIf);
 
 	status[eth_if].cluster[remoteClus].rx_enabled = data.rx_enabled;
@@ -85,8 +92,13 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payloa
 		goto err;
 	if (ethtool_setup_clus2eth(remoteClus, data.ifId, nocIf))
 		goto err;
-	if ( ethtool_apply_rules(remoteClus, data.ifId, data.nb_rules, (pkt_rule_t*)payload))
-		goto err;
+	if (fallthrough) {
+		status[eth_if].cluster[remoteClus].policy = ETH_CLUS_POLICY_FALLTHROUGH;
+	} else {
+		if ( ethtool_apply_rules(remoteClus, data.ifId,
+					 data.nb_rules, (pkt_rule_t*)payload))
+			goto err;
+	}
 	if (ethtool_enable_cluster(remoteClus, data.ifId))
 		goto err;
 	if (ethtool_start_lane(data.ifId, data.loopback))
@@ -145,6 +157,16 @@ odp_rpc_cmd_ack_t  eth_close(unsigned remoteClus, odp_rpc_t *msg)
 	return ack;
 }
 
+odp_rpc_cmd_ack_t  eth_dual_mac(unsigned remoteClus __attribute__((unused)),
+				odp_rpc_t *msg)
+{
+	odp_rpc_cmd_ack_t ack = { .status = 0 };
+	odp_rpc_cmd_eth_dual_mac_t data = { .inl_data = msg->inl_data };
+	if (ethtool_set_dual_mac(data.enabled))
+		ack.status = -1;
+	return ack;
+}
+
 static void eth_init(void)
 {
 	for (int eth_if = 0; eth_if < N_ETH_LANE; ++eth_if) {
@@ -160,10 +182,17 @@ static int eth_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload
 
 	switch (msg->pkt_type){
 	case ODP_RPC_CMD_ETH_OPEN:
-		ack = eth_open(remoteClus, msg, payload);
+		ack = eth_open(remoteClus, msg, payload, 0);
 		break;
 	case ODP_RPC_CMD_ETH_CLOS:
+	case ODP_RPC_CMD_ETH_CLOS_DEF:
 		ack = eth_close(remoteClus, msg);
+		break;
+	case ODP_RPC_CMD_ETH_OPEN_DEF:
+		ack = eth_open(remoteClus, msg, payload, 1);
+		break;
+	case ODP_RPC_CMD_ETH_DUAL_MAC:
+		ack = eth_dual_mac(remoteClus, msg);
 		break;
 	default:
 		return -1;
