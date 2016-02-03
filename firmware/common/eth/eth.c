@@ -291,6 +291,9 @@ static void eth_init(void)
 		mppabeth_lb_cfg_table_rr_dispatch_trigger((void *)&(mppa_ethernet[0]->lb),
 							  ETH_MATCHALL_TABLE_ID,
 							  eth_if, 1);
+		mppabeth_lb_cfg_default_dispatch_policy((void *)&(mppa_ethernet[0]->lb),
+							eth_if,
+							MPPABETHLB_DISPATCH_DEFAULT_POLICY_DROP);
 
 	}
 }
