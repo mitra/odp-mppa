@@ -205,19 +205,23 @@ int ethtool_init_lane(unsigned if_id, int loopback)
 		} else {
 			enum mppa_eth_mac_ethernet_mode_e link_speed =
 				mac_get_default_mode(eth_if);
-			if (!link_speed == MPPA_ETH_MAC_ETHMODE_40G) {
-				if (if_id == 4) {
-					fprintf(stderr,
-						"[ETH] Error: Cannot open 40G link\n");
-					return -1;
-				}
-			} else {
+			if (!link_speed == MPPA_ETH_MAC_ETHMODE_40G && if_id == 4) {
+				fprintf(stderr,
+					"[ETH] Error: Cannot open 40G link\n");
+				return -1;
+			} else if (link_speed == MPPA_ETH_MAC_ETHMODE_40G && if_id < 4) {
 				/* Link could do 40G but we use only one lane */
 				link_speed = MPPA_ETH_MAC_ETHMODE_10G_BASE_R;
 			}
-
+#ifdef VERBOSE
+			printf("[ETH] Initializing global MAC @ %d\n", link_speed);
+#endif
 			mppabeth_mac_cfg_mode((void*) &(mppa_ethernet[0]->mac), link_speed);
+
 			/* Init MAC */
+#ifdef VERBOSE
+			printf("[ETH] Initializing MAC for lane %d\n", eth_if);
+#endif
 			ret = mppa_eth_utils_init_mac(eth_if, link_speed);
 			if(ret) {
 				fprintf(stderr,
@@ -226,8 +230,14 @@ int ethtool_init_lane(unsigned if_id, int loopback)
 				return -1;
 			}
 
+#ifdef VERBOSE
+			printf("[ETH] Starting MAC for lane %d\n", eth_if);
+#endif
 			mppa_eth_utils_start_lane(eth_if, link_speed);
 
+#ifdef VERBOSE
+			printf("[ETH] Waiting for link %d\n", eth_if);
+#endif
 			/* Wait for link to come up */
 			unsigned long long start = __k1_read_dsu_timestamp();
 			int up = 0;
@@ -238,7 +248,7 @@ int ethtool_init_lane(unsigned if_id, int loopback)
 				}
 			}
 #ifdef VERBOSE
-			printf("Link %d %s\n", lane_id, up ? "up" : "down/polling");
+			printf("Link %d %s\n", eth_if, up ? "up" : "down/polling");
 #endif
 			if (!up)
 				return -1;
