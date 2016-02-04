@@ -97,27 +97,27 @@ static int eth_apply_rules(int lane_id, pkt_rule_t *rules, int nb_rules, int clu
 			for ( int entry_id = 0; entry_id < rules[rule_id].nb_entries; ++entry_id) {
 #ifdef VERBOSE
 				printf("Rule[%d] (P%d) Entry[%d]: offset %d cmp_mask 0x%x cmp_value %"PRIu64" hash_mask 0x%x>\n",
-						rule_id,
-						rules[rule_id].priority,
-						entry_id,
-						rules[rule_id].entries[entry_id].offset,
-						rules[rule_id].entries[entry_id].cmp_mask,
-						rules[rule_id].entries[entry_id].cmp_value,
-						rules[rule_id].entries[entry_id].hash_mask);
+				       rule_id,
+				       rules[rule_id].priority,
+				       entry_id,
+				       rules[rule_id].entries[entry_id].offset,
+				       rules[rule_id].entries[entry_id].cmp_mask,
+				       rules[rule_id].entries[entry_id].cmp_value,
+				       rules[rule_id].entries[entry_id].hash_mask);
 #endif
 				mppabeth_lb_cfg_rule((void *) &(mppa_ethernet[0]->lb),
-									 rule_id, entry_id,
-									 rules[rule_id].entries[entry_id].offset,
-									 rules[rule_id].entries[entry_id].cmp_mask,
-									 rules[rule_id].entries[entry_id].cmp_value,
-									 rules[rule_id].entries[entry_id].hash_mask);
+						     rule_id, entry_id,
+						     rules[rule_id].entries[entry_id].offset,
+						     rules[rule_id].entries[entry_id].cmp_mask,
+						     rules[rule_id].entries[entry_id].cmp_value,
+						     rules[rule_id].entries[entry_id].hash_mask);
 				mppabeth_lb_cfg_min_max_swap((void *) &(mppa_ethernet[0]->lb),
-											 rule_id, (entry_id >> 1), 0);
+							     rule_id, (entry_id >> 1), 0);
 			}
 			mppabeth_lb_cfg_extract_table_mode((void *) &(mppa_ethernet[0]->lb),
-											   rule_id,
-											   rules[rule_id].priority,
-											   MPPA_ETHERNET_DISPATCH_POLICY_HASH);
+							   rule_id,
+							   rules[rule_id].priority,
+							   MPPA_ETHERNET_DISPATCH_POLICY_HASH);
 		}
 	}
 
