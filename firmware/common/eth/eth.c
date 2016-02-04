@@ -162,8 +162,7 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payloa
 		fprintf(stderr, "[ETH] Error: Invalid NoC interface (%d %d)\n", nocIf, remoteClus);
 		goto err;
 	}
-
-	if(eth_if >= N_ETH_LANE) {
+	if(data.ifId > 4 || eth_if >= N_ETH_LANE) {
 		fprintf(stderr, "[ETH] Error: Invalid Eth lane\n");
 		goto err;
 	}
@@ -200,14 +199,14 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payloa
 	status[eth_if].cluster[remoteClus].tx_enabled = data.tx_enabled;
 	status[eth_if].cluster[remoteClus].jumbo = data.jumbo;
 
-	if (ethtool_setup_eth2clus(remoteClus, eth_if, nocIf, externalAddress,
+	if (ethtool_setup_eth2clus(remoteClus, data.ifId, nocIf, externalAddress,
 				   data.min_rx, data.max_rx))
 		goto err;
-	if (ethtool_setup_clus2eth(remoteClus, eth_if, nocIf))
+	if (ethtool_setup_clus2eth(remoteClus, data.ifId, nocIf))
 		goto err;
-	if (ethtool_init_lane(eth_if, data.loopback))
+	if (ethtool_init_lane(data.ifId, data.loopback))
 		goto err;
-	if (ethtool_enable_cluster(remoteClus, eth_if))
+	if (ethtool_enable_cluster(remoteClus, data.ifId))
 		goto err;
 
 	if (data.ifId == 4) {

@@ -45,7 +45,7 @@ enum mppa_eth_mac_ethernet_mode_e mac_get_default_mode(unsigned lane_id)
 	return -1;
 }
 
-int ethtool_setup_eth2clus(unsigned remoteClus, int eth_if,
+int ethtool_setup_eth2clus(unsigned remoteClus, int if_id,
 			   int nocIf, int externalAddress,
 			   int min_rx, int max_rx)
 {
@@ -54,6 +54,7 @@ int ethtool_setup_eth2clus(unsigned remoteClus, int eth_if,
 	mppa_dnoc_header_t header = { 0 };
 	mppa_dnoc_channel_config_t config = { 0 };
 	unsigned nocTx;
+	int eth_if = if_id % 4;
 
 	if (!status[eth_if].cluster[remoteClus].rx_enabled)
 		return 0;
@@ -128,10 +129,11 @@ int ethtool_setup_eth2clus(unsigned remoteClus, int eth_if,
 }
 
 
-int ethtool_setup_clus2eth(unsigned remoteClus, int eth_if, int nocIf)
+int ethtool_setup_clus2eth(unsigned remoteClus, int if_id, int nocIf)
 {
 	int ret;
 	unsigned rx_port;
+	int eth_if = if_id % 4;
 
 	if (!status[eth_if].cluster[remoteClus].tx_enabled)
 		return 0;
@@ -148,12 +150,15 @@ int ethtool_setup_clus2eth(unsigned remoteClus, int eth_if, int nocIf)
 		.reg = 0
 	};
 	int fifo_id = remoteClus;
-	if (mac_get_default_mode(eth_if) == MPPA_ETH_MAC_ETHMODE_40G) {
+
+	/* If we are using 40G */
+	if (if_id == 4) {
 		/* Jumbo frames */
 		fifo_id = (remoteClus % 4) * 4;
 		mppa_ethernet[0]->tx.fifo_if[nocIf].lane[eth_if].
 			eth_fifo[fifo_id].eth_fifo_ctrl._.jumbo_mode = 1;
 	}
+
 	mppa_ethernet[0]->tx.fifo_if[nocIf].lane[eth_if].
 		eth_fifo[fifo_id].eth_fifo_ctrl._.drop_en = 1;
 	mppa_noc_dnoc_rx_configuration_t conf = {
@@ -183,9 +188,10 @@ int ethtool_setup_clus2eth(unsigned remoteClus, int eth_if, int nocIf)
 	return 0;
 }
 
-int ethtool_init_lane(unsigned eth_if, int loopback)
+int ethtool_init_lane(unsigned if_id, int loopback)
 {
 	int ret;
+	int eth_if = if_id % 4;
 
 	switch (status[eth_if].initialized) {
 	case ETH_LANE_OFF:
@@ -197,7 +203,19 @@ int ethtool_init_lane(unsigned eth_if, int loopback)
 			for (int i = 0; i < N_ETH_LANE; ++i)
 				status[eth_if].initialized = ETH_LANE_LOOPBACK;
 		} else {
-			ret = mppa_eth_utils_init_mac(eth_if, -1);
+			enum mppa_eth_mac_ethernet_mode_e link_speed =
+				mac_get_default_mode(eth_if);
+			if (!link_speed == MPPA_ETH_MAC_ETHMODE_40G) {
+				if (if_id == 4) {
+					fprintf(stderr,
+						"[ETH] Error: Cannot open 40G link\n");
+					return -1;
+				}
+			} else {
+				/* Link could do 40G but we use only one lane */
+				link_speed = MPPA_ETH_MAC_ETHMODE_10G_BASE_R;
+			}
+			ret = mppa_eth_utils_init_mac(eth_if, link_speed);
 			if(ret) {
 				fprintf(stderr,
 					"[ETH] Error: Failed to initialize lane %d (%d)\n",
@@ -229,8 +247,9 @@ int ethtool_init_lane(unsigned eth_if, int loopback)
 
 	return 0;
 }
-void ethtool_cleanup_cluster(unsigned remoteClus, unsigned eth_if)
+void ethtool_cleanup_cluster(unsigned remoteClus, unsigned if_id)
 {
+	int eth_if = if_id % 4;
 	int noc_if = status[eth_if].cluster[remoteClus].nocIf;
 	int tx_id = status[eth_if].cluster[remoteClus].txId;
 	int rx_tag = status[eth_if].cluster[remoteClus].rx_tag;
@@ -251,8 +270,9 @@ void ethtool_cleanup_cluster(unsigned remoteClus, unsigned eth_if)
 	_eth_cluster_status_init(&(status[eth_if].cluster[remoteClus]));
 }
 
-int ethtool_enable_cluster(unsigned remoteClus, unsigned eth_if)
+int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id)
 {
+	int eth_if = if_id % 4;
 	if(status[eth_if].cluster[remoteClus].nocIf < 0 ||
 	   status[eth_if].cluster[remoteClus].enabled) {
 		return -1;
@@ -267,8 +287,9 @@ int ethtool_enable_cluster(unsigned remoteClus, unsigned eth_if)
 
 	return 0;
 }
-int ethtool_disable_cluster(unsigned remoteClus, unsigned eth_if)
+int ethtool_disable_cluster(unsigned remoteClus, unsigned if_id)
 {
+	int eth_if = if_id % 4;
 	if(status[eth_if].cluster[remoteClus].nocIf < 0 ||
 	   status[eth_if].cluster[remoteClus].enabled == 0) {
 		return -1;
