@@ -220,8 +220,17 @@ typedef union {
 /** @internal Compile time assert */
 _ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_ack_t) == sizeof(odp_rpc_inl_data_t), "ODP_RPC_CMD_ACK_T__SIZE_ERROR");
 
+static inline int odp_rpc_densify_cluster_id(unsigned cluster_id){
+	if(cluster_id == 128)
+		cluster_id = 16;
+	else if(cluster_id == 192)
+		cluster_id = 19;
+	return cluster_id;
+}
+
 static inline int odp_rpc_get_io_dma_id(unsigned io_id, unsigned cluster_id){
-	int dma_offset = cluster_id / 4;
+	int dense_id = odp_rpc_densify_cluster_id(cluster_id);
+	int dma_offset = dense_id / 4;
 #if defined(K1B_EXPLORER)
 	dma_offset = 0;
 #endif
@@ -239,10 +248,12 @@ static inline int odp_rpc_get_io_dma_id(unsigned io_id, unsigned cluster_id){
 }
 
 static inline int odp_rpc_get_io_tag_id(unsigned cluster_id){
-	int tag_offset = cluster_id % 4;
+	int dense_id = odp_rpc_densify_cluster_id(cluster_id);
+	int tag_offset = dense_id % 4;
+
 #if defined(K1B_EXPLORER)
 	/* Only DMA4 available on explorer + eth530 */
-	tag_offset = cluster_id;
+	tag_offset = dense_id;
 #endif
 	return RPC_BASE_RX + tag_offset;
 }
