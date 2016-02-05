@@ -384,7 +384,7 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 				ODP_ERR("hashpolicy can only be set once\n");
 				return -1;
 			}
-			rules = calloc(1, sizeof(rules));
+			rules = calloc(1, sizeof(pkt_rule_t) * 8);
 			if ( rules == NULL ) {
 				ODP_ERR("hashpolicy alloc failed\n");
 				return -1;
