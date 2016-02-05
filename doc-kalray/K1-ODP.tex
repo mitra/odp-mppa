@@ -211,6 +211,8 @@ In the current ODP release, there are some limitations:
 		given an IOETH. It means that interfaces \texttt{e0} and
 		\texttt{e1} can have different set of rules, but \texttt{e0p0}
 		and \texttt{e0p1} must have the same set of rules.
+	\item the set of rules must be the same between all the clusters for
+		a given interface.
 \end{itemize}
 
 A rule if described as follow:
@@ -219,7 +221,7 @@ e0:hashpolicy=[P_{@_/_=_#_}{@_/_=_#_}...]
 \end{lstlisting}
 \begin{itemize}
 	\item tokens \texttt{[ ]} enclose a rule. A rule is composed by an
-		optional \emph{priority} and 1 to 10 \emph{rule entries}.
+		optional \emph{priority} and 1 to 9 \emph{rule entries}.
 	\item token \texttt{P} is the priority of the current rule. It is
 		optional, must appear just after the \texttt{[} token and must
 		be comprised between 0 and 7. 0 is the most prioritary.
@@ -249,22 +251,33 @@ registered on this ethernet interface. User must ensure that there is
 enough entropy with the hashed values to ensure an even dispatch between
 the clusters.
 
+If a packet does not match any defined rule, it will be dropped.
+
 \paragraph{Examples:}
 
 Following rule dispatch all the incoming packets on interface ethernet 0
 hashing the destination MAC address:
 \begin{lstlisting}
-e0:hashpolicy=[{@0#0xfc}]
+e0:hashpolicy=[{@0#0x3f}]
 \end{lstlisting}
 
 Following rule is in two times: if the incoming packet is an IPV4 packet
-(\texttt{@12/0xc0=0x0800}), it will be dispatched hashing the IP source
-address (\texttt{@26\#0xf0}). If the packet does not match the first rule
+(\texttt{@12/0x3=0x0800}), it will be dispatched hashing the IP source
+address (\texttt{@26\#0xf}). If the packet does not match the first rule
 (which has the highest priority 0), it will use the second rule (with
 priority 1), dispatching with the hash of the source MAC address
-(\texttt{@6\#0xfc}):
+(\texttt{@6\#0x3f}) if the source MAC address is like
+\texttt{*:77:CA:FE:*:*} (\texttt{/0x1c=0x0077cafe0000}). If the packet
+does not match any of these two rules, it will be dropped.
 \begin{lstlisting}
-e0:hashpolicy=[P0{@12/0xc0=0x0800}{@26#0xf0}][P1{@6#0xfc}]
+e0:hashpolicy=[P0{@12/0x3=0x0800}{@26#0xf}][P1{@6#0x3f/0x1c=0x0077cafe0000}]
+\end{lstlisting}
+
+Previous is very restrictive. It is possible to define a low priority
+rule to dispatch without any match restriction, for example hashing the
+destination MAC addres:
+\begin{lstlisting}
+e0:hashpolicy=[P0{@12/0x3=0x0800}{@26#0xf}][P1{@6#0x3f/0x1c=0x0077cafe0000}][P2{@0#0x3f}]
 \end{lstlisting}
 
 
