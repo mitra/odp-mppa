@@ -175,7 +175,7 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules,
 				rule_id++;
 				if ( rule_id > 7 )
 					PARSE_HASH_ERR("nb rules > 8");
-				if ( rule_id > 1 && lane > 3)
+				if ( rule_id > 1 && lane < 4)
 					PARSE_HASH_ERR("nb rules > 2 on 1/10G port");
 				entry_id = -1;
 				opened_rule = true;
