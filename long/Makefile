@@ -44,6 +44,7 @@ ifeq ($(USE_PACKAGES),1)
   ODP_INSTALL_DIR = $(K1_TOOLCHAIN_DIR)
   CUNIT_INSTALL_DIR = $(K1_TOOLCHAIN_DIR)/kalray_internal/cunit/$(ODP_FILTERED_ARCH)
   IOPCIE_ELF := $(ODP_INSTALL_DIR)/share/odp/firmware/$(CORE_ARCH)$(BOARD_EXT)/iopcie.kelf
+  IOUNIFIED_ELF := $(ODP_INSTALL_DIR)/share/odp/firmware/$(CORE_ARCH)$(BOARD_EXT)/iounified.kelf
 else
   ODP_INSTALL_DIR = $(ODP_SRC_DIR)/install/local/k1tools/
   CUNIT_INSTALL_DIR = $(ODP_SRC_DIR)/install/local/k1tools/kalray_internal/cunit/$(ODP_FILTERED_ARCH)/
@@ -56,6 +57,31 @@ else
   iopcie-lflags := $($(CORE_ARCH)-kalray-ioddr$(BOARD_EXT)_LDFLAGS) $(_LDFLAGS)
   iopcie-cflags := $($(CORE_ARCH)-kalray-ioddr$(BOARD_EXT)_CFLAGS) $(_CFLAGS)
   IOPCIE_ELF := iopcie
+
+
+  _CFLAGS :=
+  _LDFLAGS :=
+  SRCFILES :=
+  HDRFILES :=
+  OBJFILES :=
+  include $(ODP_SRC_DIR)/firmware/iounified/Makefile
+  iounified-srcs := $(SRCFILES)
+  iounified-system := bare
+  iounified-lflags := $($(CORE_ARCH)-kalray-ioddr$(BOARD_EXT)_LDFLAGS) $(_LDFLAGS)
+  iounified-cflags := $($(CORE_ARCH)-kalray-ioddr$(BOARD_EXT)_CFLAGS) $(_CFLAGS)
+  IOUNIFIED_ELF := iounified
+
+  _CFLAGS :=
+  _LDFLAGS :=
+  SRCFILES :=
+  HDRFILES :=
+  OBJFILES :=
+  include $(ODP_SRC_DIR)/firmware/ioeth/Makefile
+  ioeth-srcs := $(SRCFILES)
+  ioeth-system := bare
+  ioeth-lflags := $($(CORE_ARCH)-kalray-ioddr$(BOARD_EXT)_LDFLAGS) $(_LDFLAGS)
+  ioeth-cflags := $($(CORE_ARCH)-kalray-ioddr$(BOARD_EXT)_CFLAGS) $(_CFLAGS)
+  IOETH_ELF := ioeth
 endif
 
 cluster-cflags := -I$(ODP_INSTALL_DIR)/$(INCLUDE_DIR)/include -I$(CUNIT_INSTALL_DIR)/include
@@ -67,8 +93,14 @@ cluster-lflags += -lodphelper -lodp -lcunit -lcrypto  $(LIB_NOC_LFLAGS) $($(ODP_
 $(IOPCIE_ELF)-nameinmpk = iopcie
 IOPCIE_NAME := iopcie
 
+$(IOUNIFIED_ELF)-nameinmpk = iounified
+IOUNIFIED_NAME := iounified
+
+$(IOETH_ELF)-nameinmpk = ioeth
+IOETH_NAME := ioeth
+
 # Empty direct assignement to allows += to work in included Makefiles
-io-bin := $(IOPCIE_ELF)
+io-bin := $(IOPCIE_ELF) $(IOUNIFIED_ELF) $(IOETH)
 mppa-bin :=
 cluster-bin :=
 cluster-tests :=
