@@ -130,6 +130,33 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth, int
 
 #define PARSE_HASH_ERR(msg) do { error_msg = msg; goto error_parse; } while (0) ;
 
+static int update_entry(pkt_rule_entry_t *entry) {
+	if ( entry->cmp_mask != 0 ) {
+		int upper_byte = 7 - (__k1_clz(entry->cmp_mask) - ( 32 - 8 ));
+		union {
+			uint64_t d;
+			uint8_t b[8];
+		} original_value, reordered_value;
+		reordered_value.d = 0ULL;
+		original_value.d = entry->cmp_value;
+		for ( int src = upper_byte, dst = 0; src >= 0; --src, ++dst ) {
+			reordered_value.b[dst] = original_value.b[src];
+		}
+		uint64_t bitmask = 0ULL;
+		uint8_t cmp_mask = entry->cmp_mask;
+		while ( cmp_mask ) {
+			int byte_id = __k1_ctz(cmp_mask);
+			cmp_mask &= ~( 1 << byte_id );
+			bitmask |= 0xffULL << (byte_id * 8);
+		}
+		if ( reordered_value.d & ~bitmask ) {
+			return 1;
+		}
+		entry->cmp_value = reordered_value.d;
+	}
+	return 0;
+}
+
 static const char* parse_hashpolicy(const char* pptr, int *nb_rules,
 				    pkt_rule_t *rules, int lane) {
 	const char *start_ptr = pptr;
@@ -188,6 +215,8 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules,
 					PARSE_HASH_ERR("close entry");
 				opened_entry = false;
 				rules[rule_id].nb_entries = entry_id + 1;
+				if ( update_entry(&rules[rule_id].entries[entry_id]) )
+					PARSE_HASH_ERR("compare value and mask does not fit");
 				pptr++;
 				break;
 			case PKT_ENTRY_OFFSET_SIGN:
