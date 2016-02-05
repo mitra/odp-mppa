@@ -7,8 +7,9 @@
 #include "odp_rpc_internal.h"
 #include "rpc-server.h"
 #include "pcie.h"
+#include "boot.h"
 
-int main()
+int main (int argc, char *argv[])
 {
 
 	int ret;
@@ -24,6 +25,8 @@ int main()
 		fprintf(stderr, "Failed to initialize PCIe eth interface\n");
 		exit(1);
 	}
+
+	boot_clusters(argc, argv);
 
 	while (1) {
 		odp_rpc_t *msg;

@@ -6,8 +6,9 @@
 
 #include "odp_rpc_internal.h"
 #include "rpc-server.h"
+#include "boot.h"
 
-int main()
+int main (int argc, char *argv[])
 {
 
 	int ret;
@@ -17,6 +18,8 @@ int main()
 		fprintf(stderr, "Failed to start server\n");
 		exit(EXIT_FAILURE);
 	}
+
+	boot_clusters(argc, argv);
 
 	while (1) {
 		odp_rpc_t *msg;
