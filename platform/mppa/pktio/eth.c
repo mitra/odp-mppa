@@ -250,7 +250,7 @@ end:
 			if ( rules[_rule_id].entries[_entry_id].cmp_mask == 0 &&
 					rules[_rule_id].entries[_entry_id].cmp_value != 0 ) {
 				ODP_ERR("rule %d entry %d: "
-								"mask 0x%x value %"PRIu64"\n"
+								"mask 0x%02x value %016llx\n"
 								"compare value can't be set when compare mask is 0\n",
 								_rule_id, _entry_id,
 								rules[_rule_id].entries[_entry_id].cmp_mask,

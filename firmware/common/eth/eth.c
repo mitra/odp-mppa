@@ -96,7 +96,7 @@ static int eth_apply_rules(int lane_id, pkt_rule_t *rules, int nb_rules, int clu
 		for ( int rule_id = 0; rule_id < nb_rules; ++rule_id) {
 			for ( int entry_id = 0; entry_id < rules[rule_id].nb_entries; ++entry_id) {
 #ifdef VERBOSE
-				printf("Rule[%d] (P%d) Entry[%d]: offset %d cmp_mask 0x%x cmp_value %"PRIu64" hash_mask 0x%x>\n",
+				printf("Rule[%d] (P%d) Entry[%d]: offset %d cmp_mask 0x%02x cmp_value 0x%016llx hash_mask 0x%02x>\n",
 				       rule_id,
 				       rules[rule_id].priority,
 				       entry_id,
