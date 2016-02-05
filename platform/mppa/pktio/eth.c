@@ -216,7 +216,7 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules,
 				if ( opened_entry == false )
 					PARSE_HASH_ERR("cmp_value entry");
 				pptr++;
-				int cmp_value = strtoul(pptr, &eptr, 0);
+				uint64_t cmp_value = strtoull(pptr, &eptr, 0);
 				if(pptr == eptr)
 					PARSE_HASH_ERR("bad comparison mask");
 				rules[rule_id].entries[entry_id].cmp_value = cmp_value;
