@@ -71,17 +71,6 @@ else
   iounified-cflags := $($(CORE_ARCH)-kalray-ioddr$(BOARD_EXT)_CFLAGS) $(_CFLAGS)
   IOUNIFIED_ELF := iounified
 
-  _CFLAGS :=
-  _LDFLAGS :=
-  SRCFILES :=
-  HDRFILES :=
-  OBJFILES :=
-  include $(ODP_SRC_DIR)/firmware/ioeth/Makefile
-  ioeth-srcs := $(SRCFILES)
-  ioeth-system := bare
-  ioeth-lflags := $($(CORE_ARCH)-kalray-ioddr$(BOARD_EXT)_LDFLAGS) $(_LDFLAGS)
-  ioeth-cflags := $($(CORE_ARCH)-kalray-ioddr$(BOARD_EXT)_CFLAGS) $(_CFLAGS)
-  IOETH_ELF := ioeth
 endif
 
 cluster-cflags := -I$(ODP_INSTALL_DIR)/$(INCLUDE_DIR)/include -I$(CUNIT_INSTALL_DIR)/include
@@ -96,11 +85,8 @@ IOPCIE_NAME := iopcie
 $(IOUNIFIED_ELF)-nameinmpk = iounified
 IOUNIFIED_NAME := iounified
 
-$(IOETH_ELF)-nameinmpk = ioeth
-IOETH_NAME := ioeth
-
 # Empty direct assignement to allows += to work in included Makefiles
-io-bin := $(IOPCIE_ELF) $(IOUNIFIED_ELF) $(IOETH)
+io-bin := $(IOPCIE_ELF) $(IOUNIFIED_ELF)
 mppa-bin :=
 cluster-bin :=
 cluster-tests :=
