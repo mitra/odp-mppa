@@ -18,6 +18,7 @@
 #include "eth.h"
 
 eth_status_t status[N_ETH_LANE];
+eth_lb_status_t lb_status;
 
 static inline int get_eth_dma_id(unsigned cluster_id){
 	unsigned offset = cluster_id / 4;
@@ -37,118 +38,6 @@ static inline int get_eth_dma_id(unsigned cluster_id){
 	default:
 		return -1;
 	}
-}
-
-static uint32_t registered_clusters[N_ETH_LANE] = {0};
-
-static inline pkt_rule_entry_t
-mppabeth_lb_get_rule(void __iomem *lb_addr,
-	unsigned int rule_id,
-	unsigned int entry_id) {
-	pkt_rule_entry_t entry = {0};
-	entry.offset = mppabeth_lb_get_rule_offset(lb_addr, rule_id, entry_id);
-	entry.cmp_mask = mppabeth_lb_get_rule_cmp_mask(lb_addr, rule_id, entry_id);
-	entry.cmp_value = mppabeth_lb_get_rule_expected_value(lb_addr, rule_id, entry_id);
-	entry.hash_mask = mppabeth_lb_get_rule_hashmask(lb_addr, rule_id, entry_id);
-	return entry;
-}
-
-static int compare_rule_entries(pkt_rule_entry_t entry1, pkt_rule_entry_t entry2) {
-	return entry1.offset != entry2.offset ||
-		entry1.cmp_mask != entry2.cmp_mask ||
-		entry1.cmp_value != entry2.cmp_value ||
-		entry1.hash_mask != entry2.hash_mask;
-}
-
-static int check_rules_identical(const pkt_rule_t *rules, int nb_rules) {
-	for ( int rule_id = 0; rule_id < nb_rules; ++rule_id ) {
-		for ( int entry_id = 0; entry_id < rules[rule_id].nb_entries; ++entry_id ) {
-			pkt_rule_entry_t entry = mppabeth_lb_get_rule((void *) &(mppa_ethernet[0]->lb), rule_id, entry_id);
-			if ( compare_rule_entries(rules[rule_id].entries[entry_id], entry ) ) {
-				fprintf(stderr, "Rule[%d] entry[%d] differs from already set rule\n", rule_id, entry_id);
-				return 1;
-			}
-		}
-	}
-	return 0;
-}
-
-static int eth_apply_rules(int lane_id, pkt_rule_t *rules, int nb_rules, int cluster_id) {
-#ifdef VERBOSE
-	printf("Applying %d rules for cluster %d\n", nb_rules, cluster_id);
-#endif
-
-	if ( registered_clusters[lane_id] & (1 << cluster_id) ) {
-		fprintf(stderr, "cluster %d already registered on lane %d\n", cluster_id, lane_id);
-		return -1;
-	}
-	registered_clusters[lane_id] |= 1 << cluster_id;
-
-	// if first rule first entry is null, it means that it is the first clusters registering
-	const pkt_rule_entry_t entry_nul = {0};
-	if ( compare_rule_entries(mppabeth_lb_get_rule((void *) &(mppa_ethernet[0]->lb), 0, 0), entry_nul ) ) {
-		if ( check_rules_identical(rules, nb_rules) ) {
-			fprintf(stderr, "cluster %d registration failed\n", cluster_id);
-			return -1;
-		}
-	}
-	else {
-		for ( int rule_id = 0; rule_id < nb_rules; ++rule_id) {
-			for ( int entry_id = 0; entry_id < rules[rule_id].nb_entries; ++entry_id) {
-#ifdef VERBOSE
-				printf("Rule[%d] (P%d) Entry[%d]: offset %d cmp_mask 0x%02x cmp_value 0x%016llx hash_mask 0x%02x>\n",
-				       rule_id,
-				       rules[rule_id].priority,
-				       entry_id,
-				       rules[rule_id].entries[entry_id].offset,
-				       rules[rule_id].entries[entry_id].cmp_mask,
-				       rules[rule_id].entries[entry_id].cmp_value,
-				       rules[rule_id].entries[entry_id].hash_mask);
-#endif
-				mppabeth_lb_cfg_rule((void *) &(mppa_ethernet[0]->lb),
-						     rule_id, entry_id,
-						     rules[rule_id].entries[entry_id].offset,
-						     rules[rule_id].entries[entry_id].cmp_mask,
-						     rules[rule_id].entries[entry_id].cmp_value,
-						     rules[rule_id].entries[entry_id].hash_mask);
-				mppabeth_lb_cfg_min_max_swap((void *) &(mppa_ethernet[0]->lb),
-							     rule_id, (entry_id >> 1), 0);
-			}
-			mppabeth_lb_cfg_extract_table_mode((void *) &(mppa_ethernet[0]->lb),
-							   rule_id,
-							   rules[rule_id].priority,
-							   MPPA_ETHERNET_DISPATCH_POLICY_HASH);
-		}
-	}
-
-	// dispatch hash lut between registered clusters
-	uint32_t clusters = registered_clusters[lane_id];
-	int nb_registered = __k1_cbs(clusters);
-	int chunks[nb_registered];
-	for ( int j = 0; j < nb_registered; ++j ) {
-		chunks[j] = MPPABETHLB_LUT_ARRAY_SIZE / nb_registered +
-			( ( j < ( MPPABETHLB_LUT_ARRAY_SIZE % nb_registered ) ) ? 1 : 0 );
-	}
-
-	for ( int i = 0, j = 0; i < MPPABETHLB_LUT_ARRAY_SIZE ; i+= chunks[j], j++ ) {
-		int registered_cluster = __k1_ctz(clusters);
-		clusters &= ~(1 << registered_cluster);
-		int tx_id = status[lane_id].cluster[registered_cluster].txId;
-		int noc_if = status[lane_id].cluster[registered_cluster].nocIf;
-#ifdef VERBOSE
-		printf("config lut[%3d-%3d] -> C%2d: %d %d %d %d\n",
-			   i, i + chunks[j] - 1, registered_cluster,
-			   lane_id, tx_id, ETH_DEFAULT_CTX, noc_if - ETH_BASE_TX);
-#endif
-		for ( int lut_id = i; lut_id < i + chunks[j] ; ++lut_id ) {
-			mppabeth_lb_cfg_luts((void *) &(mppa_ethernet[0]->lb),
-								 lane_id, lut_id, tx_id,
-								 ETH_DEFAULT_CTX,
-								 noc_if - ETH_BASE_TX);
-		}
-	}
-
-	return 0;
 }
 
 odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload)
@@ -206,6 +95,8 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payloa
 		goto err;
 	if (ethtool_init_lane(data.ifId, data.loopback))
 		goto err;
+	if ( ethtool_apply_rules(remoteClus, data.ifId, data.nb_rules, (pkt_rule_t*)payload))
+		goto err;
 	if (ethtool_enable_cluster(remoteClus, data.ifId))
 		goto err;
 
@@ -227,10 +118,6 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payloa
 	ack.cmd.eth_open.mac[ETH_ALEN-1] = 1 << eth_if;
 	ack.cmd.eth_open.mac[ETH_ALEN-2] = __k1_get_cluster_id();
 
-	if ( data.nb_rules > 0 ) {
-		if ( eth_apply_rules(eth_if, (pkt_rule_t*)payload, data.nb_rules, remoteClus))
-			goto err;
-	}
 
 	return ack;
 

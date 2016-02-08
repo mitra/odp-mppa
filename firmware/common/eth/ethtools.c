@@ -326,6 +326,142 @@ int ethtool_init_lane(unsigned if_id, int loopback)
 
 	return 0;
 }
+
+static inline pkt_rule_entry_t
+mppabeth_lb_get_rule(void __iomem *lb_addr,
+	unsigned int rule_id,
+	unsigned int entry_id) {
+	pkt_rule_entry_t entry = {0};
+	entry.offset = mppabeth_lb_get_rule_offset(lb_addr, rule_id, entry_id);
+	entry.cmp_mask = mppabeth_lb_get_rule_cmp_mask(lb_addr, rule_id, entry_id);
+	entry.cmp_value = mppabeth_lb_get_rule_expected_value(lb_addr, rule_id, entry_id);
+	entry.hash_mask = mppabeth_lb_get_rule_hashmask(lb_addr, rule_id, entry_id);
+	return entry;
+}
+
+static int compare_rule_entries(const pkt_rule_entry_t entry1,
+				const pkt_rule_entry_t entry2)
+{
+	return entry1.offset != entry2.offset ||
+		entry1.cmp_mask != entry2.cmp_mask ||
+		entry1.cmp_value != entry2.cmp_value ||
+		entry1.hash_mask != entry2.hash_mask;
+}
+
+static int check_rules_identical(const pkt_rule_t *rules, int nb_rules)
+{
+	for ( int rule_id = 0; rule_id < nb_rules; ++rule_id ) {
+		for ( int entry_id = 0; entry_id < rules[rule_id].nb_entries; ++entry_id ) {
+			pkt_rule_entry_t entry = mppabeth_lb_get_rule((void *) &(mppa_ethernet[0]->lb), rule_id, entry_id);
+			if ( compare_rule_entries(rules[rule_id].entries[entry_id], entry ) ) {
+				fprintf(stderr, "Rule[%d] entry[%d] differs from already set rule\n", rule_id, entry_id);
+				return 1;
+			}
+		}
+	}
+	return 0;
+}
+
+// dispatch hash lut between registered clusters
+static void update_lut(unsigned if_id)
+{
+
+	if (lb_status.enabled)
+		return;
+
+	const int eth_if = if_id % 4;
+	uint32_t clusters = 0;
+	for (int i = 0; i < BSP_NB_CLUSTER_MAX; ++i) {
+		if (status[eth_if].cluster[i].opened != ETH_CLUS_STATUS_OFF &&
+		    status[eth_if].cluster[i].hashpolicy &&
+		    status[eth_if].cluster[i].rx_enabled)
+			clusters |=  1 << i;
+	}
+
+	const int nb_registered = __k1_cbs(clusters);
+	int chunks[nb_registered];
+
+	for ( int j = 0; j < nb_registered; ++j ) {
+		chunks[j] = MPPABETHLB_LUT_ARRAY_SIZE / nb_registered +
+			( ( j < ( MPPABETHLB_LUT_ARRAY_SIZE % nb_registered ) ) ? 1 : 0 );
+	}
+
+	for ( int i = 0, j = 0; i < MPPABETHLB_LUT_ARRAY_SIZE ; i+= chunks[j], j++ ) {
+		int registered_cluster = __k1_ctz(clusters);
+		clusters &= ~(1 << registered_cluster);
+		int tx_id = status[eth_if].cluster[registered_cluster].txId;
+		int noc_if = status[eth_if].cluster[registered_cluster].nocIf;
+#ifdef VERBOSE
+		printf("config lut[%3d-%3d] -> C%2d: %d %d %d %d\n",
+			   i, i + chunks[j] - 1, registered_cluster,
+			   eth_if, tx_id, ETH_DEFAULT_CTX, noc_if - 4);
+#endif
+		for ( int lut_id = i; lut_id < i + chunks[j] ; ++lut_id ) {
+			mppabeth_lb_cfg_luts((void *) &(mppa_ethernet[0]->lb),
+								 eth_if, lut_id, tx_id,
+								 ETH_DEFAULT_CTX,
+								 noc_if - 4);
+		}
+	}
+}
+
+int ethtool_apply_rules(unsigned remoteClus, unsigned if_id,
+			int nb_rules, const pkt_rule_t rules[nb_rules] )
+{
+	const int eth_if = if_id % 4;
+
+	if (!nb_rules)
+		return 0;
+
+#ifdef VERBOSE
+	printf("Applying %d rules for cluster %d\n", nb_rules, remoteClus);
+#endif
+
+	if (!lb_status.enabled) {
+		/* No Hash rules yet. Make sure no one opened anything yet */
+		for (int i =0; i < N_ETH_LANE; ++i){
+			if (status[i].initialized != ETH_LANE_OFF) {
+				fprintf(stderr, "[ETH] Error: Lane %d already opened without hashpolicy\n", i);
+				return -1;
+			}
+		}
+		/* Configure the LB */
+		for ( int rule_id = 0; rule_id < nb_rules; ++rule_id) {
+			for ( int entry_id = 0; entry_id < rules[rule_id].nb_entries; ++entry_id) {
+#ifdef VERBOSE
+				printf("Rule[%d] (P%d) Entry[%d]: offset %d cmp_mask 0x%02x cmp_value "
+				       "0x%016llx hash_mask 0x%02x>\n",
+				       rule_id,
+				       rules[rule_id].priority,
+				       entry_id,
+				       rules[rule_id].entries[entry_id].offset,
+				       rules[rule_id].entries[entry_id].cmp_mask,
+				       rules[rule_id].entries[entry_id].cmp_value,
+				       rules[rule_id].entries[entry_id].hash_mask);
+#endif
+				mppabeth_lb_cfg_rule((void *) &(mppa_ethernet[0]->lb),
+						     rule_id, entry_id,
+						     rules[rule_id].entries[entry_id].offset,
+						     rules[rule_id].entries[entry_id].cmp_mask,
+						     rules[rule_id].entries[entry_id].cmp_value,
+						     rules[rule_id].entries[entry_id].hash_mask);
+				mppabeth_lb_cfg_min_max_swap((void *) &(mppa_ethernet[0]->lb),
+							     rule_id, (entry_id >> 1), 0);
+			}
+			mppabeth_lb_cfg_extract_table_mode((void *) &(mppa_ethernet[0]->lb),
+							   rule_id,
+							   rules[rule_id].priority,
+							   MPPA_ETHERNET_DISPATCH_POLICY_HASH);
+		}
+		lb_status.enabled = 1;
+	} else if ( check_rules_identical(rules, nb_rules) ) {
+		fprintf(stderr, "[ETH] Error: Non matching hash policy already registered\n");
+		return -1;
+	}
+	status[eth_if].cluster[remoteClus].hashpolicy = 1;
+	return 0;
+}
+
 void ethtool_cleanup_cluster(unsigned remoteClus, unsigned if_id)
 {
 	int eth_if = if_id % 4;
@@ -343,7 +479,25 @@ void ethtool_cleanup_cluster(unsigned remoteClus, unsigned if_id)
 		mppa_noc_dnoc_tx_free(noc_if, tx_id);
 
 	}
+
+	if (status[eth_if].cluster[remoteClus].hashpolicy) {
+		/* If we were the last hash policy. Clear up the tables
+		 * and reset the LB hash data */
+		int hash_global_count = 0;
+		for (int i = 0; i < N_ETH_LANE; ++i) {
+			hash_global_count += status[i].hash_refcount;
+		}
+		if (!hash_global_count){
+			for (int i = 0; i < MPPABETHLB_XT_TABLE_ARRAY_SIZE; ++i){
+				mppabeth_lb_cfg_extract_table_mode((void *) &(mppa_ethernet[0]->lb),
+								   i, 0,
+								   MPPA_ETHERNET_DISPATCH_POLICY_OFF);
+			}
+			_eth_lb_status_init(&lb_status);
+		}
+	}
 	_eth_cluster_status_init(&(status[eth_if].cluster[remoteClus]));
+
 }
 
 int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id)
@@ -351,6 +505,7 @@ int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id)
 	const int eth_if = if_id % 4;
 	const int noc_if = status[eth_if].cluster[remoteClus].nocIf;
 	const int tx_id = status[eth_if].cluster[remoteClus].txId;
+	const int hashpolicy = status[eth_if].cluster[remoteClus].hashpolicy;
 
 	if(noc_if < 0 ||
 	   status[eth_if].cluster[remoteClus].enabled) {
@@ -358,23 +513,33 @@ int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id)
 	}
 
 
+	status[eth_if].cluster[remoteClus].enabled = 1;
+
 	if (status[eth_if].cluster[remoteClus].rx_enabled) {
 		/* Configure dispatcher so that the defaulat "MATCH ALL" also
 		 * sends packet to our cluster */
-		mppabeth_lb_cfg_default_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
-							    eth_if, noc_if - 4, tx_id,
-							    (1 << ETH_DEFAULT_CTX));
+		if (hashpolicy) {
+			update_lut(if_id);
+		} else {
+			mppabeth_lb_cfg_default_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
+								    eth_if, noc_if - 4, tx_id,
+								    (1 << ETH_DEFAULT_CTX));
+		}
 	}
 
-	status[eth_if].cluster[remoteClus].enabled = 1;
-	if (!status[eth_if].enabled_refcount) {
-		mppabeth_lb_cfg_default_dispatch_policy((void *)&(mppa_ethernet[0]->lb),
-							eth_if,
-							MPPABETHLB_DISPATCH_DEFAULT_POLICY_RR);
+	if (hashpolicy) {
+		if (!status[eth_if].hash_refcount) {
+			// TODO
+		}
+		status[eth_if].hash_refcount++;
+	} else {
+		if (!status[eth_if].enabled_refcount) {
+			mppabeth_lb_cfg_default_dispatch_policy((void *)&(mppa_ethernet[0]->lb),
+								eth_if,
+								MPPABETHLB_DISPATCH_DEFAULT_POLICY_RR);
+		}
+		status[eth_if].enabled_refcount++;
 	}
-
-
-	status[eth_if].enabled_refcount++;
 
 	return 0;
 }
@@ -384,24 +549,40 @@ int ethtool_disable_cluster(unsigned remoteClus, unsigned if_id)
 	const int eth_if = if_id % 4;
 	const int noc_if = status[eth_if].cluster[remoteClus].nocIf;
 	const int tx_id = status[eth_if].cluster[remoteClus].txId;
+	const int hashpolicy = status[eth_if].cluster[remoteClus].hashpolicy;
 
 	if(status[eth_if].cluster[remoteClus].nocIf < 0 ||
 	   status[eth_if].cluster[remoteClus].enabled == 0) {
 		return -1;
 	}
 	status[eth_if].cluster[remoteClus].enabled = 0;
-	status[eth_if].enabled_refcount--;
 
-	if (status[eth_if].cluster[remoteClus].rx_enabled) {
-		mppabeth_lb_cfg_default_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
-							    eth_if, noc_if - ETH_BASE_TX,tx_id, 0);
+	if (hashpolicy) {
+		status[eth_if].hash_refcount--;
+		if (!status[eth_if].hash_refcount) {
+			// TODO
+		}
+
+		if (status[eth_if].cluster[remoteClus].rx_enabled) {
+			update_lut(if_id);
+		}
+
+	} else {
+		status[eth_if].enabled_refcount--;
+		if (!status[eth_if].enabled_refcount) {
+			mppabeth_lb_cfg_default_dispatch_policy((void *)&(mppa_ethernet[0]->lb),
+								eth_if,
+								MPPABETHLB_DISPATCH_DEFAULT_POLICY_DROP);
+		}
+
+		if (status[eth_if].cluster[remoteClus].rx_enabled) {
+			mppabeth_lb_cfg_default_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
+								    eth_if, noc_if - ETH_BASE_TX,tx_id, 0);
+		}
 	}
 
-	if (!status[eth_if].enabled_refcount) {
-		mppabeth_lb_cfg_default_dispatch_policy((void *)&(mppa_ethernet[0]->lb),
-							eth_if,
-							MPPABETHLB_DISPATCH_DEFAULT_POLICY_DROP);
-	}
 
 	return 0;
 }
+
+

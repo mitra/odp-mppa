@@ -25,7 +25,8 @@ int ethtool_init_lane(unsigned eth_if, int loopback);
 void ethtool_cleanup_cluster(unsigned remoteClus, unsigned eth_if);
 int ethtool_enable_cluster(unsigned remoteClus, unsigned eth_if);
 int ethtool_disable_cluster(unsigned remoteClus, unsigned eth_if);
-
+int ethtool_apply_rules(unsigned remoteClus, unsigned if_id,
+			int nb_rules, const pkt_rule_t rules[nb_rules]);
 typedef enum {
 	ETH_CLUS_STATUS_OFF,
 	ETH_CLUS_STATUS_ON,
@@ -44,7 +45,8 @@ typedef struct {
 		int enabled : 1;
 		int rx_enabled : 1; /* Pktio wants to receive packets from ethernet */
 		int tx_enabled : 1; /* Pktio wants to send packets to ethernet */
-		int jumbo : 1; /* Jumbo supported */
+		int jumbo : 1;      /* Jumbo supported */
+		int hashpolicy : 1; /* Cluster uses hash policy */
 	};
 } eth_cluster_status_t;
 
@@ -58,7 +60,12 @@ typedef struct {
 	} initialized;
 	eth_cluster_status_t cluster[BSP_NB_CLUSTER_MAX];
 	int enabled_refcount;
+	int hash_refcount;
 } eth_status_t;
+
+typedef struct {
+	int enabled : 1;
+} eth_lb_status_t;
 
 static inline void _eth_cluster_status_init(eth_cluster_status_t * cluster)
 {
@@ -83,6 +90,11 @@ static inline void _eth_status_init(eth_status_t * status)
 		_eth_cluster_status_init(&status->cluster[i]);
 }
 
+static inline void _eth_lb_status_init(eth_lb_status_t * status)
+{
+	status->enabled = 0;
+}
 extern eth_status_t status[N_ETH_LANE];
+extern eth_lb_status_t lb_status;
 
 #endif /* __FIRMWARE__IOETH__ETH__H__ */
