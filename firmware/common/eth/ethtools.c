@@ -119,12 +119,7 @@ int ethtool_setup_eth2clus(unsigned remoteClus, int if_id,
 		mppabeth_lb_cfg_jumbo_mode((void *)&(mppa_ethernet[0]->lb),
 					   eth_if, MPPABETHLB_JUMBO_DISABLED);
 	}
-	/* Configure dispatcher so that the defaulat "MATCH ALL" also
-	 * sends packet to our cluster */
-	mppabeth_lb_cfg_table_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
-						  ETH_MATCHALL_TABLE_ID,
-						  eth_if, nocIf - 4, nocTx,
-						  (1 << ETH_DEFAULT_CTX));
+
 	return 0;
 }
 
@@ -342,9 +337,6 @@ void ethtool_cleanup_cluster(unsigned remoteClus, unsigned if_id)
 		mppa_noc_dnoc_rx_free(noc_if, rx_tag);
 
 	if (tx_id >= 0) {
-		mppabeth_lb_cfg_table_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
-							  ETH_MATCHALL_TABLE_ID, eth_if,
-							  noc_if - ETH_BASE_TX,tx_id, 0);
 		mppa_dnoc[noc_if]->tx_chan_route[tx_id].
 			min_max_task_id[ETH_DEFAULT_CTX]._.min_max_task_id_en = 0;
 
@@ -356,14 +348,26 @@ void ethtool_cleanup_cluster(unsigned remoteClus, unsigned if_id)
 
 int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id)
 {
-	int eth_if = if_id % 4;
-	if(status[eth_if].cluster[remoteClus].nocIf < 0 ||
+	const int eth_if = if_id % 4;
+	const int noc_if = status[eth_if].cluster[remoteClus].nocIf;
+	const int tx_id = status[eth_if].cluster[remoteClus].txId;
+
+	if(noc_if < 0 ||
 	   status[eth_if].cluster[remoteClus].enabled) {
 		return -1;
 	}
 
-	status[eth_if].cluster[remoteClus].enabled = 1;
 
+	if (status[eth_if].cluster[remoteClus].rx_enabled) {
+		/* Configure dispatcher so that the defaulat "MATCH ALL" also
+		 * sends packet to our cluster */
+		mppabeth_lb_cfg_table_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
+							  ETH_MATCHALL_TABLE_ID,
+							  eth_if, noc_if - 4, tx_id,
+							  (1 << ETH_DEFAULT_CTX));
+	}
+
+	status[eth_if].cluster[remoteClus].enabled = 1;
 	/* if (!status[eth_if].enabled_refcount) */
 	/* 	//FIXME */
 
@@ -373,13 +377,23 @@ int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id)
 }
 int ethtool_disable_cluster(unsigned remoteClus, unsigned if_id)
 {
-	int eth_if = if_id % 4;
+
+	const int eth_if = if_id % 4;
+	const int noc_if = status[eth_if].cluster[remoteClus].nocIf;
+	const int tx_id = status[eth_if].cluster[remoteClus].txId;
+
 	if(status[eth_if].cluster[remoteClus].nocIf < 0 ||
 	   status[eth_if].cluster[remoteClus].enabled == 0) {
 		return -1;
 	}
 	status[eth_if].cluster[remoteClus].enabled = 0;
 	status[eth_if].enabled_refcount--;
+
+	if (status[eth_if].cluster[remoteClus].rx_enabled) {
+		mppabeth_lb_cfg_table_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
+							  ETH_MATCHALL_TABLE_ID, eth_if,
+							  noc_if - ETH_BASE_TX,tx_id, 0);
+	}
 
 	/* if (!status[eth_if].enabled_refcount) */
 	/* 	//FIXME */
