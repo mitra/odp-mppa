@@ -111,10 +111,10 @@ Kalray Hypervisor
 \section{Platform Settings}
 \subsection{Rx Threads}
 ODP internally allocates 2 cores (Rx Threads) per cluster to convert the incoming
-Ethernet, NoC, and PCIe trafic to ODP packets.
+Ethernet, NoC, and PCIe traffic to ODP packets.
 
 The number of Rx Threads can be selected at runtime from 1 to 6,
-depdning on the application requirement. Each thread can handle
+depending on the application requirement. Each thread can handle
 approximately 1.8Mpps. Thus application with low pps requirements can
 save 1 core for computation and on the other hand, high pps
 application should dedicate more cores to Rx Threads to avoid packet
@@ -148,7 +148,7 @@ with Ethernet ports, or clusters.
   \texttt{<if>}. This is only available on simu platforms}
 \end{itemize}
 
-\subsection{Customizing Ethernet interface behaviour}
+\subsection{Customizing Ethernet interface behavior}
 
 It is possible to configure the way ODP handles Ethernet interfaces.
 This is done by passing options through the pktio name:
@@ -167,7 +167,7 @@ To configure this value, the option tags can be used:
 e0:tags=120
 \end{lstlisting}
 
-Not that it is not possuble to use more than 120 tags per pktio nor
+Not that it is not possible to use more than 120 tags per pktio nor
 250 tags for all pktios.
 
 \subsubsection{Jumbo}
@@ -199,8 +199,8 @@ e0:loop
 
 \subsubsection{Dispatch}
 
-User can apply dispatch rules to ethernet physical links. According to
-these rules, input ethernet packets will be dispatched to specific
+User can apply dispatch rules to Ethernet physical links. According to
+these rules, input Ethernet packets will be dispatched to specific
 clusters. It allows for example to guarantee that all packets from an IP
 address are all managed by a single cluster. It is possible to define up
 to 8 rules.
@@ -208,7 +208,7 @@ to 8 rules.
 In the current ODP release, there are some limitations:
 \begin{itemize}
 	\item the set of rules must be identical between all pktios for a
-		given an IOETH. It means that interfaces \texttt{e0} and
+		given IOETH. It means that interfaces \texttt{e0} and
 		\texttt{e1} can have different set of rules, but \texttt{e0p0}
 		and \texttt{e0p1} must have the same set of rules.
 	\item the set of rules must be the same between all the clusters for
@@ -221,61 +221,71 @@ e0:hashpolicy=[P_{@_/_=_#_}{@_/_=_#_}...]
 \end{lstlisting}
 \begin{itemize}
 	\item tokens \texttt{[ ]} enclose a rule. A rule is composed by an
-		optional \emph{priority} and 1 to 9 \emph{rule entries}.
+		optional \emph{priority} and 1 to 9 \emph{fields}.
 	\item token \texttt{P} is the priority of the current rule. It is
 		optional, must appear just after the \texttt{[} token and must
-		be comprised between 0 and 7. 0 is the most prioritary.
-	\item tokens \texttt{\{ \}} enclose a rule entry. A rule entry is
-		applied on a 64 bit word. A rule entry must be immediatly
-		followed by another rule entry or by a closing rule token
-		\texttt{]}. A rule entry is composed by following items:
+		be comprised between 0 and 7. 0 is the most prioritized.
+	\item tokens \texttt{\{ \}} enclose a field. A field is
+		applied on a 64 bit word. A field must be immediately
+		followed by another field or by a closing rule token
+		\texttt{]}. A field is composed by following items:
 		\begin{itemize}
-			\item \emph{offset}: offset from the base of ethernet packet
+			\item \emph{@offset}: offset from the base of Ethernet packet
 				to extract the 64 bits word.
-			\item \emph{comparison bytemask}: 8 bits \emph{bytemask} for
+			\item \emph{/comparison bytemask}: 8 bits \emph{bytemask} for
 				comparing the extracted value with the extracted 64 bit
 				word.
-			\item \emph{comparison value}: expected 64 bit word to be
+			\item \emph{=comparison value}: expected 64 bit word to be
 				compared with the extracted 64 bits word after applying
 				comparison bytemask.
-			\item \emph{hash bytemask}: 8 bits mask to select the bytes
+			\item \emph{\#hash bytemask}: 8 bits mask to select the bytes
 				which will be taken into account during the hash
 				computation.
 		\end{itemize}
 \end{itemize}
 
-A rule will be applied for a packet if \emph{all} of its entries match
-this packet. At least one hash bytemask must be specified. This hash
+A rule will be applied for a packet if \emph{all} of its field match
+with the packet. At least one hash bytemask must be specified. This hash
 result will select the target cluster between all of the clusters
-registered on this ethernet interface. User must ensure that there is
+registered on this Ethernet interface. User must ensure that there is
 enough entropy with the hashed values to ensure an even dispatch between
 the clusters.
 
 If a packet does not match any defined rule, it will be dropped.
 
-\paragraph{Examples:}
+\paragraph{Example 1:}
 
-Following rule dispatch all the incoming packets on interface ethernet 0
+The following rule dispatches all the incoming packets on interface Ethernet 0
 hashing the destination MAC address:
 \begin{lstlisting}
 e0:hashpolicy=[{@0#0x3f}]
 \end{lstlisting}
 
-Following rule is in two times: if the incoming packet is an IPV4 packet
-(\texttt{@12/0x3=0x0800}), it will be dispatched hashing the IP source
-address (\texttt{@26\#0xf}). If the packet does not match the first rule
+\paragraph{Example 2:}
+
+The following example has two rules:
+
+If the incoming packet is an IPV4 packet (\texttt{@12/0x3=0x0800}),
+ it will be dispatched hashing the IP source address
+ (\texttt{@26\#0xf}).
+
+If the packet does not match the first rule
 (which has the highest priority 0), it will use the second rule (with
 priority 1), dispatching with the hash of the source MAC address
-(\texttt{@6\#0x3f}) if the source MAC address is like
-\texttt{*:77:CA:FE:*:*} (\texttt{/0x1c=0x0077cafe0000}). If the packet
+(\texttt{@6\#0x3f}) if the source MAC address i like
+\texttt{*:77:CA:FE:*:*} (\texttt{/0x1c=0x0077cafe0000}).
+
+If the packet
 does not match any of these two rules, it will be dropped.
 \begin{lstlisting}
 e0:hashpolicy=[P0{@12/0x3=0x0800}{@26#0xf}][P1{@6#0x3f/0x1c=0x0077cafe0000}]
 \end{lstlisting}
 
-Previous is very restrictive. It is possible to define a low priority
+\paragraph{Example 3:}
+
+The previous example is very restrictive. It is possible to add a low priority
 rule to dispatch without any match restriction, for example hashing the
-destination MAC addres:
+destination MAC address:
 \begin{lstlisting}
 e0:hashpolicy=[P0{@12/0x3=0x0800}{@26#0xf}][P1{@6#0x3f/0x1c=0x0077cafe0000}][P2{@0#0x3f}]
 \end{lstlisting}
@@ -295,7 +305,7 @@ To create a new ODP application the easiest way is to copy the
 In this case, building and running is easily done by running
 \texttt{make APST\_DIR=/path/to/build/dir} or running the
 \texttt{run.sh} in the \texttt{APST\_DIR/<app\_name>}.
-By default \texttt{APST\_DIR} is the install subdirectory.
+By default \texttt{APST\_DIR} is the install sub-directory.
 
 
 \subsection{Custom Project}
@@ -339,14 +349,14 @@ k1-cluster   --functional  --mboard=developer --march=bostan --user-syscall=/usr
 
 \begin{itemize}
 \item[-]{The current ODP version does not support ordered queues}
-\item[-]{In some case where multiple Rx threads are used to handle incoming trafic
+\item[-]{In some case where multiple Rx threads are used to handle incoming traffic
   (default), packets may not be returned in order to the ODP
   application. If order is required, the number of Rx thread must be
   set to one.}
 \item[-]{It is currently not possible to do loopback between multiple
   Ethernet lane of a single MPPA board. Because odp\_pktio\_open waits
   for the link to be up before returning (with a timeout), it needs
-  the opposit side of the link to be up.}
+  the opposite side of the link to be up.}
 \item[-]{Only promiscuous mode is currently available.}
 \item[-]{Multi-Lane (4x10G) it not supported yet.}
 \end{itemize}
