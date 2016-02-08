@@ -2,7 +2,8 @@ O ?= ./output
 
 project-name := odp
 
-ODP_SRC_DIR ?= $(CURDIR)/..
+LONG_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
+ODP_SRC_DIR ?= $(LONG_DIR)/..
 ODP_ARCH ?= k1b-kalray-nodeos_developer
 
 include $(ODP_SRC_DIR)/mk/platforms.inc
@@ -32,7 +33,9 @@ arch = $(CORE_ARCH)
 board = $(BOARD_NAME)
 
 cflags := -Wall -Werror -Wextra
+BOARD_EXT := $(if $(findstring explorer,$(BOARD_NAME)),_explorer,)$(if $(findstring simu,$(OS_BOARD_NAME)),_simu,)$(if $(findstring _konic80,$(OS_BOARD_NAME)),_konic80,)
 INCLUDE_DIR=$($(ODP_ARCH)_INC_DIR)
+VALID_TYPE := $(if $(findstring simu,$(OS_BOARD_NAME)),sim,jtag)
 
 ifeq ($(MAKELEVEL),0)
 $(info --- Building for arch $(arch), os $(OS_NAME), board $(BOARD_NAME) ---)
@@ -76,7 +79,7 @@ endif
 cluster-cflags := -I$(ODP_INSTALL_DIR)/$(INCLUDE_DIR)/include -I$(CUNIT_INSTALL_DIR)/include
 cluster-lflags := -L$(ODP_INSTALL_DIR)/lib/odp/$(OS_BOARD_NAME)/$(OS_PLAT_NAME)/ -L$(CUNIT_INSTALL_DIR)/lib/
 
-cluster-cflags += -I$(ODP_SRC_DIR)/test/validation/common/ -I$(CURDIR)/include $($(ODP_ARCH)_CFLAGS) -g3
+cluster-cflags += -I$(ODP_SRC_DIR)/test/validation/common/ -I$(LONG_DIR)/include $($(ODP_ARCH)_CFLAGS) -g3
 cluster-lflags += -lodphelper -lodp -lcunit -lcrypto  $(LIB_NOC_LFLAGS) $($(ODP_ARCH)_LDFLAGS) -Wl,--gc-sections
 
 $(IOPCIE_ELF)-nameinmpk = iopcie
@@ -97,4 +100,17 @@ sim-runner-opts := --mboard=developer --march=bostan
 SUB_DIRS := $(wildcard */Makefile) 
 include $(SUB_DIRS)
 
-include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray
+build: all
+
+install: all
+		 @if [ "$(LONT_DIR)" == "" ]; then echo "ERROR: LONT_DIR" not set; exit 1; fi
+		 mkdir -p $(LONT_DIR)/$(OS_BOARD_NAME)/$(OS_PLAT_NAME)/$(TEST_NAME)
+		 install $$(find output/bin/ -type f) $(addprefix $(APP_DIR)/,$($(TEST_NAME)-scripts)) $($(TEST_NAME)-extras) $(LONT_DIR)/$(OS_BOARD_NAME)/$(OS_PLAT_NAME)/$(TEST_NAME)
+
+
+valid: install
+	cd output/bin && ctest -L $(VALID_TYPE)
+
+
+
+

@@ -74,7 +74,7 @@ CONFIGS += k1b-kalray-mos_explorer
 
 k1b-kalray-mos_konic80_CONF_ENV    := CC=k1-gcc  CXX=k1-g++ STRIP=k1-strip
 k1b-kalray-mos_konic80_CONF_OPTS   :=
-k1b-kalray-mos_konic80_CFLAGS      := -march=k1b -mhypervisor -DK1_MOS -mboard=konic80 
+k1b-kalray-mos_konic80_CFLAGS      := -march=k1b -mhypervisor -DK1_MOS -mboard=konic80
 k1b-kalray-mos_konic80_LDFLAGS     := -mhypervisor -lvbsp -lutask -Wl,--defsym=USER_STACK_SIZE=5120
 k1b-kalray-mos_konic80_PLATFORM    := mppa
 k1b-kalray-mos_konic80_INC_DIR     := k1b-elf
@@ -92,6 +92,8 @@ k1b-kalray-mos_simu_MAKE_VALID  :=
 k1b-kalray-mos_simu_INSTALL     := true
 CONFIGS += k1b-kalray-mos_simu
 
+# Buid long for all BUT x86_64
+LONG_CONFIGS := $(CONFIGS)
 #
 #
 #

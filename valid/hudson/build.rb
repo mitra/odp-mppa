@@ -138,10 +138,13 @@ b.target("long") do
         make_opt = "USE_PACKAGES=1"
     end
 
-    b.run(:cmd => "make long #{make_opt} CONFIGS='#{valid_configs.join(" ")}'")
+    b.run(:cmd => "make long-build #{make_opt} LONG_CONFIGS='#{valid_configs.join(" ")}'")
 
     valid_configs.each(){|conf|
-        cd File.join(odp_path, "build", "long", conf, "bin")
+        board=conf.split("_")[1]
+        platform=conf.split("_")[0]
+
+        cd File.join(odp_path, "install/local/k1tools/share/odp/long/", board, platform)
         b.ctest( {
                      :ctest_args => "-L #{valid_type}",
                      :fail_msg => "Failed to validate #{conf}",

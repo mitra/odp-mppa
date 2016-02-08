@@ -23,7 +23,6 @@ $(CUNIT_INST_DIR)/$(1)/lib/libcunit.a: $(ARCH_DIR)/cunit/$(1)/CUnit/Sources/.lib
 	$(MAKE) -C$(ARCH_DIR)/cunit/$(1) V=1 install
 
 cunit-$(1)-valid:
-cunit-$(1)-long:
 cunit-$(1)-clean:
 	rm -Rf $(ARCH_DIR)/cunit/$(1) $(CUNIT_INST_DIR)/$(1)
 
@@ -90,9 +89,6 @@ odp-$(1)-valid: odp-$(1)-build $(INST_DIR)/lib64/libodp_syscall.so
 odp-$(1)-clean:
 	rm -Rf $(ARCH_DIR)/odp/$(1)
 
-odp-$(1)-long:
-	$(error)
-	$(MAKE) -C$(TOP_DIR)/long ODP_ARCH=$(1) O=$(ARCH_DIR)/long/$(1)/
 endef
 
 #
@@ -136,6 +132,10 @@ CHECK_LIST += $(foreach FIRMWARE, $(FIRMWARES), firmware-$(FIRMWARE)-$(1))
 apps-$(1): $(foreach APP, $(APPS), app-$(APP)-$(1))
 CHECK_LIST += $(foreach APP, $(APPS), app-$(APP)-$(1))
 
+long-$(1): $(foreach CONFIG, $(LONG_CONFIGS), long-$(CONFIG)-$(1))
+CHECK_LIST +=  $(foreach CONFIG, $(LONG_CONFIGS), long-$(CONFIG)-$(1))
+CHECK_LIST +=  $(foreach APP, $(LONGS), $(foreach CONFIG, $(LONG_CONFIGS), long-$(CONFIG)-$(APP)-$(1)))
+
 # Generate per config rules (clean/build/etc) for each arch specific component
 $(foreach ARCH_COMPONENT, $(ARCH_COMPONENTS), \
 $(ARCH_COMPONENT)-$(1): $(foreach CONFIG, $(CONFIGS), $(ARCH_COMPONENT)-$(CONFIG)-$(1))
@@ -165,6 +165,59 @@ app-$(1)-build: apps/$(1)/Makefile
 	ODP_TOOLCHAIN_DIR=$(K1ST_DIR)/ all
 app-$(1)-clean:
 	rm -Rf $(ARCH_DIR)/apps/$(1)
+endef
+
+#
+# Define rules for a given long test for a given arch
+#
+define LONG_RULE
+#$(1) CONFIG
+#$(2) APP
+
+long-$(1)-$(2)-configure: long/$(2)/Makefile
+long-$(1)-$(2)-install: long-$(1)-$(2)-build
+	cd $(ARCH_DIR)/long/$(1)/$(2) && $(MAKE) -f $(TOP_DIR)/long/$(2)/Makefile install \
+	LONT_DIR=$(LONT_DIR) ODP_TOOLCHAIN_DIR=$(K1ST_DIR)/ ODP_ARCH=$(1)
+
+long-$(1)-$(2)-valid: long-$(1)-$(2)-build extra-install
+	cd $(ARCH_DIR)/long/$(1)/$(2) && $(MAKE) -f $(TOP_DIR)/long/$(2)/Makefile valid \
+	LONT_DIR=$(LONT_DIR) ODP_TOOLCHAIN_DIR=$(K1ST_DIR)/ ODP_ARCH=$(1)
+
+long-$(1)-$(2)-build: long-$(1)-$(2)-configure
+	mkdir -p $(ARCH_DIR)/long/$(1)/$(2)
+	cd $(ARCH_DIR)/long/$(1)/$(2) && $(MAKE) -f $(TOP_DIR)/long/$(2)/Makefile \
+	LONT_DIR=$(LONT_DIR) ODP_TOOLCHAIN_DIR=$(K1ST_DIR)/ ODP_ARCH=$(1) all
+
+long-$(1)-$(2)-clean:
+	rm -Rf $(ARCH_DIR)/long/$(1)/$(2)
+endef
+
+#
+# Define rules for a given all long test for a given arch
+#
+define LONG_CONFIG_RULE
+#$(1) CONFIG
+
+long-$(1)-configure:
+long-$(1)-install: $(foreach APP, $(LONGS), long-$(1)-$(APP)-install)
+	( \
+	  echo '# Generated test file'; \
+	  echo 'SET(ENV{LD_LIBRARY_PATH} ../lib/host/:$$$$ENV{LD_LIBRARY_PATH})'; \
+	  echo 'SET(ENV{PATH} ./:$$$$ENV{PATH})'; \
+	  for test in $(LONGS); do \
+		  echo "SUBDIRS($$$$test)"; \
+	  done \
+	 ) > $(LONT_DIR)/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME)/CTestTestfile.cmake
+
+long-$(1)-valid: $(foreach APP, $(LONGS), long-$(1)-$(APP)-install) extra-install
+	cd $(LONT_DIR)/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME) && ctest -L $(if $(findstring simu,$(1)),sim,jtag)
+
+long-$(1)-build: $(foreach APP, $(LONGS), long-$(1)-$(APP)-build)
+
+long-$(1)-clean: $(foreach APP, $(LONGS), long-$(1)-$(APP)-clean)
+	rm -Rf $(ARCH_DIR)/long/$(1)
+
+$(foreach APP, $(LONGS), $(eval $(call LONG_RULE,$(1),$(APP))))
 endef
 
 #
