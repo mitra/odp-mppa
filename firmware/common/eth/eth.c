@@ -273,15 +273,6 @@ odp_rpc_cmd_ack_t  eth_close(unsigned remoteClus, odp_rpc_t *msg)
 
 static void eth_init(void)
 {
-	/* "MATCH_ALL" Rule */
-	mppabeth_lb_cfg_rule((void *)&(mppa_ethernet[0]->lb),
-			     ETH_MATCHALL_TABLE_ID, ETH_MATCHALL_RULE_ID,
-			     /* offset */ 0, /* Cmp Mask */0,
-			     /* Espected Value */ 0, /* Hash. Unused */0);
-
-	mppabeth_lb_cfg_extract_table_mode((void *)&(mppa_ethernet[0]->lb),
-					   ETH_MATCHALL_TABLE_ID, /* Priority */ 0,
-					   MPPABETHLB_DISPATCH_POLICY_RR);
 	for (int eth_if = 0; eth_if < N_ETH_LANE; ++eth_if) {
 		_eth_status_init(&status[eth_if]);
 

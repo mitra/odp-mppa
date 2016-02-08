@@ -361,15 +361,18 @@ int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id)
 	if (status[eth_if].cluster[remoteClus].rx_enabled) {
 		/* Configure dispatcher so that the defaulat "MATCH ALL" also
 		 * sends packet to our cluster */
-		mppabeth_lb_cfg_table_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
-							  ETH_MATCHALL_TABLE_ID,
-							  eth_if, noc_if - 4, tx_id,
-							  (1 << ETH_DEFAULT_CTX));
+		mppabeth_lb_cfg_default_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
+							    eth_if, noc_if - 4, tx_id,
+							    (1 << ETH_DEFAULT_CTX));
 	}
 
 	status[eth_if].cluster[remoteClus].enabled = 1;
-	/* if (!status[eth_if].enabled_refcount) */
-	/* 	//FIXME */
+	if (!status[eth_if].enabled_refcount) {
+		mppabeth_lb_cfg_default_dispatch_policy((void *)&(mppa_ethernet[0]->lb),
+							eth_if,
+							MPPABETHLB_DISPATCH_DEFAULT_POLICY_RR);
+	}
+
 
 	status[eth_if].enabled_refcount++;
 
@@ -390,13 +393,15 @@ int ethtool_disable_cluster(unsigned remoteClus, unsigned if_id)
 	status[eth_if].enabled_refcount--;
 
 	if (status[eth_if].cluster[remoteClus].rx_enabled) {
-		mppabeth_lb_cfg_table_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
-							  ETH_MATCHALL_TABLE_ID, eth_if,
-							  noc_if - ETH_BASE_TX,tx_id, 0);
+		mppabeth_lb_cfg_default_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
+							    eth_if, noc_if - ETH_BASE_TX,tx_id, 0);
 	}
 
-	/* if (!status[eth_if].enabled_refcount) */
-	/* 	//FIXME */
+	if (!status[eth_if].enabled_refcount) {
+		mppabeth_lb_cfg_default_dispatch_policy((void *)&(mppa_ethernet[0]->lb),
+							eth_if,
+							MPPABETHLB_DISPATCH_DEFAULT_POLICY_DROP);
+	}
 
 	return 0;
 }
