@@ -206,6 +206,8 @@ static int cluster_rpc_send_c2c_query(pkt_cluster_t *cluster)
 		cluster->remote.min_rx + 1;
 	cluster->mtu = ack.cmd.c2c_query.mtu;
 	cluster->remote.cnoc_rx = ack.cmd.c2c_query.cnoc_rx;
+	cluster->tx_config.header._.tag = cluster->remote.min_rx;
+
 	return 0;
 }
 
@@ -497,7 +499,6 @@ static int cluster_send(pktio_entry_t *const pktio_entry,
 			odp_spinlock_unlock(&pkt_cluster->wlock);
 			return -1;
 		}
-		pkt_cluster->tx_config.header._.tag = pkt_cluster->remote.min_rx;
 	}
 
 	tx_uc_ctx_t *ctx = c2c_get_ctx(pkt_cluster);
