@@ -431,7 +431,7 @@ static int cluster_recv(pktio_entry_t *const pktio_entry,
 	if (clus->remote.cnoc_rx < 0) {
 		/* We need to sync with the target first */
 		if (cluster_rpc_send_c2c_query(clus)){
-			return -1;
+			return 0;
 		}
 	}
 
