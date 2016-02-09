@@ -6,7 +6,8 @@ define CONFIG_RULE
 cunit-$(1)-configure: $(ARCH_DIR)/cunit/$(1)/Makefile
 
 $(eval ODP_$(1)_DOC_INST := $(K1ST_DIR)/doc/ODP/$($(1)_PLATFORM))
-
+$(eval ODP_$(1)_OS_NAME := $(firstword $(subst _, ,$(1))))
+$(eval ODP_$(1)_BOARD_NAME := $(lastword $(subst _, ,$(1))))
 $(ARCH_DIR)/cunit/$(1)/Makefile: $(TOP_DIR)/cunit/configure
 	mkdir -p $$$$(dirname $$@) && cd $$$$(dirname $$@) && \
 	$($(1)_CONF_ENV) CPPFLAGS="$($(1)_CFLAGS)" LDFLAGS="$($(1)_LDFLAGS) $($(1)_CFLAGS)" \
@@ -33,8 +34,8 @@ $(ARCH_DIR)/odp-debug/$(1)/Makefile: $(TOP_DIR)/configure $(CUNIT_INST_DIR)/$(1)
 	 $$< --host=$(1) --with-platform=$($(1)_PLATFORM) \
 	--with-cunit-path=$(CUNIT_INST_DIR)/$(1)/ --enable-test-vald \
 	--prefix=$(K1ST_DIR) \
-	--datarootdir=$(K1ST_DIR)share/odp/$(1)/ \
-	--libdir=$(K1ST_DIR)lib/$(1) \
+	--datarootdir=$(K1ST_DIR)share/odp-debug/board/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME) \
+	--libdir=$(K1ST_DIR)lib/odp-debug/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME) \
 	--includedir=$(K1ST_DIR)$($(1)_INC_DIR)/include \
 	--enable-test-perf $(DEBUG_FLAGS) $($(1)_CONF_OPTS) --disable-debug-print $(DEBUG_CONF_FLAGS) $(_DEBUG_CONF_FLAGS)
 
@@ -50,8 +51,8 @@ $(ARCH_DIR)/odp/$(1)/Makefile: $(TOP_DIR)/configure $(CUNIT_INST_DIR)/$(1)/lib/l
 	 $$< --host=$(1) --with-platform=$($(1)_PLATFORM) \
 	--with-cunit-path=$(CUNIT_INST_DIR)/$(1)/ --enable-test-vald \
 	--prefix=$(K1ST_DIR) --enable-user-guides \
-	--datarootdir=$(K1ST_DIR)share/odp/$(1)/ \
-	--libdir=$(K1ST_DIR)lib/$(1) \
+	--datarootdir=$(K1ST_DIR)share/odp/board/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME) \
+	--libdir=$(K1ST_DIR)lib/odp/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME) \
 	--includedir=$(K1ST_DIR)$($(1)_INC_DIR)/include \
 	--enable-test-perf $(DEBUG_FLAGS) $($(1)_CONF_OPTS) --disable-debug-print $(DEBUG_CONF_FLAGS)
 

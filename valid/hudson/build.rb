@@ -69,10 +69,13 @@ valid_configs = options["valid-configs"].split()
 valid_type = "sim"
 if ENV["label"].to_s() != "" then
     case ENV["label"]
-    when /MPPADevelopers-ab01b*/, /MPPAEthDevelopers-ab01b*/,
-         /KONIC80Developers*/, /MPPA_KONIC80_Developers*/
-        valid_configs = [ "k1b-kalray-nodeos", "k1b-kalray-mos" ]
+    when /MPPADevelopers-ab01b*/, /MPPAEthDevelopers-ab01b*/
+        valid_configs = [ "k1b-kalray-nodeos_developer", "k1b-kalray-mos_developer" ]
         valid_type = "jtag"
+    when /KONIC80Developers*/, /MPPA_KONIC80_Developers*/
+        valid_configs = [ "k1b-kalray-nodeos_konic80", "k1b-kalray-mos_konic80" ]
+        valid_type = "jtag"
+
     when "fedora19-64","debian6-64","debian7-64", /MPPADevelopers*/, /MPPAEthDevelopers*/
         # Validate nothing.
         valid_configs = [ ]
@@ -172,7 +175,7 @@ b.target("package") do
     cd odp_path
 
     b.run(:cmd => "cd install/; tar cf ../odp.tar local/k1tools/lib/ local/k1tools/share/odp/firmware local/k1tools/share/odp/build/ local/k1tools/share/odp/skel/ local/k1tools/k1*/include local/k1tools/doc/ local/k1tools/lib64", :env => env)
-    b.run(:cmd => "cd install/; tar cf ../odp-tests.tar local/k1tools/share/odp/*/tests local/k1tools/share/odp/*/examples", :env => env)
+    b.run(:cmd => "cd install/; tar cf ../odp-tests.tar local/k1tools/share/board local/k1tools/share/odp/*/examples", :env => env)
     b.run(:cmd => "cd install/; tar cf ../odp-apps-internal.tar local/k1tools/share/odp/apps", :env => env)
     b.run(:cmd => "cd install/; tar cf ../odp-cunit.tar local/k1tools/kalray_internal/cunit", :env => env)
 
