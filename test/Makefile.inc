@@ -33,4 +33,20 @@ install-exec-local:
 		echo "$$(echo $(subst $(top_srcdir)/,,$(srcdir)) | sed -e 's/[a-zA-Z0-9]*/../g')/../../ktest-wrapper.sh $${test}"; \
 	  done) > $(bindir)/runtests.sh
 	chmod +x $(bindir)/runtests.sh
+	( \
+	  echo '# Generated test file'; \
+	  echo 'SET(ENV{LD_LIBRARY_PATH} ../lib/host/:$$ENV{LD_LIBRARY_PATH})'; \
+	  echo 'SET(ENV{PATH} ./:$$ENV{PATH})'; \
+	  for env in $(TESTS_ENVIRONMENT); do \
+	  	  var=$$(echo $$env | sed -e 's/=.*$$//'); \
+	  	  value=$$(echo $$env | sed -e 's/^[A-Z0-0_a-z]*=//'); \
+	  	  echo "SET(ENV{$$var} $$value)"; \
+	  done; \
+	  for test in $(TESTS); do \
+	  	  test_name=$$(basename $$test); \
+		  echo "ADD_TEST($$test_name $$(echo $(subst $(top_srcdir)/,,$(srcdir)) | sed -e 's/[a-zA-Z0-9]*/../g')/../../ktest-wrapper.sh $${test})"; \
+		  echo 'SET_TESTS_PROPERTIES($$test_name PROPERTIES TIMEOUT "400")'; \
+		  echo 'SET_TESTS_PROPERTIES($$test_name PROPERTIES COST "0")';\
+	  done \
+	 ) > $(bindir)/CTestTestfile.cmake
 
