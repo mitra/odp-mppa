@@ -158,9 +158,20 @@ b.target("valid-packages") do
         board=conf.split("_")[1]
         platform=conf.split("_")[0]
         cd File.join(ENV["K1_TOOLCHAIN_DIR"], "share/odp/tests", board,
-                     platform)
-        b.run(:cmd => "./platform/mppa/test/runtests.sh")
-        b.run(:cmd => "./test/performance/runtests.sh")
+                     platform, "platform/mppa/test")
+        b.ctest( {
+                     :ctest_args => "",
+                     :fail_msg => "Failed to validate #{conf}",
+                     :success_msg => "Successfully validated #{conf}"
+                 })
+
+        cd File.join(ENV["K1_TOOLCHAIN_DIR"], "share/odp/tests", board,
+                     platform, "test/performance")
+        b.ctest( {
+                     :ctest_args => "",
+                     :fail_msg => "Failed to validate #{conf}",
+                     :success_msg => "Successfully validated #{conf}"
+                 })
     }
 end
 
