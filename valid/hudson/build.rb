@@ -157,21 +157,15 @@ b.target("valid-packages") do
     valid_configs.each(){|conf|
         board=conf.split("_")[1]
         platform=conf.split("_")[0]
-        cd File.join(ENV["K1_TOOLCHAIN_DIR"], "share/odp/tests", board,
-                     platform, "platform/mppa/test")
-        b.ctest( {
-                     :ctest_args => "",
-                     :fail_msg => "Failed to validate #{conf}",
-                     :success_msg => "Successfully validated #{conf}"
-                 })
-
-        cd File.join(ENV["K1_TOOLCHAIN_DIR"], "share/odp/tests", board,
-                     platform, "test/performance")
-        b.ctest( {
-                     :ctest_args => "",
-                     :fail_msg => "Failed to validate #{conf}",
-                     :success_msg => "Successfully validated #{conf}"
-                 })
+        [ "platform/mppa/test", "test/performance", "helper/test"].each(){|dir|
+            cd File.join(ENV["K1_TOOLCHAIN_DIR"], "share/odp/tests", board,
+                         platform, dir)
+            b.ctest( {
+                         :ctest_args => "",
+                         :fail_msg => "Failed to validate #{conf}",
+                         :success_msg => "Successfully validated #{conf}"
+                     })
+        }
     }
 end
 
