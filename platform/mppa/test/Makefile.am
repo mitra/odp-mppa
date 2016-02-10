@@ -1,12 +1,11 @@
 include $(top_srcdir)/test/Makefile.inc
-bindir      = $(datarootdir)/tests/platform/
 
 TESTS_ENVIRONMENT += TEST_DIR=${top_builddir}/test/validation
 
 ODP_MODULES = pktio
 
 if test_vald
-TESTS = pktio/pktio_run \
+TESTS =  pktio/pktio_run \
 	${top_builddir}/test/validation/buffer/buffer_main$(EXEEXT) \
 	${top_builddir}/test/validation/classification/classification_main$(EXEEXT) \
 	${top_builddir}/test/validation/cpumask/cpumask_main$(EXEEXT) \
@@ -33,7 +32,6 @@ endif
 endif
 
 endif
-
 if test_perf
 SUBDIRS = pktio
 endif

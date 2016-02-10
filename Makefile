@@ -84,7 +84,7 @@ extra-clean:
 extra-configure:
 extra-build: $(INST_DIR)/lib64/libodp_syscall.so
 extra-valid:
-extra-install: $(INST_DIR)/lib64/libodp_syscall.so $(K1ST_DIR)/share/odp/build/mk/platforms.inc $(K1ST_DIR)/share/odp/build/apps/Makefile.apps template-install
+extra-install: $(INST_DIR)/lib64/libodp_syscall.so $(K1ST_DIR)/share/odp/build/mk/platforms.inc $(K1ST_DIR)/share/odp/build/apps/Makefile.apps $(K1ST_DIR)/share/odp/tests/ktest-wrapper.sh template-install
 extra-long:
 
 $(INST_DIR)/lib64/libodp_syscall.so: $(TOP_DIR)/syscall/run.sh
@@ -98,6 +98,8 @@ $(patsubst %, $(K1ST_DIR)/share/odp/build/%, $(FIRMWARE_FILES)):  $(K1ST_DIR)/sh
 	install -D $< $@
 template-install: $(patsubst apps/skel/%, $(K1ST_DIR)/share/odp/skel/%, $(TEMPLATE_FILES))
 $(patsubst apps/skel/%, $(K1ST_DIR)/share/odp/skel/%, $(TEMPLATE_FILES)): $(K1ST_DIR)/share/odp/skel/%: apps/skel/%
+	install -D $< $@
+$(K1ST_DIR)/share/odp/tests/ktest-wrapper.sh: ktest-wrapper.sh
 	install -D $< $@
 #
 # Generate rule wrappers that pull all CONFIGS for a given (firmware/Arch componen)|RULE

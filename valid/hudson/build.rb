@@ -41,6 +41,7 @@ local_valid = options["local-valid"]
 clean = Target.new("clean", repo, [])
 build = ParallelTarget.new("build", repo, [])
 valid = ParallelTarget.new("valid", repo, [build])
+valid_packages = ParallelTarget.new("valid-packages", repo, [])
 
 long = nil
 apps = nil
@@ -56,7 +57,8 @@ end
 dkms = Target.new("dkms", repo, [])
 package = Target.new("package", repo, [install, apps])
 
-b = Builder.new("odp", options, [clean, build, valid, long, apps, dkms, package, install])
+b = Builder.new("odp", options, [clean, build, valid, valid_packages,
+                                 long, apps, dkms, package, install])
 
 b.logsession = "odp"
 
@@ -148,6 +150,20 @@ b.target("long") do
     }
 end
 
+
+b.target("valid-packages") do
+    b.logtitle = "Report for odp tests."
+
+    valid_configs.each(){|conf|
+        board=conf.split("_")[1]
+        platform=conf.split("_")[0]
+        cd File.join(ENV["K1_TOOLCHAIN_DIR"], "share/odp/tests", board,
+                     platform)
+        b.run(:cmd => "./platform/mppa/test/runtests.sh")
+        b.run(:cmd => "./test/performance/runtests.sh")
+    }
+end
+
 b.target("apps") do
     b.logtitle = "Report for odp apps."
     cd odp_path
@@ -175,7 +191,7 @@ b.target("package") do
     cd odp_path
 
     b.run(:cmd => "cd install/; tar cf ../odp.tar local/k1tools/lib/ local/k1tools/share/odp/firmware local/k1tools/share/odp/build/ local/k1tools/share/odp/skel/ local/k1tools/k1*/include local/k1tools/doc/ local/k1tools/lib64", :env => env)
-    b.run(:cmd => "cd install/; tar cf ../odp-tests.tar local/k1tools/share/board local/k1tools/share/odp/*/examples", :env => env)
+    b.run(:cmd => "cd install/; tar cf ../odp-tests.tar local/k1tools/share/odp/tests", :env => env)
     b.run(:cmd => "cd install/; tar cf ../odp-apps-internal.tar local/k1tools/share/odp/apps", :env => env)
     b.run(:cmd => "cd install/; tar cf ../odp-cunit.tar local/k1tools/kalray_internal/cunit", :env => env)
 

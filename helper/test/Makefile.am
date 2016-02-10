@@ -1,5 +1,4 @@
 include $(top_srcdir)/test/Makefile.inc
-bindir      = $(datarootdir)/tests/helpers/
 
 AM_CFLAGS += -I$(srcdir)/common
 AM_LDFLAGS += -static

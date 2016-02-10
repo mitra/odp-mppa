@@ -1,4 +1,4 @@
-include ../../../../test/validation/Makefile.inc
+include $(top_srcdir)/test/validation/Makefile.inc
 
 dist_bin_SCRIPTS = pktio_run \
 	pktio_env
