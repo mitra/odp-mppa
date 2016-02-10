@@ -7,7 +7,6 @@ TESTS_ENVIRONMENT += TEST_DIR=${builddir}
 
 EXECUTABLES = odp_chksum$(EXEEXT) \
               odp_thread$(EXEEXT) \
-              odp_process$(EXEEXT)\
               odph_pause$(EXEEXT)\
               odp_table$(EXEEXT)
 
