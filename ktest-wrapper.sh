@@ -34,7 +34,9 @@ case "$RUN_TARGET" in
 		exec k1-cluster   --functional --dcache-no-check  --mboard=developer --march=bostan  --user-syscall=${TOP_SRCDIR}/syscall/build_x86_64/libodp_syscall.so -- $ELF $*
 		;;
 	*)
-		echo ${ELF} $*
+		KTEST=$(readlink -e $0)
+		export TARGET_RUNNER=$KTEST
+		echo TARGET_RUNNER=$KTEST ${ELF} $*
 		exec ${ELF} $*
 esac
 
