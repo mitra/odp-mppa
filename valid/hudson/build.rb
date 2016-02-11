@@ -39,13 +39,13 @@ local_valid = options["local-valid"]
 
 clean = Target.new("clean", repo, [])
 build = ParallelTarget.new("build", repo, [])
+install = Target.new("install", repo, [build])
 valid = ParallelTarget.new("valid", repo, [install])
 valid_packages = ParallelTarget.new("valid-packages", repo, [])
 
 long = nil
 apps = nil
 
-install = Target.new("install", repo, [build])
 if local_valid then
         long = Target.new("long", repo, [install])
         apps = Target.new("apps", repo, [install])
