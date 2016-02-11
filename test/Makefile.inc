@@ -42,7 +42,7 @@ install-exec-local:
 	  	  value=$$(echo $$env | sed -e 's/^[A-Z0-0_a-z]*=//'); \
 	  	  echo "SET(ENV{$$var} $$value)"; \
 	  done; \
-	  echo 'SET(ENV{ODP_TOOLCHAIN_DIR} ./:$$ENV{K1_TOOLCHAIN_DIR})'; \
+	  echo 'SET(ENV{ODP_TOOLCHAIN_DIR} $$ENV{K1_TOOLCHAIN_DIR})'; \
 	  for test in $(TESTS); do \
 	  	  test_name=$$(basename $$test); \
 		  echo "ADD_TEST($$test_name $$(echo $(subst $(top_srcdir)/,,$(srcdir)) | sed -e 's/[a-zA-Z0-9]*/../g')/../../ktest-wrapper.sh $${test})"; \
