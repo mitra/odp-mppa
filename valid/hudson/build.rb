@@ -40,7 +40,7 @@ local_valid = options["local-valid"]
 
 clean = Target.new("clean", repo, [])
 build = ParallelTarget.new("build", repo, [])
-valid = ParallelTarget.new("valid", repo, [build])
+valid = ParallelTarget.new("valid", repo, [install])
 valid_packages = ParallelTarget.new("valid-packages", repo, [])
 
 long = nil
