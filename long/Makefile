@@ -61,7 +61,7 @@ endif
 
 # Empty direct assignement to allows += to work in included Makefiles
 io-bin := $(IOPCIE_ELF) $(IOUNIFIED_ELF)
-mppa-bin :=
+mppa-bin =
 cluster-bin :=
 cluster-tests :=
 mppa-tests :=
@@ -72,7 +72,9 @@ build: all
 install: all
 		 @if [ "$(LONT_DIR)" == "" ]; then echo "ERROR: LONT_DIR" not set; exit 1; fi
 		 mkdir -p $(LONT_DIR)/$(OS_BOARD_NAME)/$(OS_PLAT_NAME)/$(TEST_NAME)
-		 install $$(find output/bin/ -type f) $(addprefix $(APP_DIR)/,$($(TEST_NAME)-scripts)) $($(TEST_NAME)-extras) $(LONT_DIR)/$(OS_BOARD_NAME)/$(OS_PLAT_NAME)/$(TEST_NAME)
+		 install $(addprefix $(DIR)/,$($(TEST_NAME)-scripts)) $(addprefix output/bin/, $($(TEST_NAME)-multibinary) CTestTestfile.cmake DartConfiguration.tcl) $($(TEST_NAME)-extras) $(LONT_DIR)/$(OS_BOARD_NAME)/$(OS_PLAT_NAME)/$(TEST_NAME)
+		k1-multibin-util -f $(LONT_DIR)/$(OS_BOARD_NAME)/$(OS_PLAT_NAME)/$(TEST_NAME)/$($(TEST_NAME)-multibinary) -a --foreach="k1-strip {}"
+
 
 
 valid: install
