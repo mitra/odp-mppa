@@ -21,7 +21,7 @@ AM_LDFLAGS += -L$(LIB)
 @VALGRIND_CHECK_RULES@
 valgrind_tools = memcheck drd sgcheck
 
-TESTS_ENVIRONMENT+= ODP_PLATFORM=${with_platform} EXEEXT=${EXEEXT}
+TESTS_ENVIRONMENT+= ODP_PLATFORM=${with_platform} EXEEXT=${EXEEXT} ODP_TOOLCHAIN_DIR=${top_srcdir}/install/local/k1tools
 bindir      = $(datarootdir)/$(subst $(top_srcdir)/,,$(srcdir))
 
 install-exec-local:
@@ -42,6 +42,7 @@ install-exec-local:
 	  	  value=$$(echo $$env | sed -e 's/^[A-Z0-0_a-z]*=//'); \
 	  	  echo "SET(ENV{$$var} $$value)"; \
 	  done; \
+	  echo 'SET(ENV{ODP_TOOLCHAIN_DIR} ./:$$ENV{K1_TOOLCHAIN_DIR})'; \
 	  for test in $(TESTS); do \
 	  	  test_name=$$(basename $$test); \
 		  echo "ADD_TEST($$test_name $$(echo $(subst $(top_srcdir)/,,$(srcdir)) | sed -e 's/[a-zA-Z0-9]*/../g')/../../ktest-wrapper.sh $${test})"; \
