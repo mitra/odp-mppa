@@ -9,7 +9,6 @@ CONFIGS = `make list-configs`.split(" ").inject({}){|x, c| x.merge({ c => {} })}
 options = Options.new({ "k1tools"       => [ENV["K1_TOOLCHAIN_DIR"].to_s,"Path to a valid compiler prefix."],
                         "debug"         => {"type" => "boolean", "default" => false, "help" => "Debug mode." },
                         "list-configs"  => {"type" => "boolean", "default" => false, "help" => "List all targets" },
-                        "local-valid"   => {"type" => "boolean", "default" => false, "help" => "Valid using the local installation" },
                         "configs"       => {"type" => "string", "default" => CONFIGS.keys.join(" "), "help" => "Build configs. Default = #{CONFIGS.keys.join(" ")}" },
                         "valid-configs" => {"type" => "string", "default" => CONFIGS.keys.join(" "), "help" => "Build configs. Default = #{CONFIGS.keys.join(" ")}" },
                         "output-dir"    => [nil, "Output directory for RPMs."],
@@ -133,12 +132,7 @@ b.target("long") do
     b.logtitle = "Report for odp tests."
     cd odp_path
 
-    make_opt = ""
-    if not local_valid then
-        make_opt = "USE_PACKAGES=1"
-    end
-
-    b.run(:cmd => "make long-build #{make_opt} LONG_CONFIGS='#{valid_configs.join(" ")}'")
+    b.run(:cmd => "make long-build LONG_CONFIGS='#{valid_configs.join(" ")}'")
 
     valid_configs.each(){|conf|
         board=conf.split("_")[1]
@@ -176,12 +170,7 @@ b.target("apps") do
     b.logtitle = "Report for odp apps."
     cd odp_path
 
-    make_opt = ""
-    if not local_valid then
-        make_opt = "USE_PACKAGES=1"
-    end
-
-    b.run(:cmd => "make apps-install #{make_opt}")
+    b.run(:cmd => "make apps-install")
 
 end
 
