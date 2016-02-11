@@ -5,9 +5,10 @@ project-name := odp
 LONG_DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 ODP_SRC_DIR ?= $(LONG_DIR)/..
 ODP_ARCH ?= k1b-kalray-nodeos_developer
+ODP_TOOLCHAIN_DIR ?= $(K1_TOOLCHAIN_DIR)
+include $(ODP_TOOLCHAIN_DIR)/share/odp/build/mk/platforms.inc
 
-include $(ODP_SRC_DIR)/mk/platforms.inc
-
+INCLUDE_DIR=$($(ODP_ARCH)_INC_DIR)
 # Kalray internal system name
 SYSTEM_NAME = $(subst -kalray,,$(ODP_ARCH))
 CORE_ARCH = $(firstword $(subst -, ,$(ODP_ARCH)))
@@ -33,8 +34,7 @@ arch = $(CORE_ARCH)
 board = $(BOARD_NAME)
 
 cflags := -Wall -Werror -Wextra
-BOARD_EXT := $(if $(findstring explorer,$(BOARD_NAME)),_explorer,)$(if $(findstring simu,$(OS_BOARD_NAME)),_simu,)$(if $(findstring _konic80,$(OS_BOARD_NAME)),_konic80,)
-INCLUDE_DIR=$($(ODP_ARCH)_INC_DIR)
+LIB_NOC_LFLAGS :=  -lmppapower -lmpparouting -lmppanoc
 VALID_TYPE := $(if $(findstring simu,$(OS_BOARD_NAME)),sim,jtag)
 
 ifeq ($(MAKELEVEL),0)
@@ -42,42 +42,10 @@ $(info --- Building for arch $(arch), os $(OS_NAME), board $(BOARD_NAME) ---)
 endif
 
 CUNIT_COMMON_SRC := $(ODP_SRC_DIR)/test/validation/common/odp_cunit_common.c
-LIB_NOC_LFLAGS :=  -lmppapower -lmpparouting -lmppanoc
-ifeq ($(USE_PACKAGES),1)
-  ODP_INSTALL_DIR = $(K1_TOOLCHAIN_DIR)
-  CUNIT_INSTALL_DIR = $(K1_TOOLCHAIN_DIR)/kalray_internal/cunit/$(ODP_ARCH)
-  IOPCIE_ELF := $(ODP_INSTALL_DIR)/share/odp/firmware/$(OS_BOARD_NAME)/$(CORE_ARCH)/iopcie.kelf
-  IOUNIFIED_ELF := $(ODP_INSTALL_DIR)/share/odp/firmware/$(OS_BOARD_NAME)/$(CORE_ARCH)/iounified.kelf
-else
-  ODP_INSTALL_DIR = $(ODP_SRC_DIR)/install/local/k1tools/
-  CUNIT_INSTALL_DIR = $(ODP_SRC_DIR)/install/local/k1tools/kalray_internal/cunit/$(ODP_ARCH)/
-
-  # Build the ioddr boot firmware to avoid additionnal build/install steps...
-  INCLUDING_FIRMWARE := 1
-  include $(ODP_SRC_DIR)/firmware/iopcie/Makefile
-  iopcie-srcs := $(SRCFILES)
-  iopcie-system := bare
-  iopcie-lflags := $($(CORE_ARCH)-kalray-ioddr$(BOARD_EXT)_LDFLAGS) $(_LDFLAGS)
-  iopcie-cflags := $($(CORE_ARCH)-kalray-ioddr$(BOARD_EXT)_CFLAGS) $(_CFLAGS)
-  IOPCIE_ELF := iopcie
-
-
-  _CFLAGS :=
-  _LDFLAGS :=
-  SRCFILES :=
-  HDRFILES :=
-  OBJFILES :=
-  include $(ODP_SRC_DIR)/firmware/iounified/Makefile
-  iounified-srcs := $(SRCFILES)
-  iounified-system := bare
-  iounified-lflags := $($(CORE_ARCH)-kalray-ioddr$(BOARD_EXT)_LDFLAGS) $(_LDFLAGS)
-  iounified-cflags := $($(CORE_ARCH)-kalray-ioddr$(BOARD_EXT)_CFLAGS) $(_CFLAGS)
-  IOUNIFIED_ELF := iounified
-
-endif
-
-cluster-cflags := -I$(ODP_INSTALL_DIR)/$(INCLUDE_DIR)/include -I$(CUNIT_INSTALL_DIR)/include
-cluster-lflags := -L$(ODP_INSTALL_DIR)/lib/odp/$(OS_BOARD_NAME)/$(OS_PLAT_NAME)/ -L$(CUNIT_INSTALL_DIR)/lib/
+CUNIT_INSTALL_DIR = $(ODP_TOOLCHAIN_DIR)/kalray_internal/cunit/$(ODP_ARCH)
+IOPCIE_ELF := $(ODP_TOOLCHAIN_DIR)/share/odp/firmware/$(OS_BOARD_NAME)/$(CORE_ARCH)/iopcie.kelf
+cluster-cflags := -I$(ODP_TOOLCHAIN_DIR)/$(INCLUDE_DIR)/include -I$(CUNIT_INSTALL_DIR)/include
+cluster-lflags := -L$(ODP_TOOLCHAIN_DIR)/lib/odp/$(OS_BOARD_NAME)/$(OS_PLAT_NAME)/ -L$(CUNIT_INSTALL_DIR)/lib/
 
 cluster-cflags += -I$(ODP_SRC_DIR)/test/validation/common/ -I$(LONG_DIR)/include $($(ODP_ARCH)_CFLAGS) -g3
 cluster-lflags += -lodphelper -lodp -lcunit -lcrypto  $(LIB_NOC_LFLAGS) $($(ODP_ARCH)_LDFLAGS) -Wl,--gc-sections
@@ -85,8 +53,11 @@ cluster-lflags += -lodphelper -lodp -lcunit -lcrypto  $(LIB_NOC_LFLAGS) $($(ODP_
 $(IOPCIE_ELF)-nameinmpk = iopcie
 IOPCIE_NAME := iopcie
 
+ifneq ($(BOARD_NAME),explorer)
+IOUNIFIED_ELF := $(ODP_TOOLCHAIN_DIR)/share/odp/firmware/$(OS_BOARD_NAME)/$(CORE_ARCH)/iounified.kelf
 $(IOUNIFIED_ELF)-nameinmpk = iounified
 IOUNIFIED_NAME := iounified
+endif
 
 # Empty direct assignement to allows += to work in included Makefiles
 io-bin := $(IOPCIE_ELF) $(IOUNIFIED_ELF)
