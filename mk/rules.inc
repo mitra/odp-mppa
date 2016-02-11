@@ -81,7 +81,7 @@ odp-$(1)-install-doc: odp-$(1)-build
 
 odp-$(1)-install: odp-$(1)-install-lib odp-$(1)-install-doc
 
-odp-$(1)-valid: odp-$(1)-build $(INST_DIR)/lib64/libodp_syscall.so
+odp-$(1)-valid: odp-$(1)-build extra-install firmware-install
 	$(MAKE) -C$(ARCH_DIR)/odp/$(1)/test/validation $($(1)_MAKE_VALID) check
 	$(MAKE) -C$(ARCH_DIR)/odp/$(1)/platform/$($(1)_PLATFORM)/test/ check
 	$(MAKE) -C$(ARCH_DIR)/odp/$(1)/test/performance $($(1)_MAKE_VALID) check
