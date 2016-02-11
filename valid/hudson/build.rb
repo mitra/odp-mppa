@@ -28,10 +28,10 @@ odp_path   = File.join(workspace,odp_clone)
 
 k1tools = options["k1tools"]
 
-env = {}
-env["K1_TOOLCHAIN_DIR"] = k1tools
-env["PATH"] = "#{k1tools}/bin:#{ENV["PATH"]}"
-env["LD_LIBRARY_PATH"] = "#{k1tools}/lib:#{k1tools}/lib64:#{ENV["LD_LIBRARY_PATH"]}"
+$env = {}
+$env["K1_TOOLCHAIN_DIR"] = k1tools
+$env["PATH"] = "#{k1tools}/bin:#{ENV["PATH"]}"
+$env["LD_LIBRARY_PATH"] = "#{k1tools}/lib:#{k1tools}/lib64:#{ENV["LD_LIBRARY_PATH"]}"
 
 repo = Git.new(odp_clone,workspace)
 
@@ -193,10 +193,10 @@ b.target("package") do
     b.logtitle = "Report for odp package."
     cd odp_path
 
-    b.run(:cmd => "cd install/; tar cf ../odp.tar local/k1tools/lib/ local/k1tools/share/odp/firmware local/k1tools/share/odp/build/ local/k1tools/share/odp/skel/ local/k1tools/k1*/include local/k1tools/doc/ local/k1tools/lib64", :env => env)
-    b.run(:cmd => "cd install/; tar cf ../odp-tests.tar local/k1tools/share/odp/tests local/k1tools/share/odp/long", :env => env)
-    b.run(:cmd => "cd install/; tar cf ../odp-apps-internal.tar local/k1tools/share/odp/apps", :env => env)
-    b.run(:cmd => "cd install/; tar cf ../odp-cunit.tar local/k1tools/kalray_internal/cunit", :env => env)
+    b.run(:cmd => "cd install/; tar cf ../odp.tar local/k1tools/lib/ local/k1tools/share/odp/firmware local/k1tools/share/odp/build/ local/k1tools/share/odp/skel/ local/k1tools/k1*/include local/k1tools/doc/ local/k1tools/lib64", :env => $env)
+    b.run(:cmd => "cd install/; tar cf ../odp-tests.tar local/k1tools/share/odp/tests local/k1tools/share/odp/long", :env => $env)
+    b.run(:cmd => "cd install/; tar cf ../odp-apps-internal.tar local/k1tools/share/odp/apps", :env => $env)
+    b.run(:cmd => "cd install/; tar cf ../odp-cunit.tar local/k1tools/kalray_internal/cunit", :env => $env)
 
     (version,releaseID,sha1) = repo.describe()
     release_info = b.release_info(version,releaseID,sha1)
@@ -262,7 +262,7 @@ b.target("clean") do
     b.logtitle = "Report for odp clean."
 
     cd odp_path
-    b.run(:cmd => "make clean", :env => env)
+    b.run(:cmd => "make clean", :env => $env)
 end
 
 b.target("dkms") do
