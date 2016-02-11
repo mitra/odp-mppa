@@ -125,6 +125,12 @@ k1b-kalray-ioddr_developer_LDFLAGS     :=
 k1b-kalray-ioddr_developer_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/developer/k1b
 iopcie_CONFIGS += k1b-kalray-ioddr_developer
 
+k1b-kalray-ioddr_konic80_CC          := k1-gcc
+k1b-kalray-ioddr_konic80_CFLAGS      := -march=k1b -mos=bare -mcore=k1bio -mcluster=ioddr -mprocessing=single -mboard=konic80
+k1b-kalray-ioddr_konic80_LDFLAGS     :=
+k1b-kalray-ioddr_konic80_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/konic80/k1b
+iopcie_CONFIGS += k1b-kalray-ioddr_konic80
+
 k1b-kalray-ioddr_simu_CC          := k1-gcc
 k1b-kalray-ioddr_simu_CFLAGS      := -march=k1b -mos=bare -mcore=k1bio -mcluster=ioddr -mprocessing=single -DMAGIC_SCALL
 k1b-kalray-ioddr_simu_LDFLAGS     :=
