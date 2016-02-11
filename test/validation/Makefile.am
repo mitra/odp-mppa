@@ -1,7 +1,5 @@
 include $(top_srcdir)/test/Makefile.inc
 
-bindir      = $(datarootdir)/tests/validation/
-
 ODP_MODULES = buffer \
 	      classification \
 	      config \
