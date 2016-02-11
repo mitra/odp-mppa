@@ -49,4 +49,9 @@ install-exec-local:
 		  echo 'SET_TESTS_PROPERTIES($$test_name PROPERTIES COST "0")';\
 	  done \
 	 ) > $(bindir)/CTestTestfile.cmake
+	 ( \
+	   echo 'Name: odp'; \
+	   echo 'BuildName: odp'; \
+	   echo "Site: $$(hostname)" \
+	 ) > $(bindir)/DartConfiguration.tcl
 
