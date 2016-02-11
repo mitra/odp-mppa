@@ -175,3 +175,9 @@ k1b-kalray-netdev-loopback_CFLAGS      := -march=k1b -mos=bare -mcore=k1bio -mcl
 k1b-kalray-netdev-loopback_LDFLAGS     :=
 k1b-kalray-netdev-loopback_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/developer/k1b
 _netdev-loopback_CONFIGS += k1b-kalray-netdev-loopback
+
+k1b-kalray-netdev-loopback_konic80_CC          := k1-gcc
+k1b-kalray-netdev-loopback_konic80_CFLAGS      := -march=k1b -mos=bare -mcore=k1bio -mcluster=ioddr -mprocessing=single
+k1b-kalray-netdev-loopback_konic80_LDFLAGS     :=
+k1b-kalray-netdev-loopback_konic80_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/konic80/k1b
+_netdev-loopback_CONFIGS += k1b-kalray-netdev-loopback_konic80
