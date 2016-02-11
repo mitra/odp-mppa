@@ -46,18 +46,14 @@ valid_packages = ParallelTarget.new("valid-packages", repo, [])
 long = nil
 apps = nil
 
-if local_valid then
-        long = Target.new("long", repo, [install])
-        apps = Target.new("apps", repo, [install])
-else
-        long = Target.new("long", repo, [])
-        apps = Target.new("apps", repo, [])
-end
+long_build = Target.new("long-build", repo, [install])
+apps = Target.new("apps", repo, [install])
+long = Target.new("long", repo, [])
 dkms = Target.new("dkms", repo, [])
-package = Target.new("package", repo, [install, apps])
+package = Target.new("package", repo, [install, apps, long_build])
 
 b = Builder.new("odp", options, [clean, build, valid, valid_packages,
-                                 long, apps, dkms, package, install])
+                                 long_build, long, apps, dkms, package, install])
 
 b.logsession = "odp"
 
@@ -128,21 +124,29 @@ b.target("valid") do
 end
 
 
-b.target("long") do
+b.target("long-build") do
     b.logtitle = "Report for odp tests."
     cd odp_path
 
-    b.run(:cmd => "make long-build LONG_CONFIGS='#{valid_configs.join(" ")}'")
+    b.run(:cmd => "make long-install")
+end
+
+b.target("long") do
+    b.logtitle = "Report for odp tests."
+    cd odp_path
 
     valid_configs.each(){|conf|
         board=conf.split("_")[1]
         platform=conf.split("_")[0]
 
-        cd File.join(odp_path, "install/local/k1tools/share/odp/long/", board, platform)
+        testEnv = $env.merge({ :test_name => "long-#{conf}"})
+
+        cd File.join(ENV["K1_TOOLCHAIN_DIR"], "share/odp/long/", board, platform)
         b.ctest( {
                      :ctest_args => "-L #{valid_type}",
                      :fail_msg => "Failed to validate #{conf}",
-                     :success_msg => "Successfully validated #{conf}"
+                     :success_msg => "Successfully validated #{conf}",
+                     :env => testEnv,
                  })
     }
 end
@@ -157,10 +161,12 @@ b.target("valid-packages") do
         [ "platform/mppa/test", "test/performance", "helper/test"].each(){|dir|
             cd File.join(ENV["K1_TOOLCHAIN_DIR"], "share/odp/tests", board,
                          platform, dir)
-            b.ctest( {
+            testEnv = $env.merge({ :test_name => "valid-#{conf}-#{dir}"})
+           b.ctest( {
                          :ctest_args => "",
                          :fail_msg => "Failed to validate #{conf}",
-                         :success_msg => "Successfully validated #{conf}"
+                         :success_msg => "Successfully validated #{conf}",
+                         :env => testEnv,
                      })
         }
     }
@@ -188,7 +194,7 @@ b.target("package") do
     cd odp_path
 
     b.run(:cmd => "cd install/; tar cf ../odp.tar local/k1tools/lib/ local/k1tools/share/odp/firmware local/k1tools/share/odp/build/ local/k1tools/share/odp/skel/ local/k1tools/k1*/include local/k1tools/doc/ local/k1tools/lib64", :env => env)
-    b.run(:cmd => "cd install/; tar cf ../odp-tests.tar local/k1tools/share/odp/tests", :env => env)
+    b.run(:cmd => "cd install/; tar cf ../odp-tests.tar local/k1tools/share/odp/tests local/k1tools/share/odp/long", :env => env)
     b.run(:cmd => "cd install/; tar cf ../odp-apps-internal.tar local/k1tools/share/odp/apps", :env => env)
     b.run(:cmd => "cd install/; tar cf ../odp-cunit.tar local/k1tools/kalray_internal/cunit", :env => env)
 
