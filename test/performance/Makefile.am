@@ -45,4 +45,4 @@ dist_odp_scheduling_SOURCES = odp_scheduling.c
 dist_odp_pktio_perf_SOURCES = odp_pktio_perf.c
 dist_odp_autoreply_SOURCES  = odp_autoreply.c
 
-EXTRA_DIST = $(TESTSCRIPTS)
+dist_bin_SCRIPTS = $(TESTSCRIPTS)
