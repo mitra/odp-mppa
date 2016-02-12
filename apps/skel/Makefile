@@ -8,8 +8,10 @@ TEST_NAME := TemplateProject
 ####################################
 # Select one of these platforms    #
 ####################################
-ODP_ARCH := k1b-kalray-mos
-#ODP_ARCH := k1b-kalray-nodeos
+#ODP_ARCH := k1b-kalray-mos_developer
+#ODP_ARCH := k1b-kalray-nodeos_developer
+ODP_ARCH := k1b-kalray-mos_konic80
+#ODP_ARCH := k1b-kalray-nodeos_konic80
 #ODP_ARCH := k1b-kalray-mos_simu
 #ODP_ARCH := k1b-kalray-nodeos_simu
 

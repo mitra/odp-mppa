@@ -1,6 +1,7 @@
 DIR := $(dir $(lastword $(MAKEFILE_LIST)))
 TEST_NAME := $(lastword $(subst /, ,$(DIR)))
 
+include $(DIR)/../Makefile 
 $(TEST_NAME)-srcs := $(DIR)/cluster_ping_pong.c
 cluster-bin += $(TEST_NAME)
 
@@ -16,3 +17,4 @@ else
 endif
 $(TEST_NAME)-multibinary := $(TEST_NAME)_multibin.mpk
 mppa-tests += $(TEST_NAME)
+include $(K1_TOOLCHAIN_DIR)/share/make/Makefile.kalray

@@ -13,6 +13,7 @@ ARCH_DIR:= $(TOP_DIR)/build/
 INST_DIR:= $(TOP_DIR)/install
 K1ST_DIR:= $(INST_DIR)/local/k1tools/
 APST_DIR:= $(K1ST_DIR)/share/odp/apps/
+LONT_DIR:= $(K1ST_DIR)/share/odp/long
 CUNIT_INST_DIR:= $(INST_DIR)/local/k1tools/kalray_internal/cunit/
 MAKE_AMS:= $(shell find $(TOP_DIR) -name Makefile.am)
 MAKE_M4S:= $(shell find $(TOP_DIR) -name "*.m4")
@@ -20,7 +21,8 @@ MAKE_DEPS:= $(MAKE_AMS) $(MAKE_M4S) $(TOP_DIR)/Makefile $(wildcard $(TOP_DIR)/mk
 
 FIRMWARES := $(patsubst firmware/%/Makefile, %, $(wildcard firmware/*/Makefile))
 APPS      := $(patsubst apps/%/Makefile, %, $(wildcard apps/*/Makefile))
-RULE_LIST_SERIAL   :=  install valid long
+LONGS     := $(patsubst long/%/Makefile, %, $(wildcard long/*/Makefile))
+RULE_LIST_SERIAL   :=  install valid
 RULE_LIST_PARALLEL := clean configure build
 RULE_LIST := $(RULE_LIST_SERIAL) $(RULE_LIST_PARALLEL)
 ARCH_COMPONENTS := odp cunit
@@ -62,6 +64,12 @@ $(foreach APP, $(APPS), \
 		$(eval $(call APP_RULE,$(APP))))
 
 #
+# Define firmware rules for all firmwares and all their targets
+#
+$(foreach CONFIG, $(_CONFIGS) $(CONFIGS), \
+	$(eval $(call LONG_CONFIG_RULE,$(CONFIG))))
+
+#
 # Documentation rules
 #
 doc-clean:
@@ -84,7 +92,7 @@ extra-clean:
 extra-configure:
 extra-build: $(INST_DIR)/lib64/libodp_syscall.so
 extra-valid:
-extra-install: $(INST_DIR)/lib64/libodp_syscall.so $(K1ST_DIR)/share/odp/build/mk/platforms.inc $(K1ST_DIR)/share/odp/build/apps/Makefile.apps template-install
+extra-install: $(INST_DIR)/lib64/libodp_syscall.so $(K1ST_DIR)/share/odp/build/mk/platforms.inc $(K1ST_DIR)/share/odp/build/apps/Makefile.apps $(K1ST_DIR)/share/odp/tests/ktest-wrapper.sh template-install
 extra-long:
 
 $(INST_DIR)/lib64/libodp_syscall.so: $(TOP_DIR)/syscall/run.sh
@@ -98,6 +106,8 @@ $(patsubst %, $(K1ST_DIR)/share/odp/build/%, $(FIRMWARE_FILES)):  $(K1ST_DIR)/sh
 	install -D $< $@
 template-install: $(patsubst apps/skel/%, $(K1ST_DIR)/share/odp/skel/%, $(TEMPLATE_FILES))
 $(patsubst apps/skel/%, $(K1ST_DIR)/share/odp/skel/%, $(TEMPLATE_FILES)): $(K1ST_DIR)/share/odp/skel/%: apps/skel/%
+	install -D $< $@
+$(K1ST_DIR)/share/odp/tests/ktest-wrapper.sh: ktest-wrapper.sh
 	install -D $< $@
 #
 # Generate rule wrappers that pull all CONFIGS for a given (firmware/Arch componen)|RULE

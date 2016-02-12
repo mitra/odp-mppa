@@ -6,7 +6,8 @@ define CONFIG_RULE
 cunit-$(1)-configure: $(ARCH_DIR)/cunit/$(1)/Makefile
 
 $(eval ODP_$(1)_DOC_INST := $(K1ST_DIR)/doc/ODP/$($(1)_PLATFORM))
-
+$(eval ODP_$(1)_OS_NAME := $(firstword $(subst _, ,$(1))))
+$(eval ODP_$(1)_BOARD_NAME := $(lastword $(subst _, ,$(1))))
 $(ARCH_DIR)/cunit/$(1)/Makefile: $(TOP_DIR)/cunit/configure
 	mkdir -p $$$$(dirname $$@) && cd $$$$(dirname $$@) && \
 	$($(1)_CONF_ENV) CPPFLAGS="$($(1)_CFLAGS)" LDFLAGS="$($(1)_LDFLAGS) $($(1)_CFLAGS)" \
@@ -22,7 +23,6 @@ $(CUNIT_INST_DIR)/$(1)/lib/libcunit.a: $(ARCH_DIR)/cunit/$(1)/CUnit/Sources/.lib
 	$(MAKE) -C$(ARCH_DIR)/cunit/$(1) V=1 install
 
 cunit-$(1)-valid:
-cunit-$(1)-long:
 cunit-$(1)-clean:
 	rm -Rf $(ARCH_DIR)/cunit/$(1) $(CUNIT_INST_DIR)/$(1)
 
@@ -33,8 +33,8 @@ $(ARCH_DIR)/odp-debug/$(1)/Makefile: $(TOP_DIR)/configure $(CUNIT_INST_DIR)/$(1)
 	 $$< --host=$(1) --with-platform=$($(1)_PLATFORM) \
 	--with-cunit-path=$(CUNIT_INST_DIR)/$(1)/ --enable-test-vald \
 	--prefix=$(K1ST_DIR) \
-	--datarootdir=$(K1ST_DIR)share/odp/$(1)/ \
-	--libdir=$(K1ST_DIR)lib/$(1) \
+	--datarootdir=$(K1ST_DIR)share/odp-debug/tests/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME) \
+	--libdir=$(K1ST_DIR)lib/odp-debug/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME) \
 	--includedir=$(K1ST_DIR)$($(1)_INC_DIR)/include \
 	--enable-test-perf $(DEBUG_FLAGS) $($(1)_CONF_OPTS) --disable-debug-print $(DEBUG_CONF_FLAGS) $(_DEBUG_CONF_FLAGS)
 
@@ -50,8 +50,8 @@ $(ARCH_DIR)/odp/$(1)/Makefile: $(TOP_DIR)/configure $(CUNIT_INST_DIR)/$(1)/lib/l
 	 $$< --host=$(1) --with-platform=$($(1)_PLATFORM) \
 	--with-cunit-path=$(CUNIT_INST_DIR)/$(1)/ --enable-test-vald \
 	--prefix=$(K1ST_DIR) --enable-user-guides \
-	--datarootdir=$(K1ST_DIR)share/odp/$(1)/ \
-	--libdir=$(K1ST_DIR)lib/$(1) \
+	--datarootdir=$(K1ST_DIR)share/odp/tests/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME) \
+	--libdir=$(K1ST_DIR)lib/odp/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME) \
 	--includedir=$(K1ST_DIR)$($(1)_INC_DIR)/include \
 	--enable-test-perf $(DEBUG_FLAGS) $($(1)_CONF_OPTS) --disable-debug-print $(DEBUG_CONF_FLAGS)
 
@@ -60,7 +60,7 @@ odp-$(1)-build: $(ARCH_DIR)/odp/$(1)/Makefile
 
 odp-$(1)-install-lib: odp-$(1)-build
 	if [ "$($(1)_INSTALL)" == "true" ]; then \
-		$(MAKE) -C$(ARCH_DIR)/odp/$(1) V=1 install; \
+		$(MAKE) -C$(ARCH_DIR)/odp/$(1) V=1 install-strip; \
 	else true; fi
 
 odp-$(1)-install-doc: odp-$(1)-build
@@ -81,7 +81,7 @@ odp-$(1)-install-doc: odp-$(1)-build
 
 odp-$(1)-install: odp-$(1)-install-lib odp-$(1)-install-doc
 
-odp-$(1)-valid: odp-$(1)-build $(INST_DIR)/lib64/libodp_syscall.so
+odp-$(1)-valid: odp-$(1)-build extra-install firmware-install
 	$(MAKE) -C$(ARCH_DIR)/odp/$(1)/test/validation $($(1)_MAKE_VALID) check
 	$(MAKE) -C$(ARCH_DIR)/odp/$(1)/platform/$($(1)_PLATFORM)/test/ check
 	$(MAKE) -C$(ARCH_DIR)/odp/$(1)/test/performance $($(1)_MAKE_VALID) check
@@ -89,9 +89,6 @@ odp-$(1)-valid: odp-$(1)-build $(INST_DIR)/lib64/libodp_syscall.so
 odp-$(1)-clean:
 	rm -Rf $(ARCH_DIR)/odp/$(1)
 
-odp-$(1)-long:
-	$(error)
-	$(MAKE) -C$(TOP_DIR)/long ODP_ARCH=$(1) O=$(ARCH_DIR)/long/$(1)/
 endef
 
 #
@@ -135,6 +132,10 @@ CHECK_LIST += $(foreach FIRMWARE, $(FIRMWARES), firmware-$(FIRMWARE)-$(1))
 apps-$(1): $(foreach APP, $(APPS), app-$(APP)-$(1))
 CHECK_LIST += $(foreach APP, $(APPS), app-$(APP)-$(1))
 
+long-$(1): $(foreach CONFIG, $(LONG_CONFIGS), long-$(CONFIG)-$(1))
+CHECK_LIST +=  $(foreach CONFIG, $(LONG_CONFIGS), long-$(CONFIG)-$(1))
+CHECK_LIST +=  $(foreach APP, $(LONGS), $(foreach CONFIG, $(LONG_CONFIGS), long-$(CONFIG)-$(APP)-$(1)))
+
 # Generate per config rules (clean/build/etc) for each arch specific component
 $(foreach ARCH_COMPONENT, $(ARCH_COMPONENTS), \
 $(ARCH_COMPONENT)-$(1): $(foreach CONFIG, $(CONFIGS), $(ARCH_COMPONENT)-$(CONFIG)-$(1))
@@ -164,6 +165,59 @@ app-$(1)-build: apps/$(1)/Makefile
 	ODP_TOOLCHAIN_DIR=$(K1ST_DIR)/ all
 app-$(1)-clean:
 	rm -Rf $(ARCH_DIR)/apps/$(1)
+endef
+
+#
+# Define rules for a given long test for a given arch
+#
+define LONG_RULE
+#$(1) CONFIG
+#$(2) APP
+
+long-$(1)-$(2)-configure: long/$(2)/Makefile
+long-$(1)-$(2)-install: long-$(1)-$(2)-build
+	cd $(ARCH_DIR)/long/$(1)/$(2) && $(MAKE) -f $(TOP_DIR)/long/$(2)/Makefile install \
+	LONT_DIR=$(LONT_DIR) ODP_TOOLCHAIN_DIR=$(K1ST_DIR)/ ODP_ARCH=$(1)
+
+long-$(1)-$(2)-valid: long-$(1)-$(2)-build extra-install
+	cd $(ARCH_DIR)/long/$(1)/$(2) && $(MAKE) -f $(TOP_DIR)/long/$(2)/Makefile valid \
+	LONT_DIR=$(LONT_DIR) ODP_TOOLCHAIN_DIR=$(K1ST_DIR)/ ODP_ARCH=$(1)
+
+long-$(1)-$(2)-build: long-$(1)-$(2)-configure
+	mkdir -p $(ARCH_DIR)/long/$(1)/$(2)
+	cd $(ARCH_DIR)/long/$(1)/$(2) && $(MAKE) -f $(TOP_DIR)/long/$(2)/Makefile \
+	LONT_DIR=$(LONT_DIR) ODP_TOOLCHAIN_DIR=$(K1ST_DIR)/ ODP_ARCH=$(1) all
+
+long-$(1)-$(2)-clean:
+	rm -Rf $(ARCH_DIR)/long/$(1)/$(2)
+endef
+
+#
+# Define rules for a given all long test for a given arch
+#
+define LONG_CONFIG_RULE
+#$(1) CONFIG
+
+long-$(1)-configure:
+long-$(1)-install: $(foreach APP, $(LONGS), long-$(1)-$(APP)-install)
+	( \
+	  echo '# Generated test file'; \
+	  echo 'SET(ENV{LD_LIBRARY_PATH} ../lib/host/:$$$$ENV{LD_LIBRARY_PATH})'; \
+	  echo 'SET(ENV{PATH} ./:$$$$ENV{PATH})'; \
+	  for test in $(LONGS); do \
+		  echo "SUBDIRS($$$$test)"; \
+	  done \
+	 ) > $(LONT_DIR)/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME)/CTestTestfile.cmake
+
+long-$(1)-valid: $(foreach APP, $(LONGS), long-$(1)-$(APP)-install) extra-install
+	cd $(LONT_DIR)/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME) && ctest -L $(if $(findstring simu,$(1)),sim,jtag)
+
+long-$(1)-build: $(foreach APP, $(LONGS), long-$(1)-$(APP)-build)
+
+long-$(1)-clean: $(foreach APP, $(LONGS), long-$(1)-$(APP)-clean)
+	rm -Rf $(ARCH_DIR)/long/$(1)
+
+$(foreach APP, $(LONGS), $(eval $(call LONG_RULE,$(1),$(APP))))
 endef
 
 #
