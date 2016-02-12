@@ -220,6 +220,20 @@ typedef union {
 /** @internal Compile time assert */
 _ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_ack_t) == sizeof(odp_rpc_inl_data_t), "ODP_RPC_CMD_ACK_T__SIZE_ERROR");
 
+static inline int odp_rpc_get_cluster_id(int local_if){
+	int reg_cluster_id = __k1_get_cluster_id();
+	int base_cluster_id = (reg_cluster_id / 64 * 64) + (reg_cluster_id % 32);
+
+#ifdef K1B_EXPLORER
+	local_if = local_if % 4;
+#endif
+
+	if (local_if >= 4)
+		return base_cluster_id + 32 + local_if - 4;
+
+	return base_cluster_id + local_if;
+}
+
 static inline int odp_rpc_densify_cluster_id(unsigned cluster_id){
 	if(cluster_id == 128)
 		cluster_id = 16;
