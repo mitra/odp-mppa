@@ -230,6 +230,10 @@ int ethtool_init_lane(unsigned if_id, int loopback)
 				return -1;
 			}
 
+			mppabeth_mac_enable_rx_fcs_deletion((void*)
+							    &(mppa_ethernet[0]->mac));
+			mppabeth_mac_enable_tx_fcs_insertion((void*)
+							     &(mppa_ethernet[0]->mac));
 #ifdef VERBOSE
 			printf("[ETH] Starting MAC for lane %d\n", eth_if);
 #endif
