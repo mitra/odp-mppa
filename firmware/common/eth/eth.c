@@ -79,10 +79,7 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payloa
 
 		}
 	}
-	int externalAddress = __k1_get_cluster_id() + nocIf;
-#ifdef K1B_EXPLORER
-	externalAddress = __k1_get_cluster_id() + (nocIf % 4);
-#endif
+	int externalAddress = odp_rpc_get_cluster_id(nocIf);
 
 	status[eth_if].cluster[remoteClus].rx_enabled = data.rx_enabled;
 	status[eth_if].cluster[remoteClus].tx_enabled = data.tx_enabled;
@@ -116,7 +113,7 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payloa
 	}
 	memset(ack.cmd.eth_open.mac, 0, ETH_ALEN);
 	ack.cmd.eth_open.mac[ETH_ALEN-1] = 1 << eth_if;
-	ack.cmd.eth_open.mac[ETH_ALEN-2] = __k1_get_cluster_id();
+	ack.cmd.eth_open.mac[ETH_ALEN-2] = odp_rpc_get_cluster_id(0);
 
 
 	return ack;

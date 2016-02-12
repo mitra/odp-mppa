@@ -233,15 +233,7 @@ int odp_rpc_send_msg(uint16_t local_interface, uint16_t dest_id,
 	header._.tag = dest_tag;
 	header._.valid = 1;
 
-	int externalAddress = __k1_get_cluster_id();
-	if (local_interface >= 4) {
-		externalAddress += 32 + (local_interface % 4);
-	} else {
-		externalAddress += local_interface;
-	}
-#ifdef K1B_EXPLORER
-	externalAddress = __k1_get_cluster_id() + (local_interface % 4);
-#endif
+	int externalAddress = odp_rpc_get_cluster_id(local_interface);
 	rret = mppa_routing_get_dnoc_unicast_route(externalAddress,
 						   dest_id, &config, &header);
 	if (rret != MPPA_ROUTING_RET_SUCCESS)
