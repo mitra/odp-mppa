@@ -76,22 +76,21 @@ each of the platforms available for executing ODP applications.
 
 In this version, two ports are available:
 \begin{itemize}
-\item[-]{\texttt{k1b-kalray-nodeos}}
-\item[-]{\texttt{k1b-kalray-nodeos\_simu}}
-\item[-]{\texttt{k1b-kalray-mos}}
-\item[-]{\texttt{k1b-kalray-mos\_simu}}
+\item[-]{\texttt{k1b-kalray-nodeos}: Bostan cluster with POSIX support}
+\item[-]{\texttt{k1b-kalray-mos}: Bostan cluster directly on kalray Hypervisor}
 \end{itemize}
 
-\subsection{k1b-kalray-nodeos}
+\section{Choosing a board}
 
-This port targets one Bostan MPPA cluster on hardware.
+Multiple board are available. Each can run any of the ports of K1-ODP.
+The available boards are:
+\begin{itemize}
+\item[-]{\texttt{developer}: AB01B Board with 1G, 10G and 40G (with EXB01) ports }
+\item[-]{\texttt{konic80}: KONIC80 Board with 2 40G ports.}
+\item[-]{\texttt{simu}: AB01B board for software simulation.}
+\end{itemize}
 
-\subsection{k1b-kalray-mos}
-
-Same target as \texttt{k1b-kalray-nodeos}, but running directly on
-Kalray Hypervisor
-
-\subsection{k1b-kalray-nodeos\_simu}
+\subsection{simu}
 
 This ports targets one Bostan MPPA cluster in simulation.
 
@@ -103,10 +102,6 @@ In the current version, this port supports these interfaces:
 \item[-]{loop}
 \item[-]{magic:$<$if\_name$>$}
 \end{itemize}
-\subsection{k1b-kalray-mos\_simu}
-
-Same target as \texttt{k1b-kalray-nodeos\_simu}, but running directly on
-Kalray Hypervisor
 
 \section{Platform Settings}
 \subsection{Rx Threads}
@@ -313,14 +308,14 @@ By default \texttt{APST\_DIR} is the install sub-directory.
 Some compiler flags must be passed to the compiler when trying to
 build an ODP application.
 \begin{lstlisting}
-LDFLAGS += -L$($(K1_TOOLCHAIN_DIR)/lib/<port> -lodphelper -lodp -lcrypto -Wl,--gc-sections
+LDFLAGS += -L$($(K1_TOOLCHAIN_DIR)/lib/odp/board/<port> -lodphelper -lodp -lcrypto -Wl,--gc-sections
 \end{lstlisting}
 
 It is recommended to use the pre-built firmware
 \texttt{iounified.kelf} available with K1-ODP in these cases.
 They can be found in
 \begin{lstlisting}
-/usr/local/k1tools/share/odp/firmware/<platform>/iounified.kelf
+/usr/local/k1tools/share/odp/firmware/<board>/<platform>/iounified.kelf
 \end{lstlisting}
 
 Running a \texttt{k1b-kalray-nodeos} application, can then be done using:
@@ -337,8 +332,7 @@ For the moment, only single cluster ODP application can be run in
 simulation. In this case, only the \texttt{magic:<if\_name>} pktios
 are available.
 
-To build for simulation, either \texttt{k1b-kalray-nodeos\_simu} or
-\texttt{k1b-kalray-mos\_simu} port of K1-ODP should be used.
+To build for simulation, \texttt{simu} board should be used.
 
 Then, running the application can be done using this command:
 \begin{lstlisting}
