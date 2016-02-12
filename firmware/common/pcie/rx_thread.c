@@ -87,10 +87,13 @@ static void mppa_pcie_noc_poll_masks(rx_iface_t *iface)
 static void
 mppa_pcie_rx_rm_func()
 {
-	rx_thread_t *thread = &g_rx_threads[__k1_get_cpu_id() - RX_RM_START];
+	int rm_id = __k1_get_cpu_id();
+	rm_id += ((__k1_get_cluster_id() % 64) / 32 * 4);
+
+	rx_thread_t *thread = &g_rx_threads[rm_id - RX_RM_START];
 	int iface;
 
-	dbg_printf("RM %d with thread id %d started\n", __k1_get_cpu_id(), thread->th_id);
+	dbg_printf("RM %d with thread id %d started\n", rm_id, thread->th_id);
 
 	thread->ready = 1;
 	while (1) {
