@@ -1,6 +1,7 @@
 #ifndef __FIRMWARE__IOETH__RPC__H__
 #define __FIRMWARE__IOETH__RPC__H__
 
+#include <HAL/hal/hal.h>
 #ifndef RPC_FIRMWARE
 #include <odp/debug.h>
 #else
