@@ -3,8 +3,10 @@ BUILDDIR   := $(shell pwd)
 MAKEFILE   := $(lastword $(MAKEFILE_LIST))
 TOP_SRCDIR := $(realpath $(dir $(MAKEFILE))/..)
 SRCFILES   += $(shell find $(SRCDIRS) -name "[^.]*.c")
+ASMFILES   += $(shell find $(SRCDIRS) -name "[^.]*.S")
 HDRFILES   += $(shell find $(SRCDIRS) -name "[^.]*.h")
 OBJFILES   += $(patsubst %.c, $(BUILDDIR)/%.o, $(SRCFILES))
+ASMOBJFILES+= $(patsubst %.S, $(BUILDDIR)/%.o, $(ASMFILES))
 
 ODP_INCDIR  = $(TOP_SRCDIR)/platform/mppa/include
 ODP_SRCDIR  = $(TOP_SRCDIR)/platform/mppa/
@@ -32,12 +34,16 @@ INSTBIN  := $(INSTDIR)/$(FIRMDIR).kelf
 endif
 all: $(BIN) $(LIB)
 
-$(BIN): $(OBJFILES)
+$(BIN): $(OBJFILES) $(ASMOBJFILES)
 	$(CC) -o $@ $^ $(_CFLAGS) $(_LDFLAGS)
-$(LIB): $(OBJFILES)
+$(LIB): $(OBJFILES) $(ASMOBJFILES)
 	ar rc $@ $^
 
 $(OBJFILES): $(BUILDDIR)/%.o: %.c $(HDRFILES)
+	@mkdir -p $$(dirname $@) || true
+	$(CC) -o $@ -c $< $(_CFLAGS)
+
+$(ASMOBJFILES): $(BUILDDIR)/%.o: %.S $(HDRFILES)
 	@mkdir -p $$(dirname $@) || true
 	$(CC) -o $@ -c $< $(_CFLAGS)
 
@@ -53,5 +59,5 @@ valid:
 long:
 
 clean:
-	rm -f $(OBJFILES) $(BIN)
+	rm -f $(OBJFILES) $(ASMOBJFILES) $(BIN)
 endif
