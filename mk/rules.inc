@@ -206,7 +206,8 @@ long-$(1)-install: $(foreach APP, $(LONGS), long-$(1)-$(APP)-install)
 	  echo '# Generated test file'; \
 	  echo 'SET(ENV{LD_LIBRARY_PATH} ../lib/host/:$$$$ENV{LD_LIBRARY_PATH})'; \
 	  echo 'SET(ENV{PATH} ./:$$$$ENV{PATH})'; \
-	  for test in $(LONGS); do \
+	  for test in $$$$(cd $(LONT_DIR)/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME)/;\
+	  	  	   	   find . -mindepth 2 -name CTestTestfile.cmake -exec dirname {} \;); do \
 		  echo "SUBDIRS($$$$test)"; \
 	  done \
 	 ) > $(LONT_DIR)/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME)/CTestTestfile.cmake
