@@ -60,7 +60,9 @@ odp-$(1)-build: $(ARCH_DIR)/odp/$(1)/Makefile
 
 odp-$(1)-install-lib: odp-$(1)-build
 	if [ "$($(1)_INSTALL)" == "true" ]; then \
-		$(MAKE) -C$(ARCH_DIR)/odp/$(1) V=1 install-strip; \
+		$(MAKE) -C$(ARCH_DIR)/odp/$(1) V=1 install; \
+		$(MAKE) -C$(ARCH_DIR)/odp/$(1)/test V=1 install-strip; \
+		$(MAKE) -C$(ARCH_DIR)/odp/$(1)/example V=1 install; \
 	else true; fi
 
 odp-$(1)-install-doc: odp-$(1)-build
