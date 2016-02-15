@@ -27,14 +27,6 @@ int main (int argc, char *argv[])
 	}
 
 	boot_clusters(argc, argv);
-
-	while (1) {
-		odp_rpc_t *msg;
-
-		if (odp_rpc_server_handle(&msg) < 0) {
-			fprintf(stderr, "[RPC] Error: Unhandled message\n");
-			exit(1);
-		}
-	}
+	join_clusters();
 	return 0;
 }

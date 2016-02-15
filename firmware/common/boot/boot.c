@@ -55,7 +55,9 @@ int join_cluster(int clus_id, int *status)
 		fprintf(stderr, "Failed to join cluster %d\n", clus_id);
 		return -1;
 	}
+#ifdef VERBOSE
 	printf("[BOOT] Joined cluster %d. Status=%d\n", clus_id, *status);
+#endif
 	clus->status = STATE_OFF;
 	return pid;
 }

@@ -29,7 +29,7 @@ k1b-kalray-nodeos_explorer_PLATFORM    := mppa
 k1b-kalray-nodeos_explorer_INC_DIR     := k1b-nodeos
 k1b-kalray-nodeos_explorer_MAKE_VALID  := -j1
 k1b-kalray-nodeos_explorer_INSTALL     := true
-CONFIGS += k1b-kalray-nodeos_explorer
+_CONFIGS += k1b-kalray-nodeos_explorer
 
 k1b-kalray-nodeos_simu_CONF_ENV    := CC=k1-nodeos-gcc  CXX=k1-nodeos-g++ STRIP=k1-strip
 k1b-kalray-nodeos_simu_CONF_OPTS   :=
@@ -70,7 +70,7 @@ k1b-kalray-mos_explorer_PLATFORM    := mppa
 k1b-kalray-mos_explorer_INC_DIR     := k1b-elf
 k1b-kalray-mos_explorer_MAKE_VALID  := -j1
 k1b-kalray-mos_explorer_INSTALL     := true
-CONFIGS += k1b-kalray-mos_explorer
+_CONFIGS += k1b-kalray-mos_explorer
 
 k1b-kalray-mos_konic80_CONF_ENV    := CC=k1-gcc  CXX=k1-g++ STRIP=k1-strip
 k1b-kalray-mos_konic80_CONF_OPTS   :=
@@ -142,13 +142,13 @@ k1b-kalray-ioddr_explorer_CFLAGS      := -march=k1b -mos=bare -mcore=k1bio -mclu
 									  	 -mprocessing=single -mboard=explorer -DK1B_EXPLORER
 k1b-kalray-ioddr_explorer_LDFLAGS     :=
 k1b-kalray-ioddr_explorer_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/explorer/k1b
-iopcie_CONFIGS += k1b-kalray-ioddr_explorer
+_iopcie_CONFIGS += k1b-kalray-ioddr_explorer
 
 k1b-kalray-ioeth530_CC          := k1-gcc
 k1b-kalray-ioeth530_CFLAGS      := -march=k1b -DK1_BARE -mcore=k1bio -mcluster=ioeth -mos=bare -mboard=eth_530 -DK1B_EXPLORER
 k1b-kalray-ioeth530_LDFLAGS     :=
 k1b-kalray-ioeth530_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/explorer/k1b
-ioeth_CONFIGS += k1b-kalray-ioeth530
+_ioeth_CONFIGS += k1b-kalray-ioeth530
 
 k1b-kalray-iounified_developer_CC          := k1-gcc
 k1b-kalray-iounified_developer_CFLAGS      := -march=k1b -DK1_BARE -mcore=k1bio -mcluster=ioddr -mos=bare

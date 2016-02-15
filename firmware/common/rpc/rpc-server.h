@@ -6,9 +6,8 @@
 typedef int (*odp_rpc_handler_t)(unsigned remoteClus, odp_rpc_t * msg, uint8_t * payload);
 
 int odp_rpc_server_start(void);
-int odp_rpc_server_poll_msg(odp_rpc_t **msg, uint8_t **payload);
+int odp_rpc_server_join(void);
 int odp_rpc_server_ack(odp_rpc_t * msg, odp_rpc_cmd_ack_t ack);
-int odp_rpc_server_handle(odp_rpc_t ** unhandled_msg);
 
 /** Global structure for modules to register their handlers */
 extern odp_rpc_handler_t __rpc_handlers[MAX_RPC_HANDLERS];

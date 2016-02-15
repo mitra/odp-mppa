@@ -86,23 +86,6 @@ static int cluster_init_dnoc_rx(int clus_id)
 	return 0;
 }
 
-int odp_rpc_server_start(void)
-{
-	int i;
-
-	for (i = 0; i < BSP_NB_CLUSTER_MAX; ++i) {
-		int ret = cluster_init_dnoc_rx(i);
-		if (ret)
-			return ret;
-	}
-
-#ifdef VERBOSE
-	printf("[RPC] Server started...\n");
-#endif
-	g_rpc_init = 1;
-
-	return 0;
-}
 static int get_if_rx_id(unsigned interface_id)
 {
 	int i;
@@ -125,6 +108,8 @@ static int get_if_rx_id(unsigned interface_id)
 }
 
 static int dma_id;
+
+static
 int odp_rpc_server_poll_msg(odp_rpc_t **msg, uint8_t **payload)
 {
 	const int base_if = 4;
@@ -156,11 +141,12 @@ int odp_rpc_server_ack(odp_rpc_t * msg, odp_rpc_cmd_ack_t ack)
 	return odp_rpc_send_msg(interface, msg->dma_id, msg->dnoc_tag, msg, NULL);
 }
 
+static
 int odp_rpc_server_handle(odp_rpc_t ** unhandled_msg)
 {
 	int remoteClus;
 	odp_rpc_t *msg;
-	uint8_t *payload;
+	uint8_t *payload = NULL;
 	remoteClus = odp_rpc_server_poll_msg(&msg, &payload);
 	if(remoteClus >= 0) {
 		for (int i = 0; i < __n_rpc_handlers; ++i) {
@@ -198,4 +184,47 @@ void  __attribute__ ((constructor)) __bas_rpc_constructor()
 		fprintf(stderr, "Failed to register BAS RPC handlers\n");
 		exit(EXIT_FAILURE);
 	}
+}
+
+
+/** Boot ack */
+static char rpc_server_stack[8192] __attribute__ ((aligned(64), section(".upper_internal_memory")));
+static void rpc_server_thread()
+{
+	while (1) {
+		odp_rpc_t *msg;
+
+		if (odp_rpc_server_handle(&msg) < 0) {
+			fprintf(stderr, "[RPC] Error: Unhandled message\n");
+			exit(1);
+		}
+	}
+}
+
+int odp_rpc_server_start(void)
+{
+	int i;
+
+	for (i = 0; i < BSP_NB_CLUSTER_MAX; ++i) {
+		int ret = cluster_init_dnoc_rx(i);
+		if (ret)
+			return ret;
+	}
+
+#ifdef VERBOSE
+	printf("[RPC] Server started...\n");
+#endif
+	g_rpc_init = 1;
+
+	/* Init with scratchpad size */
+	_K1_PE_STACK_ADDRESS[4] = rpc_server_stack + sizeof(rpc_server_stack) - 16;
+	_K1_PE_START_ADDRESS[4] = &rpc_server_thread;
+	_K1_PE_ARGS_ADDRESS[4] = 0;
+
+	__builtin_k1_dinval();
+	__builtin_k1_wpurge();
+	__builtin_k1_fence();
+	__k1_poweron(4);
+
+	return 0;
 }

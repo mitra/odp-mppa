@@ -96,6 +96,7 @@ mppa_pcie_rx_rm_func()
 	dbg_printf("RM %d with thread id %d started\n", rm_id, thread->th_id);
 
 	thread->ready = 1;
+	__k1_wmb();
 	while (1) {
 		for (iface = 0; iface < IF_PER_THREAD; iface++) {
 			mppa_pcie_noc_poll_masks(&thread->iface[iface]);
@@ -135,7 +136,9 @@ pcie_start_rx_rm()
 	}
 
 	for (rm_num = RX_RM_START; rm_num < RX_RM_START + RX_RM_COUNT; rm_num++ ){
-		while(!g_rx_threads[rm_num - RX_RM_START].ready);
+		while(!g_rx_threads[rm_num - RX_RM_START].ready){
+			__k1_mb();
+		}
 		dbg_printf("RM %d started\n", rm_num);
 	}
 }
