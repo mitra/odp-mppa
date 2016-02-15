@@ -2,17 +2,10 @@
 #include <string.h>
 #include <inttypes.h>
 #include <assert.h>
+#include <stdio.h>
 #include <HAL/hal/hal.h>
 
-#include <mppa_eth_io_utils.h>
-
 #include <odp_rpc_internal.h>
-#include <mppa_eth_core.h>
-#include <mppa_eth_loadbalancer_core.h>
-#include <mppa_eth_phy.h>
-#include <mppa_eth_mac.h>
-#include <mppa_routing.h>
-#include <mppa_noc.h>
 
 #include "rpc-server.h"
 #include "eth.h"
