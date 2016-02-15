@@ -74,8 +74,6 @@ typedef struct {
 typedef enum {
 	ODP_RPC_CMD_BAS_INVL = 0 /**< BASE: Invalid command. Skip */,
 	ODP_RPC_CMD_BAS_PING     /**< BASE: Ping command. server sends back ack = 0 */,
-	ODP_RPC_CMD_BAS_SYNC     /**< SYNC: Sync command. */,
-	ODP_RPC_CMD_BAS_EXIT     /**< SYNC: Sync command. */,
 
 	ODP_RPC_CMD_ETH_OPEN     /**< ETH: Forward Rx traffic to a cluster */,
 	ODP_RPC_CMD_ETH_CLOS     /**< ETH: Stop forwarding Rx trafic to a cluster */,

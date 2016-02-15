@@ -15,38 +15,6 @@
 #include <HAL/hal/hal.h>
 
 struct odp_global_data_s odp_global_data;
-static int cluster_iopcie_sync(int exit)
-{
-	unsigned cluster_id = __k1_get_cluster_id();
-	odp_rpc_t *ack_msg;
-	odp_rpc_t cmd = {
-		.pkt_type = exit ? ODP_RPC_CMD_BAS_EXIT : ODP_RPC_CMD_BAS_SYNC,
-		.data_len = 0,
-		.flags = 0,
-	};
-	odp_rpc_cmd_ack_t ack;
-	const unsigned int rpc_server_id = odp_rpc_client_get_default_server();
-	uint64_t timeout = 120 * RPC_TIMEOUT_1S;
-	int iter = 0;
-	do {
-		odp_rpc_do_query(rpc_server_id,
-						 odp_rpc_get_io_tag_id(cluster_id),
-						 &cmd, NULL);
-
-		if (odp_rpc_wait_ack(&ack_msg, NULL, timeout) != 1) {
-			printf("Timeout %d\n", iter);
-			return -1;
-		}
-		/* We had an answer. No need to timeout anymore */
-		timeout = 3600 * RPC_TIMEOUT_1S;
-		ack.inl_data = ack_msg->inl_data;
-		iter++;
-	} while(ack.status == EAGAIN);
-
-	if(ack.status != 0)
-		printf("Bad ret %d\n", ack.status);
-	return ack.status;
-}
 
 int odp_init_global(const odp_init_t *params,
 		    const odp_platform_init_t *platform_params ODP_UNUSED)
@@ -110,14 +78,6 @@ int odp_init_global(const odp_init_t *params,
 		return -1;
 	}
 
-	/* We need to sync only when spawning from another IO */
-	if (__k1_spawn_type() == __MPPA_MPPA_SPAWN) {
-		if (cluster_iopcie_sync(0)) {
-			ODP_ERR("ODP failed to sync with boot cluster.\n");
-			return -1;
-		}
-	}
-
 	if (odp_pktio_init_global()) {
 		ODP_ERR("ODP packet io init failed.\n");
 		return -1;
@@ -158,9 +118,6 @@ int odp_term_global(void)
 		rc = -1;
 	}
 #endif
-	/* We need to sync only when spawning from another IO */
-	if (__k1_spawn_type() == __MPPA_MPPA_SPAWN)
-		cluster_iopcie_sync(1);
 
 	if (odp_rpc_client_term()) {
 		ODP_ERR("ODP RPC tem failed.\n");

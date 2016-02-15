@@ -80,8 +80,6 @@ int odp_rpc_client_get_default_server(void)
 static const char * rpc_cmd_names[ODP_RPC_CMD_N_CMD] = {
 	[ODP_RPC_CMD_BAS_INVL]    = "INVALID",
 	[ODP_RPC_CMD_BAS_PING]    = "PING",
-	[ODP_RPC_CMD_BAS_SYNC]    = "SYNC",
-	[ODP_RPC_CMD_BAS_EXIT]    = "EXIT",
 	[ODP_RPC_CMD_ETH_OPEN]    = "ETH OPEN",
 	[ODP_RPC_CMD_ETH_CLOS]    = "ETH CLOSE",
 	[ODP_RPC_CMD_ETH_PROMISC] = "ETH PROMISC",
@@ -182,8 +180,6 @@ void odp_rpc_print_msg(const odp_rpc_t * cmd)
 		break;
 	case ODP_RPC_CMD_BAS_INVL:
 	case ODP_RPC_CMD_BAS_PING:
-	case ODP_RPC_CMD_BAS_SYNC:
-	case ODP_RPC_CMD_BAS_EXIT:
 	default:
 		break;
 	}
