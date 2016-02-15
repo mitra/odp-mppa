@@ -85,25 +85,20 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payloa
 	status[eth_if].cluster[remoteClus].tx_enabled = data.tx_enabled;
 	status[eth_if].cluster[remoteClus].jumbo = data.jumbo;
 
+	if (ethtool_open_cluster(remoteClus, data.ifId))
+		goto err;
 	if (ethtool_setup_eth2clus(remoteClus, data.ifId, nocIf, externalAddress,
 				   data.min_rx, data.max_rx))
 		goto err;
 	if (ethtool_setup_clus2eth(remoteClus, data.ifId, nocIf))
 		goto err;
-	if (ethtool_init_lane(data.ifId, data.loopback))
-		goto err;
 	if ( ethtool_apply_rules(remoteClus, data.ifId, data.nb_rules, (pkt_rule_t*)payload))
 		goto err;
 	if (ethtool_enable_cluster(remoteClus, data.ifId))
 		goto err;
+	if (ethtool_start_lane(data.ifId, data.loopback))
+		goto err_enabled;
 
-	if (data.ifId == 4) {
-		for (int i = 0; i < N_ETH_LANE; ++i) {
-			status[i].cluster[remoteClus].opened = ETH_CLUS_STATUS_40G;
-		}
-	} else {
-		status[eth_if].cluster[remoteClus].opened = ETH_CLUS_STATUS_ON;
-	}
 	ack.cmd.eth_open.tx_if = externalAddress;
 	ack.cmd.eth_open.tx_tag = status[eth_if].cluster[remoteClus].rx_tag;
 	if (data.jumbo) {
@@ -117,9 +112,10 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payloa
 
 
 	return ack;
-
+ err_enabled:
+	ethtool_disable_cluster(remoteClus, data.ifId);
  err:
-	ethtool_cleanup_cluster(remoteClus, eth_if);
+	ethtool_close_cluster(remoteClus, data.ifId);
 	ack.status = 1;
 	return ack;
 }
@@ -143,7 +139,8 @@ odp_rpc_cmd_ack_t  eth_close(unsigned remoteClus, odp_rpc_t *msg)
 	}
 
 	ethtool_disable_cluster(remoteClus, data.ifId);
-	ethtool_cleanup_cluster(remoteClus, data.ifId);
+	ethtool_close_cluster(remoteClus, data.ifId);
+
 	if (data.ifId == 4) {
 		for (int i = 0; i < N_ETH_LANE; ++i) {
 			_eth_cluster_status_init(&status[i].cluster[remoteClus]);
@@ -159,16 +156,7 @@ static void eth_init(void)
 {
 	for (int eth_if = 0; eth_if < N_ETH_LANE; ++eth_if) {
 		_eth_status_init(&status[eth_if]);
-
-		mppabeth_lb_cfg_header_mode((void *)&(mppa_ethernet[0]->lb),
-					    eth_if, MPPABETHLB_ADD_HEADER);
-
-		mppabeth_lb_cfg_table_rr_dispatch_trigger((void *)&(mppa_ethernet[0]->lb),
-							  ETH_MATCHALL_TABLE_ID,
-							  eth_if, 1);
-		mppabeth_lb_cfg_default_dispatch_policy((void *)&(mppa_ethernet[0]->lb),
-							eth_if,
-							MPPABETHLB_DISPATCH_DEFAULT_POLICY_DROP);
+		ethtool_init_lane(eth_if);
 
 	}
 }

@@ -17,16 +17,19 @@
 odp_rpc_cmd_ack_t eth_open(unsigned remoteClus, odp_rpc_t * msg, uint8_t *payload);
 odp_rpc_cmd_ack_t eth_close(unsigned remoteClus, odp_rpc_t * msg);
 
-int ethtool_setup_eth2clus(unsigned remoteClus, int eth_if,
+int ethtool_init_lane(int eth_if);
+int ethtool_open_cluster(unsigned remoteClus, unsigned if_id);
+int ethtool_setup_eth2clus(unsigned remoteClus, int if_id,
 			   int nocIf, int externalAddress,
 			   int min_rx, int max_rx);
-int ethtool_setup_clus2eth(unsigned remoteClus, int eth_if, int nocIf);
-int ethtool_init_lane(unsigned eth_if, int loopback);
-void ethtool_cleanup_cluster(unsigned remoteClus, unsigned eth_if);
-int ethtool_enable_cluster(unsigned remoteClus, unsigned eth_if);
-int ethtool_disable_cluster(unsigned remoteClus, unsigned eth_if);
+int ethtool_setup_clus2eth(unsigned remoteClus, int if_id, int nocIf);
+int ethtool_start_lane(unsigned if_id, int loopback);
 int ethtool_apply_rules(unsigned remoteClus, unsigned if_id,
 			int nb_rules, const pkt_rule_t rules[nb_rules]);
+int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id);
+int ethtool_disable_cluster(unsigned remoteClus, unsigned if_id);
+int ethtool_close_cluster(unsigned remoteClus, unsigned if_id);
+
 typedef enum {
 	ETH_CLUS_STATUS_OFF,
 	ETH_CLUS_STATUS_ON,
