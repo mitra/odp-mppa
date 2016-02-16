@@ -55,7 +55,7 @@ cluster-tests :=
 mppa-tests :=
 sim-runner-opts := --mboard=developer --march=bostan
 
-$(realpath .)/firmware-$(OS_BOARD_NAME)/firmware.kelf-nameinmpk := firmware-$(OS_BOARD_NAME).kelf
+$(realpath .)/firmware-$(OS_BOARD_NAME)/firmware.kelf-nameinmpk := firmware.kelf
 $(TEST_NAME)-objs := $(cluster-bin) $(realpath .)/firmware-$(OS_BOARD_NAME)/firmware.kelf
 
 build: all
@@ -70,11 +70,14 @@ clean-hooks := clean-firmware
 
 build-firmware:
 	+mkdir -p ./firmware-$(OS_BOARD_NAME) && cd ./firmware-$(OS_BOARD_NAME) && \
-	$(MAKE) -f $(APP_DIR)/firmware/Makefile CC="$(k1b-kalray-iounified_$(BOARD_NAME)_CC)" CFLAGS="$(k1b-kalray-iounified_$(BOARD_NAME)_CFLAGS)" \
-	 LDFLAGS="$(k1b-kalray-iounified_$(BOARD_NAME)_LDFLAGS)" ODP_TOOLCHAIN_DIR="$(ODP_TOOLCHAIN_DIR)" all
+	$(MAKE) -f $(APP_DIR)/firmware/Makefile CC="$(k1b-kalray-iounified_$(OS_BOARD_NAME)_CC)" \
+	CFLAGS="$(k1b-kalray-iounified_$(OS_BOARD_NAME)_CFLAGS)" \
+	LDFLAGS="$(k1b-kalray-iounified_$(OS_BOARD_NAME)_LDFLAGS)" ODP_TOOLCHAIN_DIR="$(ODP_TOOLCHAIN_DIR)" all
+
 clean-firmware:
 	if [ -d ./firmware-$(OS_BOARD_NAME) ]; then \
-	$(MAKE) -f $(APP_DIR)/firmware/Makefile CC="$(k1b-kalray-iounified_$(BOARD_NAME)_CC)" CFLAGS="$(k1b-kalray-iounified_$(BOARD_NAME)_CFLAGS)" \
-	 LDFLAGS="$(k1b-kalray-iounified_$(BOARD_NAME)_LDFLAGS)" ODP_TOOLCHAIN_DIR="$(ODP_TOOLCHAIN_DIR)" clean; else true; fi
+	$(MAKE) -f $(APP_DIR)/firmware/Makefile CC="$(k1b-kalray-iounified_$(OS_BOARD_NAME)_CC)" \
+	CFLAGS="$(k1b-kalray-iounified_$(OS_BOARD_NAME)_CFLAGS)" \
+	LDFLAGS="$(k1b-kalray-iounified_$(BOARD_NAME)_LDFLAGS)" ODP_TOOLCHAIN_DIR="$(ODP_TOOLCHAIN_DIR)" clean; else true; fi
 
 
