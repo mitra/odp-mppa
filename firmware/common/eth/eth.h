@@ -73,6 +73,7 @@ typedef struct {
 		ETH_LANE_LOOPBACK,
 		ETH_LANE_LOOPBACK_40G
 	} initialized;
+	uint8_t mac_address[2][6];
 	eth_cluster_status_t cluster[BSP_NB_CLUSTER_MAX];
 
 	eth_refcounts_t refcounts;

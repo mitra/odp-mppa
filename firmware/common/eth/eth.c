@@ -9,6 +9,7 @@
 
 #include "rpc-server.h"
 #include "eth.h"
+#include "mac.h"
 
 eth_status_t status[N_ETH_LANE];
 eth_lb_status_t lb_status;
@@ -111,10 +112,12 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg,
 	} else {
 		ack.cmd.eth_open.mtu = 1600;
 	}
-	memset(ack.cmd.eth_open.mac, 0, ETH_ALEN);
-	ack.cmd.eth_open.mac[ETH_ALEN-1] = 1 << eth_if;
-	ack.cmd.eth_open.mac[ETH_ALEN-2] = odp_rpc_get_cluster_id(0);
 
+	if (!lb_status.dual_mac || fallthrough) {
+		memcpy(ack.cmd.eth_open.mac, status[eth_if].mac_address[0], ETH_ALEN);
+	} else {
+		memcpy(ack.cmd.eth_open.mac, status[eth_if].mac_address[1], ETH_ALEN);
+	}
 
 	return ack;
  err_enabled:
@@ -172,7 +175,10 @@ static void eth_init(void)
 	for (int eth_if = 0; eth_if < N_ETH_LANE; ++eth_if) {
 		_eth_status_init(&status[eth_if]);
 		ethtool_init_lane(eth_if);
-
+		mppa_ethernet_generate_mac(160 + 64 *( (__k1_get_cluster_id() - 128) / 64), eth_if,
+					   status[eth_if].mac_address[0]);
+		memcpy(status[eth_if].mac_address[1], status[eth_if].mac_address[0], ETH_ALEN);
+		status[eth_if].mac_address[1][ETH_ALEN - 1] |= 1;
 	}
 }
 
