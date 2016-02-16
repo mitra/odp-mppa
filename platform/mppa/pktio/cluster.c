@@ -497,7 +497,7 @@ static int cluster_send(pktio_entry_t *const pktio_entry,
 		/* We need to sync with the target first */
 		if (cluster_rpc_send_c2c_query(pkt_cluster)){
 			odp_spinlock_unlock(&pkt_cluster->wlock);
-			return -1;
+			return 0;
 		}
 	}
 
