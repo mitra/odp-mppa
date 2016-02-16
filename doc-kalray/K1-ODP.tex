@@ -70,6 +70,26 @@ Working with K1-ODP requires two sets of packages:
 The K1-ODP files will be installed under the
 \texttt{/usr/local/k1tools} directory.
 
+\section{What's new}
+\subsection{K1-ODP 0.3.1}
+
+\subsubsection{Makefile.apps}
+
+To avoid multiple builds of firmwares (developer and KONIC) the
+Makefile.apps used by the TemplateProject was updated to only build
+the required firmware.
+Compilation should work seamlessly but the run.sh script of project
+should be updated.
+The new firmware is always named \texttt{firmware.kelf} and does not
+contain the board type anymore.
+
+\subsubsection{Bug Fixes}
+
+\begin{itemize}
+\item[-]{When cluster2cluster link is not yet ready, \texttt{odp\_pktio\_recv}
+now returns 0 instead of -2}
+\end{itemize}
+
 \section{Choosing a version}
 K1-ODP is available in multiple ports in the k1-odp package, one for
 each of the platforms available for executing ODP applications.
