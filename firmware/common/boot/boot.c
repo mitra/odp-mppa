@@ -32,6 +32,7 @@ struct clus_bin_boot {
 };
 
 static unsigned int clus_count;
+static unsigned has_booted;
 static struct clus_bin_boot clus_bin_boots[BSP_NB_CLUSTER_MAX];
 
 int join_cluster(int clus_id, int *status)
@@ -65,6 +66,8 @@ int join_cluster(int clus_id, int *status)
 int join_clusters(void)
 {
 	int i, ret, status;
+	if (!has_booted)
+		while(1);
 
 	for (i = 0; i < BSP_NB_CLUSTER_MAX; ++i) {
 		if (clus_bin_boots[i].status != STATE_ON)
@@ -82,6 +85,7 @@ void boot_set_nb_clusters(int nb_clusters) {
 }
 int boot_cluster(int clus_id, const char bin_file[], const char * argv[] ) {
 	struct clus_bin_boot *clus = &clus_bin_boots[clus_id];
+	has_booted = 1;
 
 	if (clus->status != STATE_OFF)
 		return -1;
