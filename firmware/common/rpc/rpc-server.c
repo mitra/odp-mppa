@@ -35,7 +35,7 @@ static inline int rxToMsg(unsigned ifId, unsigned tag,
 	remoteClus = (tag - RPC_BASE_RX);
 #else
 	int locIfId = ifId - 4;
-	remoteClus = 4 * locIfId + (tag - RPC_BASE_RX);
+	remoteClus = 4 * locIfId + ((tag - RPC_BASE_RX)) / 4 * 16 + ((tag - RPC_BASE_RX) % 4);
 #endif
 
 	odp_rpc_t *cmd = (void*)g_clus_priv[remoteClus].recv_buf;
