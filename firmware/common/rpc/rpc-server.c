@@ -20,7 +20,7 @@ static uint64_t __rpc_fair_masks[BSP_NB_DMA_IO_MAX][4];
 
 static struct {
 	char    recv_buf[RPC_PKT_SIZE];
-} g_clus_priv[BSP_NB_CLUSTER_MAX]
+} g_clus_priv[RPC_MAX_CLIENTS]
 #ifndef K1B_EXPLORER
  __attribute__ ((aligned(64), section(".upper_internal_memory")))
 #endif
@@ -205,7 +205,7 @@ int odp_rpc_server_start(void)
 {
 	int i;
 
-	for (i = 0; i < BSP_NB_CLUSTER_MAX; ++i) {
+	for (i = 0; i < RPC_MAX_CLIENTS; ++i) {
 		int ret = cluster_init_dnoc_rx(i);
 		if (ret)
 			return ret;

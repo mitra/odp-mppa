@@ -74,7 +74,7 @@ typedef struct {
 		ETH_LANE_LOOPBACK_40G
 	} initialized;
 	uint8_t mac_address[2][6];
-	eth_cluster_status_t cluster[BSP_NB_CLUSTER_MAX];
+	eth_cluster_status_t cluster[RPC_MAX_CLIENTS];
 
 	eth_refcounts_t refcounts;
 	eth_refcounts_t rx_refcounts;
@@ -118,7 +118,7 @@ static inline void _eth_status_init(eth_status_t * status)
 	_eth_refcount_init(&status->refcounts);
 	_eth_refcount_init(&status->rx_refcounts);
 
-	for (i = 0; i < BSP_NB_CLUSTER_MAX; ++i)
+	for (i = 0; i < RPC_MAX_CLIENTS; ++i)
 		_eth_cluster_status_init(&status->cluster[i]);
 }
 

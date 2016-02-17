@@ -404,7 +404,7 @@ static void update_lut(unsigned if_id)
 
 	const int eth_if = if_id % 4;
 	uint32_t clusters = 0;
-	for (int i = 0; i < BSP_NB_CLUSTER_MAX; ++i) {
+	for (int i = 0; i < RPC_MAX_CLIENTS; ++i) {
 		if (status[eth_if].cluster[i].opened != ETH_CLUS_STATUS_OFF &&
 		    status[eth_if].cluster[i].policy == ETH_CLUS_POLICY_HASH &&
 		    status[eth_if].cluster[i].rx_enabled)

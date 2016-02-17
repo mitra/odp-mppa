@@ -2,7 +2,7 @@
 #define RPC_SERVER__H
 
 #define MAX_RPC_HANDLERS 32
-
+#define RPC_MAX_CLIENTS (BSP_NB_CLUSTER_MAX + BSP_NB_IOCLUSTER_MAX * 4)
 typedef int (*odp_rpc_handler_t)(unsigned remoteClus, odp_rpc_t * msg, uint8_t * payload);
 
 int odp_rpc_server_start(void);
