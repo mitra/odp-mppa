@@ -88,6 +88,7 @@ contain the board type anymore.
 \begin{itemize}
 \item[-]{When cluster2cluster link is not yet ready, \texttt{odp\_pktio\_recv}
 now returns 0 instead of -2}
+\item[-]{Fix packet ordering issue, even when only on Rx thread is used.}
 \end{itemize}
 
 \section{Choosing a version}
