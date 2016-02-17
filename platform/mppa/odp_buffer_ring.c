@@ -121,20 +121,33 @@ odp_buffer_hdr_t * odp_buffer_ring_push_list(odp_buffer_ring_t *ring,
 	/* Sort the list first */
 	{
 		odp_buffer_hdr_t *sorted  = buffers;
-		odp_buffer_hdr_t *buf;
+		odp_buffer_hdr_t **last_insertion = &buffers;
+		odp_buffer_hdr_t *buf, *next;
 		unsigned count;
-		for (count = 0, buf = sorted->next; buf && count !=0; count+=1, buf = buf->next) {
+		for (count = 1, buf = sorted->next; buf && count < *nbufs; count+=1, buf = next) {
+			next = buf->next;
+
 			if (odp_unlikely(buf->order < sorted->order)){
-				/* Out of order */
-				odp_buffer_hdr_t **prev = &buffers;
-				odp_buffer_hdr_t *ptr = buffers;
 				/* Remove unsorted elnt */
 				sorted->next = buf->next;
+
+				/* Out of order */
+				odp_buffer_hdr_t **prev = last_insertion;
+				odp_buffer_hdr_t *ptr = *last_insertion;
+
+				if (odp_unlikely(buf->order < ptr->order)) {
+					/* We need to be inserted before the last insertion point */
+					prev = &buffers;
+					ptr = buffers;
+				}
 				/* Find slot */
-				for(ptr = buf; (*prev)->order < buf->order; prev=&ptr->next, ptr = ptr->next){}
+				for(; ptr->order < buf->order; prev=&ptr->next, ptr = ptr->next){}
 				/* Insert element in its rightful place */
 				*prev = buf;
 				buf->next = ptr;
+				last_insertion = prev;
+			} else {
+				sorted = buf;
 			}
 		}
 	}
