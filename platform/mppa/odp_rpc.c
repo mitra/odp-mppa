@@ -242,6 +242,11 @@ int odp_rpc_send_msg(uint16_t local_interface, uint16_t dest_id,
 
 	int externalAddress = odp_rpc_get_cluster_id(local_interface);
 
+#ifdef VERBOSE
+	printf("[RPC] Sending message from %d (%d) to %d/%d\n",
+	       local_interface, externalAddress, dest_id, dest_tag);
+	odp_rpc_print_msg(cmd);
+#endif
 	rret = mppa_routing_get_dnoc_unicast_route(externalAddress,
 						   dest_id, &config, &header);
 	if (rret != MPPA_ROUTING_RET_SUCCESS)
