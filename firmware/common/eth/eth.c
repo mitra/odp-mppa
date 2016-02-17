@@ -15,7 +15,7 @@ eth_status_t status[N_ETH_LANE];
 eth_lb_status_t lb_status;
 
 static inline int get_eth_dma_id(unsigned cluster_id){
-	unsigned offset = cluster_id / 4;
+	unsigned offset = (cluster_id / 4) % 4;
 #ifdef K1B_EXPLORER
 	offset = 0;
 #endif
