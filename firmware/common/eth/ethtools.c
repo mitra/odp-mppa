@@ -12,7 +12,7 @@
 #include <mppa_routing.h>
 #include <mppa_noc.h>
 #include <mppa_eth_io_utils.h>
-
+#include <mppa_eth_qsfp_utils.h>
 #include "rpc-server.h"
 #include "eth.h"
 
@@ -223,7 +223,10 @@ int ethtool_init_lane(unsigned if_id, int loopback)
 			printf("[ETH] Initializing MAC for lane %d\n", eth_if);
 #endif
 			ret = mppa_eth_utils_init_mac(eth_if, link_speed);
-			if(ret) {
+			if (ret == BAD_VENDOR) {
+				fprintf(stderr,
+					"[ETH] Warning: QSFP coonector is not supported\n");
+			}else if(ret < 0) {
 				fprintf(stderr,
 					"[ETH] Error: Failed to initialize lane %d (%d)\n",
 					eth_if, ret);
