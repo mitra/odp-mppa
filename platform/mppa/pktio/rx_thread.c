@@ -582,6 +582,7 @@ int rx_thread_link_open(rx_config_t *rx_config, int n_ports, int rr_policy)
 			rx_th_t *th = &rx_hdl.th[i];
 
 			th->pools[ifce->pool_id].n_rx += nrx_per_th;
+			memset(&th->ifce[rx_config->pktio_id], sizeof(rx_ifce_th_t), 0);
 
 			for (int j = 0; j < 4; ++j) {
 				th->ev_masks[j] |= ev_masks[i][j];
