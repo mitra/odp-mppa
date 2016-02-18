@@ -8,12 +8,7 @@
 #endif
 
 #ifndef INVALIDATE_AREA
-#define INVALIDATE_AREA(p, s) do {									\
-		const char *__ptr;									\
-		for (__ptr = (char*)(p); __ptr < ((char*)(p)) + (s); __ptr += _K1_DCACHE_LINE_SIZE) {	\
-			__k1_dcache_invalidate_line((__k1_uintptr_t) __ptr);				\
-		}											\
-		__k1_dcache_invalidate_line((__k1_uintptr_t) __ptr);					\
+#define INVALIDATE_AREA(p, s) do {	__k1_dcache_invalidate_mem_area((__k1_uintptr_t)(void*)p, s);	\
 	}while(0)
 #endif
 #ifndef INVALIDATE
