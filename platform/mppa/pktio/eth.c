@@ -556,6 +556,7 @@ static int eth_recv(pktio_entry_t *pktio_entry, odp_packet_t pkt_table[],
 			((uint8_t *)pkt_hdr->buf_hdr.addr) +
 			pkt_hdr->headroom;
 
+		INVALIDATE(pkt_hdr);
 		packet_parse_reset(pkt_hdr);
 
 		union mppa_ethernet_header_info_t info;
