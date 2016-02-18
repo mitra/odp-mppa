@@ -124,9 +124,9 @@ odp_buffer_hdr_t * odp_buffer_ring_push_list(odp_buffer_ring_t *ring,
 		odp_buffer_hdr_t **last_insertion = &buffers;
 		odp_buffer_hdr_t *buf, *next;
 		unsigned count;
-		for (count = 1, buf = sorted->next; buf && count < *nbufs; count+=1, buf = next) {
-			next = buf->next;
 
+		for (count = 1, buf = sorted->next; buf && count < n_buffers; count+=1, buf = next) {
+			next = buf->next;
 			if (odp_unlikely(buf->order < sorted->order)){
 				/* Remove unsorted elnt */
 				sorted->next = buf->next;
