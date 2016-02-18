@@ -377,7 +377,7 @@ static void *_rx_thread_start(void *arg)
 		odp_rwlock_read_lock(&rx_hdl.lock);
 		uint64_t update_id = odp_atomic_load_u64(&rx_hdl.update_id);
 		if (update_id != last_update) {
-			INVALIDATE(&rx_hdl);
+			__builtin_k1_dinval();
 			last_update = update_id;
 		}
 
