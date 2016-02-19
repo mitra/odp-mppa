@@ -78,7 +78,7 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth, int
 	odp_rpc_cmd_eth_open_t open_cmd = {
 		{
 			.ifId = eth->port_id,
-			.dma_if = eth->rx_config.dma_if,
+			.dma_if = __k1_get_cluster_id() + eth->rx_config.dma_if,
 			.min_rx = eth->rx_config.min_port,
 			.max_rx = eth->rx_config.max_port,
 			.loopback = eth->loopback,
