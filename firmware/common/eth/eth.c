@@ -258,9 +258,8 @@ odp_rpc_cmd_ack_t  eth_close(unsigned remoteClus, odp_rpc_t *msg)
 		}
 	}
 
-	ethtool_disable_cluster(remoteClus, eth_if);
-	ethtool_cleanup_cluster(remoteClus, eth_if);
-
+	ethtool_disable_cluster(remoteClus, data.ifId);
+	ethtool_cleanup_cluster(remoteClus, data.ifId);
 	if (data.ifId == 4) {
 		for (int i = 0; i < N_ETH_LANE; ++i) {
 			_eth_cluster_status_init(&status[i].cluster[remoteClus]);
