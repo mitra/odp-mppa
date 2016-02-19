@@ -138,13 +138,13 @@ static int eth_apply_rules(int lane_id, pkt_rule_t *rules, int nb_rules, int clu
 #ifdef VERBOSE
 		printf("config lut[%3d-%3d] -> C%2d: %d %d %d %d\n",
 			   i, i + chunks[j] - 1, registered_cluster,
-			   lane_id, tx_id, ETH_DEFAULT_CTX, noc_if - 4);
+			   lane_id, tx_id, ETH_DEFAULT_CTX, noc_if - ETH_BASE_TX);
 #endif
 		for ( int lut_id = i; lut_id < i + chunks[j] ; ++lut_id ) {
 			mppabeth_lb_cfg_luts((void *) &(mppa_ethernet[0]->lb),
 								 lane_id, lut_id, tx_id,
 								 ETH_DEFAULT_CTX,
-								 noc_if - 4);
+								 noc_if - ETH_BASE_TX);
 		}
 	}
 
@@ -258,9 +258,8 @@ odp_rpc_cmd_ack_t  eth_close(unsigned remoteClus, odp_rpc_t *msg)
 		}
 	}
 
-	ethtool_disable_cluster(remoteClus, eth_if);
-	ethtool_cleanup_cluster(remoteClus, eth_if);
-
+	ethtool_disable_cluster(remoteClus, data.ifId);
+	ethtool_cleanup_cluster(remoteClus, data.ifId);
 	if (data.ifId == 4) {
 		for (int i = 0; i < N_ETH_LANE; ++i) {
 			_eth_cluster_status_init(&status[i].cluster[remoteClus]);
