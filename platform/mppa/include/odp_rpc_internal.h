@@ -94,15 +94,16 @@ typedef enum {
 
 typedef union {
 	struct {
-		uint8_t ifId : 3; /* 0-3, 4 for 40G */
-		uint8_t dma_if : 8;
-		uint8_t min_rx : 8;
-		uint8_t max_rx : 8;
-		uint8_t loopback : 1;
-		uint8_t rx_enabled : 1;
-		uint8_t tx_enabled : 1;
-		uint8_t jumbo : 1;
-		uint8_t nb_rules : 4;
+		uint8_t ifId : 3;        /**< 0-3, 4 for 40G */
+		uint8_t dma_if : 8;      /**< External address of the local DMA */
+		uint8_t min_rx : 8;      /**< Minimum Rx Tag for Eth2Clus */
+		uint8_t max_rx : 8;      /**< Maximum Rx tag for Eth2Clus */
+		uint8_t loopback : 1;    /**< Put interface in loopback mode (no MAC) */
+		uint8_t rx_enabled : 1;  /**< Enable packet reception (Eth2Clus). */
+		uint8_t tx_enabled : 1;  /**< Enable packet transmission (Clus2Eth) */
+		uint8_t jumbo : 1;       /**< Enable Jumbo frame support */
+		uint8_t nb_rules : 4;    /**< Number of rule to the has policy.
+								  *   Rules are provided in the payload */
 	};
 	odp_rpc_inl_data_t inl_data;
 } odp_rpc_cmd_eth_open_t;
