@@ -155,15 +155,15 @@ int ethtool_setup_clus2eth(unsigned remoteClus, int if_id, int nocIf)
 	if (if_id == 4) {
 		/* Jumbo frames */
 		fifo_id = (remoteClus % 4) * 4;
-		mppa_ethernet[0]->tx.fifo_if[nocIf].lane[eth_if].
+		mppa_ethernet[0]->tx.fifo_if[nocIf - ETH_BASE_TX].lane[eth_if].
 			eth_fifo[fifo_id].eth_fifo_ctrl._.jumbo_mode = 1;
 	}
 
-	mppa_ethernet[0]->tx.fifo_if[nocIf].lane[eth_if].
+	mppa_ethernet[0]->tx.fifo_if[nocIf - ETH_BASE_TX].lane[eth_if].
 		eth_fifo[fifo_id].eth_fifo_ctrl._.drop_en = 1;
 	mppa_noc_dnoc_rx_configuration_t conf = {
 		.buffer_base = (unsigned long)(void*)
-		&mppa_ethernet[0]->tx.fifo_if[nocIf].lane[eth_if].
+		&mppa_ethernet[0]->tx.fifo_if[nocIf - ETH_BASE_TX].lane[eth_if].
 		eth_fifo[fifo_id].push_data,
 		.buffer_size = 8,
 		.current_offset = 0,
