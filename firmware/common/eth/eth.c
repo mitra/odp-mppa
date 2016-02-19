@@ -15,23 +15,12 @@ eth_status_t status[N_ETH_LANE];
 eth_lb_status_t lb_status;
 
 static inline int get_eth_dma_id(unsigned cluster_id){
-	unsigned offset = (cluster_id / 4) % 4;
-#ifdef K1B_EXPLORER
-	offset = 0;
-#endif
+	unsigned offset = (cluster_id / 4) % ETH_N_DMA_TX;
 
-	switch(__k1_get_cluster_id()){
-#ifndef K1B_EXPLORER
-	case 128:
-	case 160:
-		return offset + 4;
-#endif
-	case 192:
-	case 224:
-		return offset + 4;
-	default:
-		return -1;
-	}
+	if (cluster_id >= 128)
+		offset = cluster_id % ETH_N_DMA_TX;
+
+	return offset + ETH_BASE_TX;
 }
 
 odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg,
@@ -39,7 +28,7 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg,
 {
 	odp_rpc_cmd_ack_t ack = { .status = 0};
 	odp_rpc_cmd_eth_open_t data = { .inl_data = msg->inl_data };
-	const int nocIf = get_eth_dma_id(remoteClus);
+	const int nocIf = get_eth_dma_id(data.dma_if);
 	const unsigned int eth_if = data.ifId % 4; /* 4 is actually 0 in 40G mode */
 
 	if(nocIf < 0) {

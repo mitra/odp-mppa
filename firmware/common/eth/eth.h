@@ -3,7 +3,14 @@
 
 #include <mppa_noc.h>
 
+#ifdef K1B_EXPLORER
+#define ETH_BASE_TX 0
+#define ETH_N_DMA_TX 1
+#else
 #define ETH_BASE_TX 4
+#define ETH_N_DMA_TX 4
+#endif
+
 #define ETH_DEFAULT_CTX 0
 #define ETH_MATCHALL_TABLE_ID 0
 #define ETH_MATCHALL_RULE_ID 0
