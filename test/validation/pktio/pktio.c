@@ -437,7 +437,7 @@ static int send_packets(odp_pktout_queue_t pktout,
 	unsigned sent = 0;
 
 	while (sent < pkts) {
-		ret = odp_pktio_send_queue(pktout, &pkt_tbl[sent], pkts - sent);
+		ret = odp_pktout_send(pktout, &pkt_tbl[sent], pkts - sent);
 
 		if (ret < 0) {
 			CU_FAIL_FATAL("failed to send test packet");
@@ -485,8 +485,7 @@ static void pktio_txrx_multi(pktio_info_t *pktio_a, pktio_info_t *pktio_b,
 	/* send packet(s) out */
 	if (mode == TXRX_MODE_SINGLE) {
 		for (i = 0; i < num_pkts; ++i) {
-			ret = odp_pktio_send_queue(pktio_a->pktout,
-						   &tx_pkt[i], 1);
+			ret = odp_pktout_send(pktio_a->pktout, &tx_pkt[i], 1);
 			if (ret != 1) {
 				CU_FAIL_FATAL("failed to send test packet");
 				odp_packet_free(tx_pkt[i]);
@@ -683,8 +682,8 @@ void pktio_test_recv_queue(void)
 	if (num_queues > MAX_QUEUES)
 		num_queues = MAX_QUEUES;
 
-	ret = odp_pktio_send_queue(pktout_queue[num_queues - 1], pkt_tbl,
-				   TX_BATCH_LEN);
+	ret = odp_pktout_send(pktout_queue[num_queues - 1], pkt_tbl,
+			      TX_BATCH_LEN);
 	CU_ASSERT_FATAL(ret == TX_BATCH_LEN);
 
 	/* Receive packets */
@@ -1122,7 +1121,7 @@ void pktio_test_statistics_counters(void)
 
 	/* send */
 	for (pkts = 0; pkts != alloc; ) {
-		ret = odp_pktio_send_queue(pktout, &tx_pkt[pkts], alloc - pkts);
+		ret = odp_pktout_send(pktout, &tx_pkt[pkts], alloc - pkts);
 		if (ret < 0) {
 			CU_FAIL("unable to send packet\n");
 			break;
@@ -1231,8 +1230,8 @@ void pktio_test_start_stop(void)
 		}
 
 		for (pkts = 0; pkts != alloc; ) {
-			ret = odp_pktio_send_queue(pktout, &tx_pkt[pkts],
-						   alloc - pkts);
+			ret = odp_pktout_send(pktout, &tx_pkt[pkts],
+					      alloc - pkts);
 			if (ret < 0) {
 				CU_FAIL("unable to enqueue packet\n");
 				break;
@@ -1298,7 +1297,7 @@ void pktio_test_start_stop(void)
 
 	/* send */
 	for (pkts = 0; pkts != alloc; ) {
-		ret = odp_pktio_send_queue(pktout, &tx_pkt[pkts], alloc - pkts);
+		ret = odp_pktout_send(pktout, &tx_pkt[pkts], alloc - pkts);
 		if (ret < 0) {
 			CU_FAIL("unable to enqueue packet\n");
 			break;
@@ -1445,7 +1444,7 @@ void pktio_test_send_failure(void)
 		/* try to send the batch with the long packet in the middle,
 		 * the initial short packets should be sent successfully */
 		odp_errno_zero();
-		ret = odp_pktio_send_queue(pktout, pkt_tbl, TX_BATCH_LEN);
+		ret = odp_pktout_send(pktout, pkt_tbl, TX_BATCH_LEN);
 		CU_ASSERT_FATAL(ret == long_pkt_idx);
 		CU_ASSERT(odp_errno() == 0);
 
@@ -1460,9 +1459,9 @@ void pktio_test_send_failure(void)
 			/* now try to send starting with the too-long packet
 			 * and verify it fails */
 			odp_errno_zero();
-			ret = odp_pktio_send_queue(pktout,
-						   &pkt_tbl[long_pkt_idx],
-						   TX_BATCH_LEN - long_pkt_idx);
+			ret = odp_pktout_send(pktout,
+					      &pkt_tbl[long_pkt_idx],
+					      TX_BATCH_LEN - long_pkt_idx);
 			CU_ASSERT(ret == -1);
 			CU_ASSERT(odp_errno() != 0);
 		} else {
@@ -1482,8 +1481,7 @@ void pktio_test_send_failure(void)
 		CU_ASSERT_FATAL(ret == 0);
 
 		CU_ASSERT_FATAL(pkt_seq[i] != TEST_SEQ_INVALID);
-		ret = odp_pktio_send_queue(pktout, &pkt_tbl[i],
-					   TX_BATCH_LEN - i);
+		ret = odp_pktout_send(pktout, &pkt_tbl[i], TX_BATCH_LEN - i);
 		CU_ASSERT_FATAL(ret == (TX_BATCH_LEN - i));
 
 		i = wait_for_packets(&info_rx, &pkt_tbl[i], &pkt_seq[i], ret,
