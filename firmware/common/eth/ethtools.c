@@ -446,7 +446,7 @@ static void update_lut(unsigned if_id)
 			mppabeth_lb_cfg_luts((void *) &(mppa_ethernet[0]->lb),
 								 eth_if, lut_id, tx_id,
 								 ETH_DEFAULT_CTX,
-								 noc_if - 4);
+								 noc_if - ETH_BASE_TX);
 		}
 	}
 }
@@ -578,7 +578,7 @@ int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id)
 		}
 		status[eth_if].rx_refcounts.policy[ETH_CLUS_POLICY_FALLTHROUGH]++;
 		mppabeth_lb_cfg_default_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
-							    eth_if, noc_if - 4, tx_id,
+							    eth_if, noc_if - ETH_BASE_TX, tx_id,
 					    (1 << ETH_DEFAULT_CTX));
 		break;
 	case ETH_CLUS_POLICY_MAC_MATCH:
@@ -596,7 +596,7 @@ int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id)
 		}
 		status[eth_if].rx_refcounts.policy[ETH_CLUS_POLICY_MAC_MATCH]++;
 		mppabeth_lb_cfg_table_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
-							  eth_if, eth_if, noc_if - 4, tx_id,
+							  eth_if, eth_if, noc_if - ETH_BASE_TX, tx_id,
 							  (1 << ETH_DEFAULT_CTX));
 		break;
 	default:
@@ -645,8 +645,7 @@ int ethtool_disable_cluster(unsigned remoteClus, unsigned if_id)
 		}
 		/* Clear context from RR mask */
 		mppabeth_lb_cfg_default_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
-							    eth_if, noc_if - ETH_BASE_TX,
-							    tx_id, 0);
+							    eth_if, noc_if - ETH_BASE_TX, tx_id, 0);
 		break;
 	case ETH_CLUS_POLICY_MAC_MATCH:
 		status[eth_if].rx_refcounts.policy[ETH_CLUS_POLICY_MAC_MATCH]--;
@@ -657,7 +656,7 @@ int ethtool_disable_cluster(unsigned remoteClus, unsigned if_id)
 		}
 		mppabeth_lb_cfg_table_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
 							  eth_if, eth_if,
-							  noc_if,tx_id, 0);
+							  noc_if - ETH_BASE_TX, tx_id, 0);
 		break;
 	default:
 		return -1;
@@ -689,9 +688,9 @@ int ethtool_close_cluster(unsigned remoteClus, unsigned if_id)
 
 	if (fifo_id >= 0) {
 		uint16_t mask = (if_id == 4) ? (0xff << fifo_id) : (0x1 << fifo_id);
-		mppa_ethernet[0]->tx.fifo_if[noc_if - 4].lane[eth_if].
+		mppa_ethernet[0]->tx.fifo_if[noc_if - ETH_BASE_TX].lane[eth_if].
 			eth_fifo[fifo_id].eth_fifo_ctrl._.jumbo_mode = 0;
-		lb_status.tx_fifo[noc_if] |= mask;
+		lb_status.tx_fifo[noc_if - ETH_BASE_TX] |= mask;
 	}
 
 	if (tx_id >= 0) {
