@@ -93,49 +93,86 @@ int main(){
 		fprintf(stderr, "Failed to open Rx ports\n");
 	}
 
-	{
-		/*
-		 * RPC Msg to IOETH  #N so the LB will dispatch to us
-		 */
-		odp_rpc_cmd_eth_open_t open_cmd = {
-			{
-				.ifId = 4,
-				.dma_if = rx_config.dma_if,
-				.min_rx = rx_config.min_port,
-				.max_rx = rx_config.max_port,
-				.loopback = 0,
-				.jumbo = 0,
-				.rx_enabled = 1,
-				.tx_enabled = 1,
-				.nb_rules = 0,
+	for (int dma = 0; dma < 4; ++dma){
+		{
+			/*
+			 * RPC Msg to IOETH  #N so the LB will dispatch to us
+			 */
+			odp_rpc_cmd_eth_open_t open_cmd = {
+				{
+					.ifId = 4,
+					.dma_if = cluster_id + dma,
+					.min_rx = rx_config.min_port,
+					.max_rx = rx_config.max_port,
+					.loopback = 0,
+					.jumbo = 0,
+					.rx_enabled = 1,
+					.tx_enabled = 1,
+					.nb_rules = 0,
+				}
+			};
+			odp_rpc_t cmd = {
+				.data_len = 0,
+				.pkt_type = ODP_RPC_CMD_ETH_OPEN_DEF,
+				.inl_data = open_cmd.inl_data,
+				.flags = 0,
+			};
+
+			odp_rpc_do_query(odp_rpc_get_io_dma_id(1, cluster_id),
+							 odp_rpc_get_io_tag_id(cluster_id),
+							 &cmd, NULL);
+
+			ret = odp_rpc_wait_ack(&ack_msg, NULL, -1);
+			if (ret < 0) {
+				fprintf(stderr, "[ETH] RPC Error\n");
+				return 1;
+			} else if (ret == 0){
+				fprintf(stderr, "[ETH] Query timed out\n");
+				return 1;
 			}
-		};
-		odp_rpc_t cmd = {
-			.data_len = 0,
-			.pkt_type = ODP_RPC_CMD_ETH_OPEN_DEF,
-			.inl_data = open_cmd.inl_data,
-			.flags = 0,
-		};
-
-		odp_rpc_do_query(odp_rpc_get_io_dma_id(1, cluster_id),
-				 odp_rpc_get_io_tag_id(cluster_id),
-				 &cmd, NULL);
-
-		ret = odp_rpc_wait_ack(&ack_msg, NULL, -1);
-		if (ret < 0) {
-			fprintf(stderr, "[ETH] RPC Error\n");
-			return 1;
-		} else if (ret == 0){
-			fprintf(stderr, "[ETH] Query timed out\n");
-			return 1;
+			ack.inl_data = ack_msg->inl_data;
+			if (ack.status) {
+				fprintf(stderr, "[ETH] Error: Server declined opening of eth interface\n");
+				return 1;
+			}
 		}
-		ack.inl_data = ack_msg->inl_data;
-		if (ack.status) {
-			fprintf(stderr, "[ETH] Error: Server declined opening of eth interface\n");
-			return 1;
+		printf("Ethernet =>%d  opened successfully\n", dma);
+
+		{
+			/*
+			 * RPC Msg to IOETH  #N so the LB will dispatch to us
+			 */
+			odp_rpc_cmd_eth_clos_t close_cmd = {
+				{
+					.ifId = 4
+				}
+			};
+			odp_rpc_t cmd = {
+				.pkt_type = ODP_RPC_CMD_ETH_CLOS,
+				.data_len = 0,
+				.flags = 0,
+				.inl_data = close_cmd.inl_data
+			};
+			odp_rpc_do_query(odp_rpc_get_io_dma_id(1, cluster_id),
+							 odp_rpc_get_io_tag_id(cluster_id),
+							 &cmd, NULL);
+
+			ret = odp_rpc_wait_ack(&ack_msg, NULL, -1);
+			if (ret < 0) {
+				fprintf(stderr, "[ETH] RPC Error\n");
+				return 1;
+			} else if (ret == 0){
+				fprintf(stderr, "[ETH] Query timed out\n");
+				return 1;
+			}
+			ack.inl_data = ack_msg->inl_data;
+			if (ack.status) {
+				fprintf(stderr, "[ETH] Error: Server declined closing of eth interface\n");
+				return 1;
+			}
 		}
+		printf("Ethernet =>%d closed successfully\n", dma);
 	}
-	printf("Ethernet opened successfully\n");
 	while(1) {}
 	return 0;
 }
