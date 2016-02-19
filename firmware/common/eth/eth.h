@@ -52,9 +52,10 @@ typedef struct {
 	enum {
 		ETH_LANE_OFF,
 		ETH_LANE_ON,
-		ETH_LANE_LOOPBACK
+		ETH_LANE_ON_40G,
+		ETH_LANE_LOOPBACK,
+		ETH_LANE_LOOPBACK_40G
 	} initialized;
-	int laneStatus;
 	eth_cluster_status_t cluster[BSP_NB_CLUSTER_MAX];
 	int enabled_refcount;
 } eth_status_t;
@@ -76,7 +77,6 @@ static inline void _eth_cluster_status_init(eth_cluster_status_t * cluster)
 static inline void _eth_status_init(eth_status_t * status)
 {
 	status->initialized = 0;
-	status->laneStatus = -1;
 	status->enabled_refcount = 0;
 
 	for (int i = 0; i < BSP_NB_CLUSTER_MAX; ++i)

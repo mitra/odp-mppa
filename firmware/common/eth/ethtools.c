@@ -201,7 +201,8 @@ int ethtool_init_lane(unsigned if_id, int loopback)
 #endif
 			mppabeth_mac_enable_loopback_bypass((void *)&(mppa_ethernet[0]->mac));
 			for (int i = 0; i < N_ETH_LANE; ++i)
-				status[eth_if].initialized = ETH_LANE_LOOPBACK;
+				status[i].initialized = (if_id == 4) ? ETH_LANE_LOOPBACK_40G :  ETH_LANE_LOOPBACK;
+
 		} else {
 			enum mppa_eth_mac_ethernet_mode_e link_speed =
 				mac_get_default_mode(eth_if);
@@ -265,7 +266,11 @@ int ethtool_init_lane(unsigned if_id, int loopback)
 #endif
 			if (!up)
 				return -1;
-			status[eth_if].initialized = ETH_LANE_ON;
+			if (if_id == 4) {
+				for (int i = 9; i < N_ETH_LANE; ++i)
+					status[i].initialized = ETH_LANE_ON_40G;
+			} else
+				status[eth_if].initialized = ETH_LANE_ON;
 		}
 		break;
 	case ETH_LANE_ON:
@@ -274,12 +279,48 @@ int ethtool_init_lane(unsigned if_id, int loopback)
 				"[ETH] Error: One lane was enabled. Cannot set lane %d in loopback\n",
 				eth_if);
 			return -1;
+		} else if (if_id == 4) {
+			fprintf(stderr,
+				"[ETH] Error: One lane was enabled in 1 or 10G. Cannot set lane %d in 40G\n",
+				eth_if);
+			return -1;
+		}
+		break;
+	case ETH_LANE_ON_40G:
+		if (loopback) {
+			fprintf(stderr,
+				"[ETH] Error: One lane was enabled. Cannot set lane %d in loopback\n",
+				eth_if);
+			return -1;
+		} else if (if_id < 4) {
+			fprintf(stderr,
+				"[ETH] Error: Interface was enabled in 40G. Cannot set lane %d in 1 or 10G mode\n",
+				eth_if);
+			return -1;
 		}
 		break;
 	case ETH_LANE_LOOPBACK:
 		if (!loopback) {
 			fprintf(stderr,
-				"[ETH] Error: Eth is in loopback. Cannot enable lane %d\n",
+				"[ETH] Error: Eth is in 10G loopback. Cannot enable lane %d\n",
+				eth_if);
+			return -1;
+		} else if(if_id == 4){
+			fprintf(stderr,
+				"[ETH] Error: One lane was enabled in 10G loopback . Cannot set lane %d in 40G loopback\n",
+				eth_if);
+			return -1;
+		}
+		break;
+	case ETH_LANE_LOOPBACK_40G:
+		if (!loopback) {
+			fprintf(stderr,
+					"[ETH] Error: Eth is in 40G loopback. Cannot enable lane %d\n",
+					eth_if);
+			return -1;
+		} else if (if_id < 4) {
+			fprintf(stderr,
+				"[ETH] Error: Interface was enabled in 40G loopback. Cannot set lane %d in 10G loopback\n",
 				eth_if);
 			return -1;
 		}
