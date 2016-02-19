@@ -709,7 +709,7 @@ int ethtool_close_cluster(unsigned remoteClus, unsigned if_id)
 			hash_global_count += status[i].refcounts.policy[ETH_CLUS_POLICY_HASH];
 		}
 		if (!hash_global_count){
-			for (int i = 0; i < MPPABETHLB_XT_TABLE_ARRAY_SIZE; ++i){
+			for (int i = 0; i < MPPABETHLB_XT_TABLE_ARRAY_SIZE - 1; ++i){
 				mppabeth_lb_cfg_extract_table_mode((void *) &(mppa_ethernet[0]->lb),
 								   i, 0,
 								   MPPA_ETHERNET_DISPATCH_POLICY_OFF);
