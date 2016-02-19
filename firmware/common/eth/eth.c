@@ -138,13 +138,13 @@ static int eth_apply_rules(int lane_id, pkt_rule_t *rules, int nb_rules, int clu
 #ifdef VERBOSE
 		printf("config lut[%3d-%3d] -> C%2d: %d %d %d %d\n",
 			   i, i + chunks[j] - 1, registered_cluster,
-			   lane_id, tx_id, ETH_DEFAULT_CTX, noc_if - 4);
+			   lane_id, tx_id, ETH_DEFAULT_CTX, noc_if - ETH_BASE_TX);
 #endif
 		for ( int lut_id = i; lut_id < i + chunks[j] ; ++lut_id ) {
 			mppabeth_lb_cfg_luts((void *) &(mppa_ethernet[0]->lb),
 								 lane_id, lut_id, tx_id,
 								 ETH_DEFAULT_CTX,
-								 noc_if - 4);
+								 noc_if - ETH_BASE_TX);
 		}
 	}
 

@@ -303,7 +303,7 @@ void ethtool_cleanup_cluster(unsigned remoteClus, unsigned if_id)
 	if (tx_id >= 0) {
 		mppabeth_lb_cfg_table_rr_dispatch_channel((void *)&(mppa_ethernet[0]->lb),
 							  ETH_MATCHALL_TABLE_ID, eth_if,
-							  noc_if,tx_id, 0);
+							  noc_if - ETH_BASE_TX,tx_id, 0);
 		mppa_dnoc[noc_if]->tx_chan_route[tx_id].
 			min_max_task_id[ETH_DEFAULT_CTX]._.min_max_task_id_en = 0;
 
