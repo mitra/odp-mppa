@@ -48,6 +48,7 @@ typedef struct {
 	int min_rx;
 	int max_rx;
 	int rx_tag;
+	int eth_tx_fifo;
 
 	eth_cluster_lane_status_t opened;
 	struct {
@@ -78,6 +79,7 @@ typedef struct {
 
 	eth_refcounts_t refcounts;
 	eth_refcounts_t rx_refcounts;
+
 } eth_status_t;
 
 typedef struct {
@@ -85,6 +87,7 @@ typedef struct {
 		int enabled : 1;
 		int dual_mac : 1;
 	};
+	uint16_t tx_fifo[MPPA_ETHERNET_TX_FIFO_IF_NUMBER];
 } eth_lb_status_t;
 
 static inline void _eth_cluster_status_init(eth_cluster_status_t * cluster)
@@ -94,6 +97,7 @@ static inline void _eth_cluster_status_init(eth_cluster_status_t * cluster)
 	cluster->min_rx = 0;
 	cluster->max_rx = -1;
 	cluster->rx_tag = -1;
+	cluster->eth_tx_fifo = -1;
 	cluster->opened = ETH_CLUS_STATUS_OFF;
 	cluster->enabled = 0;
 	cluster->rx_enabled = 0;
@@ -125,6 +129,10 @@ static inline void _eth_status_init(eth_status_t * status)
 static inline void _eth_lb_status_init(eth_lb_status_t * status)
 {
 	status->enabled = 0;
+	status->dual_mac = 0;
+	for (int i = 0; i < MPPA_ETHERNET_TX_FIFO_IF_NUMBER; ++i){
+		status->tx_fifo[i] = -1;
+	}
 }
 extern eth_status_t status[N_ETH_LANE];
 extern eth_lb_status_t lb_status;

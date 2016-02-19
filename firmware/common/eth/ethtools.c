@@ -177,15 +177,28 @@ int ethtool_setup_clus2eth(unsigned remoteClus, int if_id, int nocIf)
 	mppa_dnoc_queue_event_it_target_t it_targets = {
 		.reg = 0
 	};
-	int fifo_id = remoteClus;
+	int fifo_id;
+	uint16_t fifo_mask;
+
+	if (lb_status.tx_fifo[nocIf - 4] == 0) {
+		fprintf(stderr, "[ETH] Error: No more Ethernet Tx fifo available on NoC interface %d\n", nocIf);
+		return  -1;
+	}
+	fifo_id = __builtin_k1_ctz(lb_status.tx_fifo[nocIf - 4]);
+	fifo_mask = if_id == 4 ? (0xf << fifo_id) : (1 << fifo_id);
+	if ((fifo_mask & lb_status.tx_fifo[nocIf - 4]) != fifo_mask) {
+		/* This should never happen */
+		return -1;
+	}
+	lb_status.tx_fifo[nocIf - 4] &= ~fifo_mask;
+
 
 	/* If we are using 40G */
 	if (if_id == 4) {
-		/* Jumbo frames */
-		fifo_id = (remoteClus % 4) * 4;
 		mppa_ethernet[0]->tx.fifo_if[nocIf - ETH_BASE_TX].lane[eth_if].
 			eth_fifo[fifo_id].eth_fifo_ctrl._.jumbo_mode = 1;
 	}
+	status[eth_if].cluster[remoteClus].eth_tx_fifo = fifo_id;
 
 	mppa_ethernet[0]->tx.fifo_if[nocIf - ETH_BASE_TX].lane[eth_if].
 		eth_fifo[fifo_id].eth_fifo_ctrl._.drop_en = 1;
@@ -660,6 +673,7 @@ int ethtool_close_cluster(unsigned remoteClus, unsigned if_id)
 	int noc_if = status[eth_if].cluster[remoteClus].nocIf;
 	int tx_id = status[eth_if].cluster[remoteClus].txId;
 	int rx_tag = status[eth_if].cluster[remoteClus].rx_tag;
+	int fifo_id = status[eth_if].cluster[remoteClus].eth_tx_fifo;
 
 	if (if_id == 4) {
 		for (int i = 0; i < N_ETH_LANE; ++i)
@@ -672,6 +686,13 @@ int ethtool_close_cluster(unsigned remoteClus, unsigned if_id)
 
 	if (rx_tag >= 0)
 		mppa_noc_dnoc_rx_free(noc_if, rx_tag);
+
+	if (fifo_id >= 0) {
+		uint16_t mask = (if_id == 4) ? (0xff << fifo_id) : (0x1 << fifo_id);
+		mppa_ethernet[0]->tx.fifo_if[noc_if - 4].lane[eth_if].
+			eth_fifo[fifo_id].eth_fifo_ctrl._.jumbo_mode = 0;
+		lb_status.tx_fifo[noc_if] |= mask;
+	}
 
 	if (tx_id >= 0) {
 		mppa_dnoc[noc_if]->tx_chan_route[tx_id].
@@ -694,7 +715,7 @@ int ethtool_close_cluster(unsigned remoteClus, unsigned if_id)
 								   i, 0,
 								   MPPA_ETHERNET_DISPATCH_POLICY_OFF);
 			}
-			_eth_lb_status_init(&lb_status);
+			lb_status.enabled = 0;
 		}
 	}
 	if (if_id == 4) {

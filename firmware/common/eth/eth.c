@@ -172,6 +172,7 @@ odp_rpc_cmd_ack_t  eth_dual_mac(unsigned remoteClus __attribute__((unused)),
 
 static void eth_init(void)
 {
+	_eth_lb_status_init(&lb_status);
 	for (int eth_if = 0; eth_if < N_ETH_LANE; ++eth_if) {
 		_eth_status_init(&status[eth_if]);
 		ethtool_init_lane(eth_if);
