@@ -38,7 +38,7 @@ enum {
 };
 
 // cmp_mask and hash_mask are bytemask
-typedef struct {
+typedef struct pkt_rule_entry {
 	uint64_t cmp_value;
 	uint16_t offset;
 	uint8_t  cmp_mask;
@@ -47,7 +47,7 @@ typedef struct {
 
 // a set of rules is like: hashpolicy=[P0{@6#0xfc}{@12/0xf0=32}][P2{@0/0xff=123456}{@20#0xff}]
 // P (for priority) is optional, [0..7]
-typedef struct {
+typedef struct pkt_rule {
 	pkt_rule_entry_t entries[10];
 	uint8_t nb_entries : 4;
 	uint8_t priority   : 4;
@@ -57,7 +57,7 @@ typedef struct {
 	uint64_t data[4];
 } odp_rpc_inl_data_t;
 
-typedef struct {
+typedef struct odp_rpc {
 	uint16_t pkt_type;
 	uint16_t data_len;       /* Packet is data len * 8B long. data_len < RPC_MAX_PAYLOAD / 8 */
 	uint8_t  dma_id;         /* Source cluster ID */
