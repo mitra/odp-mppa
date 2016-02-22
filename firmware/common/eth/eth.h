@@ -93,6 +93,7 @@ typedef struct {
 	struct {
 		int enabled : 1;
 		int dual_mac : 1;
+		unsigned nb_rules : 3;
 	};
 	uint16_t tx_fifo[MPPA_ETHERNET_TX_FIFO_IF_NUMBER];
 } eth_lb_status_t;

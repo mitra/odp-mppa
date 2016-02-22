@@ -525,6 +525,7 @@ int ethtool_apply_rules(unsigned remoteClus, unsigned if_id,
 			}
 		}
 		lb_status.enabled = 1;
+		lb_status.nb_rules = ((lb_status.dual_mac && if_id < 4) ? 4 : 1) * nb_rules;
 	} else if ( check_rules_identical(rules, nb_rules) ) {
 		fprintf(stderr, "[ETH] Error: Non matching hash policy already registered\n");
 		return -1;
