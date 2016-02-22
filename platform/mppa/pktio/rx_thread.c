@@ -611,7 +611,7 @@ int rx_thread_link_close(uint8_t pktio_id)
 
 	odp_rwlock_write_lock(&rx_hdl.lock);
 	{
-		INVALIDATE(ifce);
+		INVALIDATE(&rx_hdl);
 
 		if (ifce->status == RX_IFCE_DOWN) {
 			odp_rwlock_write_unlock(&rx_hdl.lock);

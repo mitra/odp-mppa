@@ -392,8 +392,7 @@ static int cluster_close(pktio_entry_t * const pktio_entry ODP_UNUSED)
 	}
 
 	/* Push Context to handling threads */
-	rx_thread_link_close( MAX_RX_ETH_IF +
-			      MAX_RX_PCIE_IF + clus->clus_id);
+	rx_thread_link_close(clus->rx_config.pktio_id);
 
 	return 0;
 }
