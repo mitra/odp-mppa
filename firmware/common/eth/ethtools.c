@@ -351,6 +351,10 @@ int ethtool_stop_lane(unsigned if_id)
 	status[eth_if].initialized = ETH_LANE_OFF;
 	lb_status.opened_refcount--;
 
+	if (lb_status.loopback && !lb_status.opened_refcount){
+		lb_status.loopback = 0;
+		mppabeth_mac_disable_loopback_bypass((void *)&(mppa_ethernet[0]->mac));
+	}
 	return 0;
 }
 
