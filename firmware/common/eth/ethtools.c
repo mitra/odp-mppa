@@ -731,6 +731,10 @@ int ethtool_close_cluster(unsigned remoteClus, unsigned if_id)
 
 	}
 	status[eth_if].refcounts.opened--;
+
+	if (!status[eth_if].refcounts.opened)
+		ethtool_stop_lane(if_id);
+
 	if (status[eth_if].cluster[remoteClus].policy == ETH_CLUS_POLICY_HASH) {
 		/* If we were the last hash policy. Clear up the tables
 		 * and reset the LB hash data */
