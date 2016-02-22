@@ -99,6 +99,7 @@ typedef struct {
 		int dual_mac : 1;
 		unsigned nb_rules : 3;
 	};
+	int opened_refcount;
 	uint16_t tx_fifo[MPPA_ETHERNET_TX_FIFO_IF_NUMBER];
 } eth_lb_status_t;
 
@@ -143,6 +144,7 @@ static inline void _eth_lb_status_init(eth_lb_status_t * status)
 	status->enabled = 0;
 	status->dual_mac = 0;
 	status->loopback = 0;
+	status->opened_refcount = 0;
 	for (int i = 0; i < MPPA_ETHERNET_TX_FIFO_IF_NUMBER; ++i){
 		status->tx_fifo[i] = -1;
 	}

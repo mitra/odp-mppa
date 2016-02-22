@@ -338,6 +338,7 @@ int ethtool_start_lane(unsigned if_id, int loopback)
 		return -1;
 	}
 
+	lb_status.opened_refcount++;
 	return 0;
 }
 
@@ -348,6 +349,7 @@ int ethtool_stop_lane(unsigned if_id)
 	/* Close the lane ! */
 	mppa_ethernet[0]->mac.port_ctl._.rx_enable &= ~(1 << eth_if);
 	status[eth_if].initialized = ETH_LANE_OFF;
+	lb_status.opened_refcount--;
 
 	return 0;
 }
