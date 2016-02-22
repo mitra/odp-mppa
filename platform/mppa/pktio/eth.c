@@ -523,7 +523,7 @@ static int eth_close(pktio_entry_t * const pktio_entry)
 	ack.inl_data = ack_msg->inl_data;
 
 	/* Push Context to handling threads */
-	rx_thread_link_close(slot_id * MAX_ETH_PORTS + port_id);
+	rx_thread_link_close(eth->rx_config.pktio_id);
 
 	return ack.status;
 }
