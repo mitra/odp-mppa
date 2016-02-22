@@ -104,7 +104,7 @@ int main(){
 					.dma_if = cluster_id + dma,
 					.min_rx = rx_config.min_port,
 					.max_rx = rx_config.max_port,
-					.loopback = 0,
+					.loopback = 1,
 					.jumbo = 0,
 					.rx_enabled = 1,
 					.tx_enabled = 1,
@@ -173,6 +173,5 @@ int main(){
 		}
 		printf("Ethernet =>%d closed successfully\n", dma);
 	}
-	while(1) {}
 	return 0;
 }
