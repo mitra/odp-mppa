@@ -60,6 +60,8 @@ int join_cluster(int clus_id, int *status)
 	printf("[BOOT] Joined cluster %d. Status=%d\n", clus_id, *status);
 #endif
 	clus->status = STATE_OFF;
+	free(clus->bin);
+	clus->bin = NULL;
 	return pid;
 }
 
