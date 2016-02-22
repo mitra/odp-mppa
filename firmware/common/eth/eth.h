@@ -83,8 +83,6 @@ typedef struct {
 		ETH_LANE_OFF,
 		ETH_LANE_ON,
 		ETH_LANE_ON_40G,
-		ETH_LANE_LOOPBACK,
-		ETH_LANE_LOOPBACK_40G
 	} initialized;
 	uint8_t mac_address[2][6];
 	eth_cluster_status_t cluster[RPC_MAX_CLIENTS];
@@ -97,6 +95,7 @@ typedef struct {
 typedef struct {
 	struct {
 		int enabled : 1;
+		int loopback;
 		int dual_mac : 1;
 		unsigned nb_rules : 3;
 	};
@@ -143,6 +142,7 @@ static inline void _eth_lb_status_init(eth_lb_status_t * status)
 {
 	status->enabled = 0;
 	status->dual_mac = 0;
+	status->loopback = 0;
 	for (int i = 0; i < MPPA_ETHERNET_TX_FIFO_IF_NUMBER; ++i){
 		status->tx_fifo[i] = -1;
 	}
