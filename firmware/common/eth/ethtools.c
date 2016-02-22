@@ -544,6 +544,12 @@ int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id)
 	   status[eth_if].cluster[remoteClus].enabled) {
 		return -1;
 	}
+	/* Enable on single lane while 40G mode is one */
+	if (if_id < 4 && status[eth_if].cluster[remoteClus].opened == ETH_CLUS_STATUS_40G)
+		return -1;
+	/* Enable on all lanes while 1 or 10G mode is one */
+	if (if_id == 4 && status[eth_if].cluster[remoteClus].opened == ETH_CLUS_STATUS_ON)
+		return -1;
 
 	/* Make sure link is up */
 	{
@@ -624,6 +630,13 @@ int ethtool_disable_cluster(unsigned remoteClus, unsigned if_id)
 	const int noc_if = status[eth_if].cluster[remoteClus].nocIf;
 	const int tx_id = status[eth_if].cluster[remoteClus].txId;
 	const eth_cluster_policy_t policy = status[eth_if].cluster[remoteClus].policy;
+
+	/* Disable on single lane while 40G mode is one */
+	if (if_id < 4 && status[eth_if].cluster[remoteClus].opened == ETH_CLUS_STATUS_40G)
+		return -1;
+	/* Disable on all lanes while 1 or 10G mode is one */
+	if (if_id == 4 && status[eth_if].cluster[remoteClus].opened == ETH_CLUS_STATUS_ON)
+		return -1;
 
 	if(status[eth_if].cluster[remoteClus].nocIf < 0 ||
 	   status[eth_if].cluster[remoteClus].enabled == 0) {
