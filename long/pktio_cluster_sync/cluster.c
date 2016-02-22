@@ -17,22 +17,18 @@ int main(int argc, char **argv)
 {
 	(void) argc;
 	(void) argv;
-	printf("START\n");
 	if (0 != odp_init_global(NULL, NULL)) {
 		fprintf(stderr, "error: odp_init_global() failed.\n");
 		return 1;
 	}
-	printf("START 1\n");
 	if (0 != odp_init_local(ODP_THREAD_CONTROL)) {
 		fprintf(stderr, "error: odp_init_local() failed.\n");
 		return 1;
 	}
-	printf("START 2\n");
 	if (0 != odp_term_local()) {
 		fprintf(stderr, "error: odp_term_local() failed.\n");
 		return 1;
 	}
-	printf("START 3\n");
 	if (0 != odp_term_global()) {
 		fprintf(stderr, "error: odp_term_global() failed.\n");
 		return 1;
