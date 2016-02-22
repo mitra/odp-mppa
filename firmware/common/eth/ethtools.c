@@ -429,6 +429,21 @@ static void update_lut(unsigned if_id)
 	}
 
 	const int nb_registered = __k1_cbs(clusters);
+	if (!nb_registered) {
+		if (lb_status.opened_refcount > 1) {
+			/* Set all the rules to DROP */
+			for (int i = 0; i < lb_status.nb_rules; ++i){
+				mppabeth_lb_cfg_extract_table_dispatch_mode((void *) &(mppa_ethernet[0]->lb),
+									    i, MPPA_ETHERNET_DISPATCH_POLICY_DROP);
+			}
+
+		} else {
+			/* HW has no support to stop hashing a subset of lanes.
+			 * So let's assume this won't happen (Known Limitation ) */
+		}
+
+
+	}
 	int chunks[nb_registered];
 
 	for ( int j = 0; j < nb_registered; ++j ) {
@@ -452,6 +467,10 @@ static void update_lut(unsigned if_id)
 								 ETH_DEFAULT_CTX,
 								 noc_if - ETH_BASE_TX);
 		}
+	}
+	for (int i = 0; i < lb_status.nb_rules; ++i){
+		mppabeth_lb_cfg_extract_table_dispatch_mode((void *) &(mppa_ethernet[0]->lb),
+													i, MPPA_ETHERNET_DISPATCH_POLICY_HASH);
 	}
 }
 
@@ -532,7 +551,7 @@ int ethtool_apply_rules(unsigned remoteClus, unsigned if_id,
 				mppabeth_lb_cfg_extract_table_mode((void *) &(mppa_ethernet[0]->lb),
 								   hw_rule_id,
 								   rules[rule_id].priority,
-								   MPPA_ETHERNET_DISPATCH_POLICY_HASH);
+								   MPPA_ETHERNET_DISPATCH_POLICY_DROP);
 			}
 		}
 		lb_status.enabled = 1;
