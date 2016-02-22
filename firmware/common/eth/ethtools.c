@@ -45,6 +45,22 @@ enum mppa_eth_mac_ethernet_mode_e mac_get_default_mode(unsigned lane_id)
 	return -1;
 }
 
+enum mppa_eth_mac_ethernet_mode_e ethtool_get_mac_speed(unsigned if_id)
+{
+	int eth_if = if_id % 4;
+	enum mppa_eth_mac_ethernet_mode_e link_speed =
+		mac_get_default_mode(eth_if);
+	if (!link_speed == MPPA_ETH_MAC_ETHMODE_40G && if_id == 4) {
+		fprintf(stderr,
+				"[ETH] Error: Cannot open 40G link\n");
+		return -1;
+	} else if (link_speed == MPPA_ETH_MAC_ETHMODE_40G && if_id < 4) {
+		/* Link could do 40G but we use only one lane */
+		link_speed = MPPA_ETH_MAC_ETHMODE_10G_BASE_R;
+	}
+	return link_speed;
+}
+
 int ethtool_init_lane(int eth_if)
 {
 	mppabeth_lb_cfg_header_mode((void *)&(mppa_ethernet[0]->lb),
@@ -245,16 +261,10 @@ int ethtool_start_lane(unsigned if_id, int loopback)
 				status[i].initialized = (if_id == 4) ? ETH_LANE_LOOPBACK_40G :  ETH_LANE_LOOPBACK;
 
 		} else {
-			enum mppa_eth_mac_ethernet_mode_e link_speed =
+			enum mppa_eth_mac_ethernet_mode_e link_speed = ethtool_get_mac_speed(if_id);
+			if ((int)link_speed < 0)
+				return link_speed;
 				mac_get_default_mode(eth_if);
-			if (!link_speed == MPPA_ETH_MAC_ETHMODE_40G && if_id == 4) {
-				fprintf(stderr,
-					"[ETH] Error: Cannot open 40G link\n");
-				return -1;
-			} else if (link_speed == MPPA_ETH_MAC_ETHMODE_40G && if_id < 4) {
-				/* Link could do 40G but we use only one lane */
-				link_speed = MPPA_ETH_MAC_ETHMODE_10G_BASE_R;
-			}
 #ifdef VERBOSE
 			printf("[ETH] Initializing global MAC @ %d\n", link_speed);
 #endif
