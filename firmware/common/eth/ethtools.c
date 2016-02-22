@@ -300,23 +300,6 @@ int ethtool_start_lane(unsigned if_id, int loopback)
 #endif
 			mppa_eth_utils_start_lane(eth_if, link_speed);
 
-#ifdef VERBOSE
-			printf("[ETH] Waiting for link %d\n", eth_if);
-#endif
-			/* Wait for link to come up */
-			unsigned long long start = __k1_read_dsu_timestamp();
-			int up = 0;
-			while (__k1_read_dsu_timestamp() - start < 3ULL * __bsp_frequency) {
-				if (!mppa_eth_utils_mac_poll_state(eth_if, link_speed)) {
-					up = 1;
-					break;
-				}
-			}
-#ifdef VERBOSE
-			printf("Link %d %s\n", eth_if, up ? "up" : "down/polling");
-#endif
-			if (!up)
-				return -1;
 			if (if_id == 4) {
 				for (int i = 9; i < N_ETH_LANE; ++i)
 					status[i].initialized = ETH_LANE_ON_40G;
@@ -562,6 +545,22 @@ int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id)
 		return -1;
 	}
 
+	/* Make sure link is up */
+	{
+		enum mppa_eth_mac_ethernet_mode_e link_speed =
+			ethtool_get_mac_speed(if_id);
+		unsigned long long start = __k1_read_dsu_timestamp();
+		int up = 0;
+		while (__k1_read_dsu_timestamp() - start < 3ULL * __bsp_frequency) {
+			if (!mppa_eth_utils_mac_poll_state(eth_if, link_speed)) {
+				up = 1;
+				break;
+			}
+		}
+		if (!up)
+			return -1;
+	}
+
 	status[eth_if].cluster[remoteClus].enabled = 1;
 	status[eth_if].refcounts.policy[policy]++;
 	status[eth_if].refcounts.enabled++;
@@ -612,6 +611,7 @@ int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id)
 	default:
 		return -1;
 	}
+
 	status[eth_if].rx_refcounts.enabled++;
 
 	return 0;
@@ -639,11 +639,6 @@ int ethtool_disable_cluster(unsigned remoteClus, unsigned if_id)
 	switch(policy){
 	case ETH_CLUS_POLICY_HASH:
 		status[eth_if].rx_refcounts.policy[ETH_CLUS_POLICY_HASH]--;
-		if (!status[eth_if].rx_refcounts.policy[ETH_CLUS_POLICY_HASH]) {
-			// TODO
-			/* We should pu the rules to DROP mode here but when using
-			 * multiple lanes, it would break other lanes... */
-		}
 		update_lut(if_id);
 		break;
 	case ETH_CLUS_POLICY_FALLTHROUGH:

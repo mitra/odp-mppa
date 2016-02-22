@@ -89,11 +89,10 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg,
 					 data.nb_rules, (pkt_rule_t*)payload))
 			goto err;
 	}
+	if (ethtool_start_lane(data.ifId, data.loopback))
+		goto err;
 	if (ethtool_enable_cluster(remoteClus, data.ifId))
 		goto err;
-	if (ethtool_start_lane(data.ifId, data.loopback))
-		goto err_enabled;
-
 	ack.cmd.eth_open.tx_if = externalAddress;
 	ack.cmd.eth_open.tx_tag = status[eth_if].cluster[remoteClus].rx_tag;
 	if (data.jumbo) {
@@ -109,8 +108,6 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg,
 	}
 
 	return ack;
- err_enabled:
-	ethtool_disable_cluster(remoteClus, data.ifId);
  err:
 	ethtool_close_cluster(remoteClus, data.ifId);
 	ack.status = 1;
