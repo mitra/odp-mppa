@@ -22,17 +22,22 @@
 #endif
 
 int ethtool_init_lane(int eth_if);
+
 int ethtool_open_cluster(unsigned remoteClus, unsigned if_id);
+int ethtool_close_cluster(unsigned remoteClus, unsigned if_id);
+
 int ethtool_setup_eth2clus(unsigned remoteClus, int if_id,
 			   int nocIf, int externalAddress,
 			   int min_rx, int max_rx);
 int ethtool_setup_clus2eth(unsigned remoteClus, int if_id, int nocIf);
-int ethtool_start_lane(unsigned if_id, int loopback);
 int ethtool_apply_rules(unsigned remoteClus, unsigned if_id,
 			int nb_rules, const pkt_rule_t rules[nb_rules]);
+
 int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id);
 int ethtool_disable_cluster(unsigned remoteClus, unsigned if_id);
-int ethtool_close_cluster(unsigned remoteClus, unsigned if_id);
+
+int ethtool_start_lane(unsigned if_id, int loopback);
+int ethtool_stop_lane(unsigned if_id);
 
 int ethtool_set_dual_mac(int enabled);
 

@@ -366,6 +366,17 @@ int ethtool_start_lane(unsigned if_id, int loopback)
 	return 0;
 }
 
+int ethtool_stop_lane(unsigned if_id)
+{
+	const int eth_if = if_id % 4;
+
+	/* Close the lane ! */
+	mppa_ethernet[0]->mac.port_ctl._.rx_enable &= ~(1 << eth_if);
+	status[eth_if].initialized = ETH_LANE_OFF;
+
+	return 0;
+}
+
 static inline pkt_rule_entry_t
 mppabeth_lb_get_rule(void __iomem *lb_addr,
 	unsigned int rule_id,
