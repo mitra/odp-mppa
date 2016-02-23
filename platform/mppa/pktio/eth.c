@@ -493,7 +493,7 @@ static int eth_close(pktio_entry_t * const pktio_entry)
 	int ret;
 	odp_rpc_cmd_eth_clos_t close_cmd = {
 		{
-			.ifId = eth->port_id = port_id
+			.ifId = port_id
 
 		}
 	};
