@@ -114,6 +114,39 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg,
 	return ack;
 }
 
+odp_rpc_cmd_ack_t  eth_set_state(unsigned remoteClus, odp_rpc_t *msg)
+{
+	odp_rpc_cmd_ack_t ack = { .status = 0 };
+	odp_rpc_cmd_eth_state_t data = { .inl_data = msg->inl_data };
+	const unsigned int eth_if = data.ifId % 4; /* 4 is actually 0 in 40G mode */
+
+	if (data.ifId == 4) {
+		if(status[eth_if].cluster[remoteClus].opened != ETH_CLUS_STATUS_40G) {
+			ack.status = -1;
+			return ack;
+		}
+	} else {
+		if(status[eth_if].cluster[remoteClus].opened != ETH_CLUS_STATUS_ON) {
+			ack.status = -1;
+			return ack;
+		}
+	}
+
+	if (data.enabled) {
+		if (ethtool_enable_cluster(remoteClus, data.ifId)) {
+			ack.status = -1;
+			return ack;
+		}
+	} else {
+		if (ethtool_disable_cluster(remoteClus, data.ifId)) {
+			ack.status = -1;
+			return ack;
+		}
+	}
+
+	return ack;
+}
+
 odp_rpc_cmd_ack_t  eth_close(unsigned remoteClus, odp_rpc_t *msg)
 {
 	odp_rpc_cmd_ack_t ack = { .status = 0 };
@@ -176,6 +209,9 @@ static int eth_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload
 	switch (msg->pkt_type){
 	case ODP_RPC_CMD_ETH_OPEN:
 		ack = eth_open(remoteClus, msg, payload, 0);
+		break;
+	case ODP_RPC_CMD_ETH_STATE:
+		ack = eth_set_state(remoteClus, msg);
 		break;
 	case ODP_RPC_CMD_ETH_CLOS:
 	case ODP_RPC_CMD_ETH_CLOS_DEF:

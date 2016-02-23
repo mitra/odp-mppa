@@ -81,6 +81,7 @@ typedef enum {
 	ODP_RPC_CMD_ETH_OPEN_DEF /**< ETH: Forward unmatch Rx traffic to a cluster */,
 	ODP_RPC_CMD_ETH_CLOS_DEF /**< ETH: Stop forwarding unmatch Rx traffic to a cluster */,
 	ODP_RPC_CMD_ETH_DUAL_MAC /**< ETH: Enable dual-mac mode (ODP + Linux) */,
+	ODP_RPC_CMD_ETH_STATE    /**< ETH: Start or Stop trafic forwarding */,
 
 	ODP_RPC_CMD_PCIE_OPEN    /**< PCIe: Forward Rx traffic to a cluster */,
 	ODP_RPC_CMD_PCIE_CLOS    /**< PCIe: Stop forwarding Rx trafic to a cluster */,
@@ -126,6 +127,12 @@ typedef union {
 } odp_rpc_cmd_eth_promisc_t;
 /** @internal Compile time assert */
 _ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_eth_promisc_t) == sizeof(odp_rpc_inl_data_t), "ODP_RPC_CMD_ETH_PROMISC_T__SIZE_ERROR");
+
+typedef odp_rpc_cmd_eth_promisc_t odp_rpc_cmd_eth_state_t;
+/** @internal Compile time assert */
+_ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_eth_state_t) == sizeof(odp_rpc_inl_data_t),
+		   "ODP_RPC_CMD_ETH_STATE_T__SIZE_ERROR");
+
 
 typedef union {
 	struct {

@@ -82,6 +82,7 @@ static const char * rpc_cmd_names[ODP_RPC_CMD_N_CMD] = {
 	[ODP_RPC_CMD_BAS_PING]    = "PING",
 	[ODP_RPC_CMD_ETH_OPEN]    = "ETH OPEN",
 	[ODP_RPC_CMD_ETH_CLOS]    = "ETH CLOSE",
+	[ODP_RPC_CMD_ETH_STATE]   = "ETH SET STATE",
 	[ODP_RPC_CMD_ETH_PROMISC] = "ETH PROMISC",
 	[ODP_RPC_CMD_ETH_OPEN_DEF]= "ETH OPEN FALLTHROUGH",
 	[ODP_RPC_CMD_ETH_CLOS_DEF]= "ETH CLOSE FALLTHROUGH",
@@ -140,6 +141,7 @@ void odp_rpc_print_msg(const odp_rpc_t * cmd)
 		}
 		break;
 	case ODP_RPC_CMD_ETH_PROMISC:
+	case ODP_RPC_CMD_ETH_STATE:
 		{
 			odp_rpc_cmd_eth_promisc_t promisc = { .inl_data = cmd->inl_data };
 			printf("\t\tifId: %d\n"
