@@ -348,7 +348,13 @@ int ethtool_stop_lane(unsigned if_id)
 
 	/* Close the lane ! */
 	mppa_ethernet[0]->mac.port_ctl._.rx_enable &= ~(1 << eth_if);
-	status[eth_if].initialized = ETH_LANE_OFF;
+
+	if (if_id == 4) {
+		for (int i = 0; i < N_ETH_LANE; ++i)
+			status[i].initialized = ETH_LANE_OFF;
+	} else
+		status[eth_if].initialized = ETH_LANE_OFF;
+
 	lb_status.opened_refcount--;
 
 	if (lb_status.loopback && !lb_status.opened_refcount){
