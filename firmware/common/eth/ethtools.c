@@ -289,10 +289,13 @@ int ethtool_start_lane(unsigned if_id, int loopback)
 			if (ret == BAD_VENDOR) {
 				fprintf(stderr,
 					"[ETH] Warning: QSFP coonector is not supported\n");
-			}else if(ret < 0) {
+			} else if (ret == -EBUSY) {
+				/* lane is already configured. Ignore */
+				mppa_ethernet[0]->mac.port_ctl._.rx_enable |= ~(1 << eth_if);
+			} else if(ret < 0) {
 				fprintf(stderr,
 					"[ETH] Error: Failed to initialize lane %d (%d)\n",
-					eth_if, ret);
+						eth_if, ret);
 				return -1;
 			}
 
