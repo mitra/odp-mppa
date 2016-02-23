@@ -575,8 +575,10 @@ int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id)
 				break;
 			}
 		}
-		if (!up)
+		if (!up) {
+			fprintf(stderr, "[ETH] Error:No carrier on lane %d\n", eth_if);
 			return -1;
+		}
 	}
 
 	status[eth_if].cluster[remoteClus].enabled = 1;
