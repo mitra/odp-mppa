@@ -301,8 +301,8 @@ static int _pktio_stop(pktio_entry_t *entry)
 {
 	int res = 0;
 
-       if (entry->s.state == STATE_STOP)
-               return -1;
+	if (entry->s.state == STATE_STOP)
+		return -1;
 
 	if (entry->s.ops->stop)
 		res = entry->s.ops->stop(entry);
