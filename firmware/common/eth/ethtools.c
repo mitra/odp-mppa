@@ -564,7 +564,7 @@ int ethtool_enable_cluster(unsigned remoteClus, unsigned if_id)
 		return -1;
 
 	/* Make sure link is up */
-	{
+	if (!lb_status.loopback){
 		enum mppa_eth_mac_ethernet_mode_e link_speed =
 			ethtool_get_mac_speed(if_id);
 		unsigned long long start = __k1_read_dsu_timestamp();
