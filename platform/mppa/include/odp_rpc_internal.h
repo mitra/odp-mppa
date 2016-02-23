@@ -75,8 +75,8 @@ typedef enum {
 	ODP_RPC_CMD_BAS_INVL = 0 /**< BASE: Invalid command. Skip */,
 	ODP_RPC_CMD_BAS_PING     /**< BASE: Ping command. server sends back ack = 0 */,
 
-	ODP_RPC_CMD_ETH_OPEN     /**< ETH: Forward Rx traffic to a cluster */,
-	ODP_RPC_CMD_ETH_CLOS     /**< ETH: Stop forwarding Rx trafic to a cluster */,
+	ODP_RPC_CMD_ETH_OPEN     /**< ETH: Configure trafic forward to/from Eth in IOETH */,
+	ODP_RPC_CMD_ETH_CLOS     /**< ETH: Free forward resources to/from Eth in IOETH */,
 	ODP_RPC_CMD_ETH_PROMISC  /**< ETH: KSet/Clear promisc mode */,
 	ODP_RPC_CMD_ETH_OPEN_DEF /**< ETH: Forward unmatch Rx traffic to a cluster */,
 	ODP_RPC_CMD_ETH_CLOS_DEF /**< ETH: Stop forwarding unmatch Rx traffic to a cluster */,

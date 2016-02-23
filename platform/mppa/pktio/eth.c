@@ -528,6 +528,55 @@ static int eth_close(pktio_entry_t * const pktio_entry)
 	return ack.status;
 }
 
+static int eth_set_state(pktio_entry_t * const pktio_entry, int enabled)
+{
+
+	pkt_eth_t *eth = &pktio_entry->s.pkt_eth;
+	int slot_id = eth->slot_id;
+	int port_id = eth->port_id;
+	odp_rpc_t *ack_msg;
+	odp_rpc_cmd_ack_t ack;
+	int ret;
+	odp_rpc_cmd_eth_state_t state_cmd = {
+		{
+			.ifId = port_id,
+			.enabled = enabled,
+		}
+	};
+	unsigned cluster_id = __k1_get_cluster_id();
+	odp_rpc_t cmd = {
+		.pkt_type = ODP_RPC_CMD_ETH_STATE,
+		.data_len = 0,
+		.flags = 0,
+		.inl_data = state_cmd.inl_data
+	};
+
+	odp_rpc_do_query(odp_rpc_get_io_dma_id(slot_id, cluster_id),
+					 odp_rpc_get_io_tag_id(cluster_id),
+					 &cmd, NULL);
+
+	ret = odp_rpc_wait_ack(&ack_msg, NULL, 5 * RPC_TIMEOUT_1S);
+	if (ret < 0) {
+		fprintf(stderr, "[ETH] RPC Error\n");
+		return 1;
+	} else if (ret == 0){
+		fprintf(stderr, "[ETH] Query timed out\n");
+		return 1;
+	}
+	ack.inl_data = ack_msg->inl_data;
+	return ack.status;
+}
+
+static int eth_start(pktio_entry_t * const pktio_entry)
+{
+	return eth_set_state(pktio_entry, 1);
+}
+
+static int eth_stop(pktio_entry_t * const pktio_entry)
+{
+	return eth_set_state(pktio_entry, 0);
+}
+
 static int eth_mac_addr_get(pktio_entry_t *pktio_entry,
 			    void *mac_addr)
 {
@@ -616,8 +665,8 @@ const pktio_if_ops_t eth_pktio_ops = {
 	.term = eth_destroy,
 	.open = eth_open,
 	.close = eth_close,
-	.start = NULL,
-	.stop = NULL,
+	.start = eth_start,
+	.stop = eth_stop,
 	.recv = eth_recv,
 	.send = eth_send,
 	.mtu_get = eth_mtu_get,
