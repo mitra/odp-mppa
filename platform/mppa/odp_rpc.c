@@ -54,6 +54,8 @@ int odp_rpc_client_term(void){
 		return -1;
 
 	mppa_noc_dnoc_rx_free(0, rx_port);
+	g_rpc_init = 0;
+	rx_port = -1;
 
 	return 0;
 }
