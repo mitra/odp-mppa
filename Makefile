@@ -90,13 +90,13 @@ extra-clean:
 	rm -Rf $(TOP_DIR)/build $(INST_DIR) $(TOP_DIR)/configure \
 	 $(TOP_DIR)/cunit/install $(TOP_DIR)/cunit/configure syscall/build_x86_64/
 extra-configure:
-extra-build: $(INST_DIR)/lib64/libodp_syscall.so
+extra-build:
 extra-valid:
-extra-install: $(INST_DIR)/lib64/libodp_syscall.so $(K1ST_DIR)/share/odp/build/mk/platforms.inc $(K1ST_DIR)/share/odp/build/apps/Makefile.apps $(K1ST_DIR)/share/odp/tests/ktest-wrapper.sh template-install
+extra-install: $(K1ST_DIR)/lib64/libodp_syscall.so $(K1ST_DIR)/share/odp/build/mk/platforms.inc $(K1ST_DIR)/share/odp/build/apps/Makefile.apps $(K1ST_DIR)/share/odp/tests/ktest-wrapper.sh template-install
 extra-long:
 
-$(INST_DIR)/lib64/libodp_syscall.so: $(TOP_DIR)/syscall/run.sh
-	+$< $(INST_DIR)/local/k1tools/
+$(K1ST_DIR)/lib64/libodp_syscall.so: $(TOP_DIR)/syscall/run.sh
+	+$< $(K1ST_DIR)
 $(K1ST_DIR)/share/odp/build/mk/platforms.inc: $(TOP_DIR)/mk/platforms.inc
 	install -D $< $@
 $(K1ST_DIR)/share/odp/build/apps/Makefile.apps: $(TOP_DIR)/apps/Makefile.apps
