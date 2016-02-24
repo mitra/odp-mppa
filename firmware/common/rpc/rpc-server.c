@@ -189,8 +189,13 @@ void  __attribute__ ((constructor)) __bas_rpc_constructor()
 
 /** Boot ack */
 static char rpc_server_stack[8192] __attribute__ ((aligned(64), section(".upper_internal_memory")));
-static void rpc_server_thread()
+int odp_rpc_server_thread()
 {
+	if (__k1_get_cluster_id() != 160 &&
+	    __k1_get_cluster_id() != 224) {
+		return -1;
+	}
+
 	while (1) {
 		odp_rpc_t *msg;
 
@@ -199,6 +204,7 @@ static void rpc_server_thread()
 			exit(1);
 		}
 	}
+	return 0;
 }
 
 int odp_rpc_server_start(void)
@@ -216,15 +222,18 @@ int odp_rpc_server_start(void)
 #endif
 	g_rpc_init = 1;
 
-	/* Init with scratchpad size */
-	_K1_PE_STACK_ADDRESS[4] = rpc_server_stack + sizeof(rpc_server_stack) - 16;
-	_K1_PE_START_ADDRESS[4] = &rpc_server_thread;
-	_K1_PE_ARGS_ADDRESS[4] = 0;
+	if (__k1_get_cluster_id() == 128 ||
+	    __k1_get_cluster_id() == 192) {
+		/* Boot only if we are in an IODDR */
+		_K1_PE_STACK_ADDRESS[4] = rpc_server_stack + sizeof(rpc_server_stack) - 16;
+		_K1_PE_START_ADDRESS[4] = &odp_rpc_server_thread;
+		_K1_PE_ARGS_ADDRESS[4] = 0;
 
-	__builtin_k1_dinval();
-	__builtin_k1_wpurge();
-	__builtin_k1_fence();
-	__k1_poweron(4);
+		__builtin_k1_dinval();
+		__builtin_k1_wpurge();
+		__builtin_k1_fence();
+		__k1_poweron(4);
+	}
 
 	return 0;
 }
