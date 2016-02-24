@@ -8,6 +8,16 @@ HDRFILES   += $(shell find $(SRCDIRS) -name "[^.]*.h")
 OBJFILES   += $(patsubst %.c, $(BUILDDIR)/%.o, $(SRCFILES))
 ASMOBJFILES+= $(patsubst %.S, $(BUILDDIR)/%.o, $(ASMFILES))
 
+ODP_TOOLCHAIN_DIR ?= $(K1_TOOLCHAIN_DIR)
+include $(ODP_TOOLCHAIN_DIR)/share/odp/build/mk/platforms.inc
+ODP_FIRMWARE_CONFIG ?= k1b-kalray_konic80
+
+# Inherit flags from platforms.inc
+CC            = $(firmware_$(ODP_FIRMWARE_CONFIG)_CC)
+PLAT_CFLAGS   = $(firmware_$(ODP_FIRMWARE_CONFIG)_CFLAGS)
+PLAT_LDFLAGS  = $(firmware_$(ODP_FIRMWARE_CONFIG)_CFLAGS)
+
+
 ODP_INCDIR  = $(TOP_SRCDIR)/platform/mppa/include
 ODP_SRCDIR  = $(TOP_SRCDIR)/platform/mppa/
 _CFLAGS    += -I$(ODP_INCDIR) -I$(TOP_SRCDIR)/include
@@ -35,17 +45,17 @@ endif
 all: $(BIN) $(LIB)
 
 $(BIN): $(OBJFILES) $(ASMOBJFILES)
-	$(CC) -o $@ $^ $(_CFLAGS) $(_LDFLAGS)
+	$(CC) -o $@ $^ $(PLAT_CFLAGS) $(_CFLAGS) $(PLAT_LDFLAGS) $(_LDFLAGS)
 $(LIB): $(OBJFILES) $(ASMOBJFILES)
 	ar rc $@ $^
 
 $(OBJFILES): $(BUILDDIR)/%.o: %.c $(HDRFILES)
 	@mkdir -p $$(dirname $@) || true
-	$(CC) -o $@ -c $< $(_CFLAGS)
+	$(CC) -o $@ -c $< $(PLAT_CFLAGS) $(_CFLAGS)
 
 $(ASMOBJFILES): $(BUILDDIR)/%.o: %.S $(HDRFILES)
 	@mkdir -p $$(dirname $@) || true
-	$(CC) -o $@ -c $< $(_CFLAGS)
+	$(CC) -o $@ -c $< $(PLAT_CFLAGS) $(_CFLAGS)
 
 install: $(INSTBIN) $(INSTLIB)
 $(INSTBIN): $(BIN)

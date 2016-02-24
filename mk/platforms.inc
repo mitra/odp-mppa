@@ -118,91 +118,53 @@ CONFIGS += x86_64-unknown-linux-gnu
 #
 #
 #
+firmware_k1b-kalray_developer_CC          := k1-gcc
+firmware_k1b-kalray_developer_CFLAGS      := -march=k1b -mos=bare -mcore=k1bio -mcluster=ioddr -mprocessing=single
+firmware_k1b-kalray_developer_LDFLAGS     :=
+firmware_k1b-kalray_developer_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/developer/k1b
+
+firmware_k1b-kalray_konic80_CC            := k1-gcc
+firmware_k1b-kalray_konic80_CFLAGS        := -march=k1b -mos=bare -mcore=k1bio -mcluster=ioddr -mprocessing=single -mboard=konic80
+firmware_k1b-kalray_konic80_LDFLAGS       :=
+firmware_k1b-kalray_konic80_INSTDIR        = $(K1ST_DIR)/share/odp/firmware/konic80/k1b
+
+firmware_k1b-kalray_simu_CC               := k1-gcc
+firmware_k1b-kalray_simu_CFLAGS           := -march=k1b -mos=bare -mcore=k1bio -mcluster=ioddr -mprocessing=single -DMAGIC_SCALL
+firmware_k1b-kalray_simu_LDFLAGS          :=
+firmware_k1b-kalray_simu_INSTDIR           = $(K1ST_DIR)/share/odp/firmware/simu/k1b
+
+firmware_k1b-kalray_explorer_CC           := k1-gcc
+firmware_k1b-kalray_explorer_CFLAGS       := -march=k1b -mos=bare -mcore=k1bio -mcluster=ioddr \
+									  	     -mprocessing=single -mboard=explorer -DK1B_EXPLORER
+firmware_k1b-kalray_explorer_LDFLAGS      :=
+firmware_k1b-kalray_explorer_INSTDIR       = $(K1ST_DIR)/share/odp/firmware/explorer/k1b
+
 
 #
 # IOPCIE
 #
-k1b-kalray-ioddr_developer_CC          := k1-gcc
-k1b-kalray-ioddr_developer_CFLAGS      := -march=k1b -mos=bare -mcore=k1bio -mcluster=ioddr -mprocessing=single
-k1b-kalray-ioddr_developer_LDFLAGS     :=
-k1b-kalray-ioddr_developer_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/developer/k1b
-iopcie_CONFIGS += k1b-kalray-ioddr_developer
-
-k1b-kalray-ioddr_konic80_CC          := k1-gcc
-k1b-kalray-ioddr_konic80_CFLAGS      := -march=k1b -mos=bare -mcore=k1bio -mcluster=ioddr -mprocessing=single -mboard=konic80
-k1b-kalray-ioddr_konic80_LDFLAGS     :=
-k1b-kalray-ioddr_konic80_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/konic80/k1b
-iopcie_CONFIGS += k1b-kalray-ioddr_konic80
-
-k1b-kalray-ioddr_simu_CC          := k1-gcc
-k1b-kalray-ioddr_simu_CFLAGS      := -march=k1b -mos=bare -mcore=k1bio -mcluster=ioddr -mprocessing=single -DMAGIC_SCALL
-k1b-kalray-ioddr_simu_LDFLAGS     :=
-k1b-kalray-ioddr_simu_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/simu/k1b
-iopcie_CONFIGS += k1b-kalray-ioddr_simu
-
-k1b-kalray-ioddr_explorer_CC          := k1-gcc
-k1b-kalray-ioddr_explorer_CFLAGS      := -march=k1b -mos=bare -mcore=k1bio -mcluster=ioddr \
-									  	 -mprocessing=single -mboard=explorer -DK1B_EXPLORER
-k1b-kalray-ioddr_explorer_LDFLAGS     :=
-k1b-kalray-ioddr_explorer_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/explorer/k1b
-_iopcie_CONFIGS += k1b-kalray-ioddr_explorer
+iopcie_CONFIGS += k1b-kalray_developer
+iopcie_CONFIGS += k1b-kalray_konic80
+iopcie_CONFIGS += k1b-kalray_simu
+_iopcie_CONFIGS += k1b-kalray_explorer
 
 #
 # IOUNIFIED
 #
-k1b-kalray-iounified_developer_CC          := k1-gcc
-k1b-kalray-iounified_developer_CFLAGS      := -march=k1b -DK1_BARE -mcore=k1bio -mcluster=ioddr -mos=bare
-k1b-kalray-iounified_developer_LDFLAGS     :=
-k1b-kalray-iounified_developer_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/developer/k1b
-iounified_CONFIGS += k1b-kalray-iounified_developer
-
-k1b-kalray-iounified_simu_CC          := k1-gcc
-k1b-kalray-iounified_simu_CFLAGS      := -march=k1b -DK1_BARE -mcore=k1bio -mcluster=ioddr -mos=bare -DMAGIC_SCALL
-k1b-kalray-iounified_simu_LDFLAGS     :=
-k1b-kalray-iounified_simu_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/simu/k1b
-iounified_CONFIGS += k1b-kalray-iounified_simu
-
-k1b-kalray-iounified_konic80_CC          := k1-gcc
-k1b-kalray-iounified_konic80_CFLAGS      := -march=k1b -DK1_BARE -mcore=k1bio -mcluster=ioddr -mos=bare \
-										 	-mboard=konic80
-k1b-kalray-iounified_konic80_LDFLAGS     :=
-k1b-kalray-iounified_konic80_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/konic80/k1b
-iounified_CONFIGS += k1b-kalray-iounified_konic80
+iounified_CONFIGS += k1b-kalray_developer
+iounified_CONFIGS += k1b-kalray_simu
+iounified_CONFIGS += k1b-kalray_konic80
 
 
 #
 # IOETH
 #
-k1b-kalray-ioeth_developer_CC          := k1-gcc
-k1b-kalray-ioeth_developer_CFLAGS      := -march=k1b -DK1_BARE -mcore=k1bio -mcluster=ioddr -mos=bare
-k1b-kalray-ioeth_developer_LDFLAGS     :=
-k1b-kalray-ioeth_developer_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/developer/k1b
-ioeth_CONFIGS += k1b-kalray-ioeth_developer
-
-k1b-kalray-ioeth_simu_CC          := k1-gcc
-k1b-kalray-ioeth_simu_CFLAGS      := -march=k1b -DK1_BARE -mcore=k1bio -mcluster=ioddr -mos=bare -DMAGIC_SCALL
-k1b-kalray-ioeth_simu_LDFLAGS     :=
-k1b-kalray-ioeth_simu_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/simu/k1b
-ioeth_CONFIGS += k1b-kalray-ioeth_simu
-
-k1b-kalray-ioeth_konic80_CC          := k1-gcc
-k1b-kalray-ioeth_konic80_CFLAGS      := -march=k1b -DK1_BARE -mcore=k1bio -mcluster=ioddr -mos=bare \
-										 	-mboard=konic80
-k1b-kalray-ioeth_konic80_LDFLAGS     :=
-k1b-kalray-ioeth_konic80_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/konic80/k1b
-ioeth_CONFIGS += k1b-kalray-ioeth_konic80
+ioeth_CONFIGS += k1b-kalray_developer
+ioeth_CONFIGS += k1b-kalray_simu
+ioeth_CONFIGS += k1b-kalray_konic80
 
 #
 # Netdev loopback
 #
-k1b-kalray-netdev-loopback_CC          := k1-gcc
-k1b-kalray-netdev-loopback_CFLAGS      := -march=k1b -mos=bare -mcore=k1bio -mcluster=ioddr -mprocessing=single
-k1b-kalray-netdev-loopback_LDFLAGS     :=
-k1b-kalray-netdev-loopback_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/developer/k1b
-_netdev-loopback_CONFIGS += k1b-kalray-netdev-loopback
-
-k1b-kalray-netdev-loopback_konic80_CC          := k1-gcc
-k1b-kalray-netdev-loopback_konic80_CFLAGS      := -march=k1b -mos=bare -mcore=k1bio -mcluster=ioddr -mprocessing=single
-k1b-kalray-netdev-loopback_konic80_LDFLAGS     :=
-k1b-kalray-netdev-loopback_konic80_INSTDIR      = $(K1ST_DIR)/share/odp/firmware/konic80/k1b
-_netdev-loopback_CONFIGS += k1b-kalray-netdev-loopback_konic80
+_netdev-loopback_CONFIGS += k1b-kalray_developer
+_netdev-loopback_CONFIGS += k1b-kalray_konic80
