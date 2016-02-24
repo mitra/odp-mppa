@@ -74,7 +74,7 @@ build-firmware:
 	ODP_TOOLCHAIN_DIR="$(ODP_TOOLCHAIN_DIR)" all
 
 clean-firmware:
-	if [ -d ./firmware-$(OS_BOARD_NAME) ]; then \
+	if [ -d ./firmware-$(OS_BOARD_NAME) ]; then cd ./firmware-$(OS_BOARD_NAME) && \
 	$(MAKE) -f $(APP_DIR)/firmware/Makefile ODP_FIRMWARE_CONFIG="k1b-kalray_$(OS_BOARD_NAME)" \
 	ODP_TOOLCHAIN_DIR="$(ODP_TOOLCHAIN_DIR)" clean; else true; fi
 
