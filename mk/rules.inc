@@ -101,7 +101,7 @@ define FIRMWARE_RULE
 #$(2) Firmware type
 $(eval $(1)-$(2)-ENV := ODP_FIRMWARE_CONFIG="$(1)" INSTDIR="$(firmware_$(1)_INSTDIR)" ODP_TOOLCHAIN_DIR="$(K1ST_DIR)")
 firmware-$(2)-$(1)-configure: firmware/$(2)/Makefile
-firmware-$(2)-$(1)-build: firmware/$(2)/Makefile
+firmware-$(2)-$(1)-build: firmware/$(2)/Makefile extra-install
 	mkdir -p $(ARCH_DIR)/firmware/$(2)/$(1)
 	cd $(ARCH_DIR)/firmware/$(2)/$(1) && $$(MAKE) -f $(TOP_DIR)/firmware/$(2)/Makefile all $($(1)-$(2)-ENV)
 

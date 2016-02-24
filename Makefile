@@ -32,7 +32,6 @@ FIRMWARE_FILES := $(shell find firmware/common -type f -or -type l) firmware/Mak
 TEMPLATE_FILES := $(shell find apps/skel -type f -or -type l)
 install_DEPS := build
 firmware-install_DEPS := firmware-common-install
-firmware-build_DEPS := extra-install
 
 include mk/platforms.inc
 include mk/rules.inc
