@@ -19,8 +19,5 @@ int main (int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	boot_clusters(argc, argv);
-	join_clusters();
-
-	return 0;
+	return odp_rpc_server_start();
 }
