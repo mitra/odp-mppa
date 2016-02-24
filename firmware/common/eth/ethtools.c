@@ -267,7 +267,7 @@ int ethtool_init_lane(unsigned if_id, int loopback)
 			if (!up)
 				return -1;
 			if (if_id == 4) {
-				for (int i = 9; i < N_ETH_LANE; ++i)
+				for (int i = 0; i < N_ETH_LANE; ++i)
 					status[i].initialized = ETH_LANE_ON_40G;
 			} else
 				status[eth_if].initialized = ETH_LANE_ON;
