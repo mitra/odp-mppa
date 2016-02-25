@@ -18,5 +18,5 @@ int main (int argc __attribute__((unused)), char *argv[] __attribute__((unused))
 		exit(EXIT_FAILURE);
 	}
 
-	return odp_rpc_server_start();
+	return odp_rpc_server_thread();
 }
