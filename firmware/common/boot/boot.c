@@ -86,6 +86,9 @@ void boot_set_nb_clusters(int nb_clusters) {
 	clus_count = nb_clusters;
 }
 int boot_cluster(int clus_id, const char bin_file[], const char * argv[] ) {
+	if (__k1_get_cluster_id() != 128)
+		return -1;
+
 	struct clus_bin_boot *clus = &clus_bin_boots[clus_id];
 	has_booted = 1;
 
@@ -119,6 +122,8 @@ int boot_clusters(int argc, char * const argv[])
 {
 	unsigned int i;
 	int opt;
+	if (__k1_get_cluster_id() != 128)
+		return -1;
 
 	while ((opt = getopt(argc, argv, "c:a:")) != -1) {
 		switch (opt) {
