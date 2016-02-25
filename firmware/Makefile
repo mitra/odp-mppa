@@ -7,6 +7,7 @@ ASMFILES   += $(shell find $(SRCDIRS) -name "[^.]*.S")
 HDRFILES   += $(shell find $(SRCDIRS) -name "[^.]*.h")
 OBJFILES   += $(patsubst %.c, $(BUILDDIR)/%.o, $(SRCFILES))
 ASMOBJFILES+= $(patsubst %.S, $(BUILDDIR)/%.o, $(ASMFILES))
+_EXTRA_INST:= $(patsubst $(BUILDDIR)/%,$(INSTDIR)/%,$(EXTRA_BINS))
 
 ODP_TOOLCHAIN_DIR ?= $(K1_TOOLCHAIN_DIR)
 include $(ODP_TOOLCHAIN_DIR)/share/odp/build/mk/platforms.inc
@@ -42,7 +43,7 @@ else
 BIN      := $(BUILDDIR)/$(FIRMDIR).kelf
 INSTBIN  := $(INSTDIR)/$(FIRMDIR).kelf
 endif
-all: $(BIN) $(LIB)
+all: $(BIN) $(LIB) $(EXTRA_BINS)
 
 $(BIN): $(OBJFILES) $(ASMOBJFILES)
 	$(CC) -o $@ $^ $(PLAT_CFLAGS) $(_CFLAGS) $(PLAT_LDFLAGS) $(_LDFLAGS)
@@ -57,13 +58,18 @@ $(ASMOBJFILES): $(BUILDDIR)/%.o: %.S $(HDRFILES)
 	@mkdir -p $$(dirname $@) || true
 	$(CC) -o $@ -c $< $(PLAT_CFLAGS) $(_CFLAGS)
 
-install: $(INSTBIN) $(INSTLIB)
+install: $(INSTBIN) $(INSTLIB) $(_EXTRA_INST) $(EXTRA_INST)
 $(INSTBIN): $(BIN)
 	if [ "$(INSTDIR)" == "" ]; then echo "ERROR: INSTDIR not set" && exit 1; fi
 	install -D $< $@
 $(INSTLIB): $(LIB)
 	if [ "$(INSTDIR)" == "" ]; then echo "ERROR: INSTDIR not set" && exit 1; fi
 	install -D $< $@
+
+$(_EXTRA_INST):$(INSTDIR)/%:$(BUILDDIR)/%
+	if [ "$(INSTDIR)" == "" ]; then echo "ERROR: INSTDIR not set" && exit 1; fi
+	install -D $< $@
+
 
 valid:
 long:
