@@ -75,7 +75,7 @@ build-firmware:
 	LDFLAGS="$(k1b-kalray-iounified_$(OS_BOARD_NAME)_LDFLAGS)" ODP_TOOLCHAIN_DIR="$(ODP_TOOLCHAIN_DIR)" all
 
 clean-firmware:
-	if [ -d ./firmware-$(OS_BOARD_NAME) ]; then \
+	if [ -d ./firmware-$(OS_BOARD_NAME) ]; then cd ./firmware-$(OS_BOARD_NAME) && \
 	$(MAKE) -f $(APP_DIR)/firmware/Makefile CC="$(k1b-kalray-iounified_$(OS_BOARD_NAME)_CC)" \
 	CFLAGS="$(k1b-kalray-iounified_$(OS_BOARD_NAME)_CFLAGS)" \
 	LDFLAGS="$(k1b-kalray-iounified_$(BOARD_NAME)_LDFLAGS)" ODP_TOOLCHAIN_DIR="$(ODP_TOOLCHAIN_DIR)" clean; else true; fi
