@@ -111,21 +111,25 @@ void odp_buffer_ring_push_multi(odp_buffer_ring_t *ring,
 	}
 }
 
-odp_buffer_hdr_t * odp_buffer_ring_push_list(odp_buffer_ring_t *ring,
-					     odp_buffer_hdr_t *buffers,
-					     unsigned *nbufs)
+unsigned odp_buffer_ring_push_sort_list(odp_buffer_ring_t *ring,
+										odp_buffer_hdr_t **head,
+										odp_buffer_hdr_t ***tail,
+										unsigned n_buffers)
 {
+	const unsigned total_bufs = n_buffers;
 	uint32_t prod_head, prod_next, cons_tail;
-	unsigned n_buffers = *nbufs;
+
+	if (!total_bufs)
+		return 0;
 
 	/* Sort the list first */
 	{
-		odp_buffer_hdr_t *sorted  = buffers;
-		odp_buffer_hdr_t **last_insertion = &buffers;
+		odp_buffer_hdr_t *sorted  = (*head);
+		odp_buffer_hdr_t **last_insertion = head;
 		odp_buffer_hdr_t *buf, *next;
 		unsigned count;
 
-		for (count = 1, buf = sorted->next; buf && count < n_buffers; count+=1, buf = next) {
+		for (count = 1, buf = sorted->next; buf && count < total_bufs; count+=1, buf = next) {
 			next = buf->next;
 			if (odp_unlikely(buf->order < sorted->order)){
 				/* Remove unsorted elnt */
@@ -137,8 +141,8 @@ odp_buffer_hdr_t * odp_buffer_ring_push_list(odp_buffer_ring_t *ring,
 
 				if (odp_unlikely(buf->order < ptr->order)) {
 					/* We need to be inserted before the last insertion point */
-					prev = &buffers;
-					ptr = buffers;
+					prev = head;
+					ptr = *head;
 				}
 				/* Find slot */
 				for(; ptr->order < buf->order; prev=&ptr->next, ptr = ptr->next){}
@@ -150,6 +154,8 @@ odp_buffer_hdr_t * odp_buffer_ring_push_list(odp_buffer_ring_t *ring,
 				sorted = buf;
 			}
 		}
+		/* Update tail ptr */
+		*tail = &(sorted->next);
 	}
 
 	do {
@@ -162,8 +168,9 @@ odp_buffer_hdr_t * odp_buffer_ring_push_list(odp_buffer_ring_t *ring,
 			n_buffers = cons_tail + ring->buf_num - prod_head - 1;
 		}
 
+		/* Ring is full */
 		if (!n_buffers)
-			return buffers;
+			return total_bufs;
 
 		prod_next = prod_head + n_buffers;
 		if(prod_next > ring->buf_num)
@@ -178,14 +185,19 @@ odp_buffer_hdr_t * odp_buffer_ring_push_list(odp_buffer_ring_t *ring,
 		}
 	} while(1);
 
-	for (unsigned i = 0, idx = prod_head; i < n_buffers && buffers; ++i, ++idx, buffers = buffers->next) {
-		if(odp_unlikely(idx == ring->buf_num))
-			idx = 0;
-
-		ring->buf_ptrs[idx] = buffers;
+	{
+		/* Push buffers to ring buf */
+		odp_buffer_hdr_t *buf;
+		unsigned i, idx;
+		for (i = 0, idx = prod_head, buf = *head; i < n_buffers && buf; ++i, ++idx, buf = buf->next) {
+			if(odp_unlikely(idx == ring->buf_num))
+				idx = 0;
+			ring->buf_ptrs[idx] = buf;
+		}
+		/* Update head */
+		*head = buf;
 	}
 
-	*nbufs = *nbufs - n_buffers;
 	__builtin_k1_wpurge();
 	__builtin_k1_fence();
 
@@ -193,5 +205,5 @@ odp_buffer_hdr_t * odp_buffer_ring_push_list(odp_buffer_ring_t *ring,
 		odp_spin();
 
 	odp_atomic_store_u32(&ring->prod_tail, prod_next);
-	return buffers;
+	return total_bufs - n_buffers;
 }
