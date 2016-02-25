@@ -13,6 +13,7 @@ ARCH_DIR:= $(TOP_DIR)/build/
 INST_DIR:= $(TOP_DIR)/install
 K1ST_DIR:= $(INST_DIR)/local/k1tools/
 APST_DIR:= $(K1ST_DIR)/share/odp/apps/
+LONT_DIR:= $(K1ST_DIR)/share/odp/long
 CUNIT_INST_DIR:= $(INST_DIR)/local/k1tools/kalray_internal/cunit/
 MAKE_AMS:= $(shell find $(TOP_DIR) -name Makefile.am)
 MAKE_M4S:= $(shell find $(TOP_DIR) -name "*.m4")
@@ -20,7 +21,8 @@ MAKE_DEPS:= $(MAKE_AMS) $(MAKE_M4S) $(TOP_DIR)/Makefile $(wildcard $(TOP_DIR)/mk
 
 FIRMWARES := $(patsubst firmware/%/Makefile, %, $(wildcard firmware/*/Makefile))
 APPS      := $(patsubst apps/%/Makefile, %, $(wildcard apps/*/Makefile))
-RULE_LIST_SERIAL   :=  install valid long
+LONGS     := $(patsubst long/%/Makefile, %, $(wildcard long/*/Makefile))
+RULE_LIST_SERIAL   :=  install valid
 RULE_LIST_PARALLEL := clean configure build
 RULE_LIST := $(RULE_LIST_SERIAL) $(RULE_LIST_PARALLEL)
 ARCH_COMPONENTS := odp cunit
@@ -62,6 +64,12 @@ $(foreach APP, $(APPS), \
 		$(eval $(call APP_RULE,$(APP))))
 
 #
+# Define firmware rules for all firmwares and all their targets
+#
+$(foreach CONFIG, $(_CONFIGS) $(CONFIGS), \
+	$(eval $(call LONG_CONFIG_RULE,$(CONFIG))))
+
+#
 # Documentation rules
 #
 doc-clean:
@@ -82,23 +90,13 @@ extra-clean:
 	rm -Rf $(TOP_DIR)/build $(INST_DIR) $(TOP_DIR)/configure \
 	 $(TOP_DIR)/cunit/install $(TOP_DIR)/cunit/configure syscall/build_x86_64/
 extra-configure:
-extra-build: $(INST_DIR)/lib64/libodp_syscall.so
+extra-build:
 extra-valid:
-extra-install: $(INST_DIR)/lib64/libodp_syscall.so example-install $(K1ST_DIR)/share/odp/build/mk/platforms.inc $(K1ST_DIR)/share/odp/build/apps/Makefile.apps template-install
+extra-install: $(K1ST_DIR)/lib64/libodp_syscall.so $(K1ST_DIR)/share/odp/build/mk/platforms.inc $(K1ST_DIR)/share/odp/build/apps/Makefile.apps $(K1ST_DIR)/share/odp/tests/ktest-wrapper.sh template-install
 extra-long:
 
-ifneq (,$(findstring x86_64,$(CONFIGS)))
-example-install: odp-x86_64-unknown-linux-gnu-build
-	mkdir -p $(K1ST_DIR)/doc/ODP/example/packet
-	install example/example_debug.h platform/mppa/test/pktio/pktio_env \
-		example/packet/{odp_pktio.c,Makefile.k1b-kalray-nodeos_simu} \
-		$(ARCH_DIR)/odp/x86_64-unknown-linux-gnu/example/generator/odp_generator \
-			$(K1ST_DIR)/doc/ODP/example
-else
-example-install:
-endif
-$(INST_DIR)/lib64/libodp_syscall.so: $(TOP_DIR)/syscall/run.sh
-	+$< $(INST_DIR)/local/k1tools/
+$(K1ST_DIR)/lib64/libodp_syscall.so: $(TOP_DIR)/syscall/run.sh
+	+$< $(K1ST_DIR)
 $(K1ST_DIR)/share/odp/build/mk/platforms.inc: $(TOP_DIR)/mk/platforms.inc
 	install -D $< $@
 $(K1ST_DIR)/share/odp/build/apps/Makefile.apps: $(TOP_DIR)/apps/Makefile.apps
@@ -108,6 +106,8 @@ $(patsubst %, $(K1ST_DIR)/share/odp/build/%, $(FIRMWARE_FILES)):  $(K1ST_DIR)/sh
 	install -D $< $@
 template-install: $(patsubst apps/skel/%, $(K1ST_DIR)/share/odp/skel/%, $(TEMPLATE_FILES))
 $(patsubst apps/skel/%, $(K1ST_DIR)/share/odp/skel/%, $(TEMPLATE_FILES)): $(K1ST_DIR)/share/odp/skel/%: apps/skel/%
+	install -D $< $@
+$(K1ST_DIR)/share/odp/tests/ktest-wrapper.sh: ktest-wrapper.sh
 	install -D $< $@
 #
 # Generate rule wrappers that pull all CONFIGS for a given (firmware/Arch componen)|RULE

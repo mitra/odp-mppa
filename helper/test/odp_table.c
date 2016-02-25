@@ -54,7 +54,7 @@ int main(int argc TEST_UNUSED, char *argv[] TEST_UNUSED)
 	printf("test hash table:\n");
 	test_ops = &odph_hash_table_ops;
 
-	table = test_ops->f_create("test", 2, 4, 16);
+	table = test_ops->f_create("test", 1, 4, 16);
 	if (table == NULL) {
 		printf("table create fail\n");
 		return -1;

@@ -9,7 +9,6 @@ CONFIGS = `make list-configs`.split(" ").inject({}){|x, c| x.merge({ c => {} })}
 options = Options.new({ "k1tools"       => [ENV["K1_TOOLCHAIN_DIR"].to_s,"Path to a valid compiler prefix."],
                         "debug"         => {"type" => "boolean", "default" => false, "help" => "Debug mode." },
                         "list-configs"  => {"type" => "boolean", "default" => false, "help" => "List all targets" },
-                        "local-valid"   => {"type" => "boolean", "default" => false, "help" => "Valid using the local installation" },
                         "configs"       => {"type" => "string", "default" => CONFIGS.keys.join(" "), "help" => "Build configs. Default = #{CONFIGS.keys.join(" ")}" },
                         "valid-configs" => {"type" => "string", "default" => CONFIGS.keys.join(" "), "help" => "Build configs. Default = #{CONFIGS.keys.join(" ")}" },
                         "output-dir"    => [nil, "Output directory for RPMs."],
@@ -29,10 +28,10 @@ odp_path   = File.join(workspace,odp_clone)
 
 k1tools = options["k1tools"]
 
-env = {}
-env["K1_TOOLCHAIN_DIR"] = k1tools
-env["PATH"] = "#{k1tools}/bin:#{ENV["PATH"]}"
-env["LD_LIBRARY_PATH"] = "#{k1tools}/lib:#{k1tools}/lib64:#{ENV["LD_LIBRARY_PATH"]}"
+$env = {}
+$env["K1_TOOLCHAIN_DIR"] = k1tools
+$env["PATH"] = "#{k1tools}/bin:#{ENV["PATH"]}"
+$env["LD_LIBRARY_PATH"] = "#{k1tools}/lib:#{k1tools}/lib64:#{ENV["LD_LIBRARY_PATH"]}"
 
 repo = Git.new(odp_clone,workspace)
 
@@ -40,23 +39,21 @@ local_valid = options["local-valid"]
 
 clean = Target.new("clean", repo, [])
 build = ParallelTarget.new("build", repo, [])
-valid = ParallelTarget.new("valid", repo, [build])
+install = Target.new("install", repo, [build])
+valid = ParallelTarget.new("valid", repo, [install])
+valid_packages = ParallelTarget.new("valid-packages", repo, [])
 
 long = nil
 apps = nil
 
-install = Target.new("install", repo, [build])
-if local_valid then
-        long = Target.new("long", repo, [install])
-        apps = Target.new("apps", repo, [install])
-else
-        long = Target.new("long", repo, [])
-        apps = Target.new("apps", repo, [])
-end
+long_build = Target.new("long-build", repo, [install])
+apps = Target.new("apps", repo, [install])
+long = Target.new("long", repo, [])
 dkms = Target.new("dkms", repo, [])
-package = Target.new("package", repo, [install, apps])
+package = Target.new("package", repo, [install, apps, long_build])
 
-b = Builder.new("odp", options, [clean, build, valid, long, apps, dkms, package, install])
+b = Builder.new("odp", options, [clean, build, valid, valid_packages,
+                                 long_build, long, apps, dkms, package, install])
 
 b.logsession = "odp"
 
@@ -69,10 +66,13 @@ valid_configs = options["valid-configs"].split()
 valid_type = "sim"
 if ENV["label"].to_s() != "" then
     case ENV["label"]
-    when /MPPADevelopers-ab01b*/, /MPPAEthDevelopers-ab01b*/,
-         /KONIC80Developers*/, /MPPA_KONIC80_Developers*/
-        valid_configs = [ "k1b-kalray-nodeos", "k1b-kalray-mos" ]
+    when /MPPADevelopers-ab01b*/, /MPPAEthDevelopers-ab01b*/
+        valid_configs = [ "k1b-kalray-nodeos_developer", "k1b-kalray-mos_developer" ]
         valid_type = "jtag"
+    when /KONIC80Developers*/, /MPPA_KONIC80_Developers*/
+        valid_configs = [ "k1b-kalray-nodeos_konic80", "k1b-kalray-mos_konic80" ]
+        valid_type = "jtag"
+
     when "fedora19-64","debian6-64","debian7-64", /MPPADevelopers*/, /MPPAEthDevelopers*/
         # Validate nothing.
         valid_configs = [ ]
@@ -124,24 +124,51 @@ b.target("valid") do
 end
 
 
+b.target("long-build") do
+    b.logtitle = "Report for odp tests."
+    cd odp_path
+
+    b.run(:cmd => "make long-install")
+end
+
 b.target("long") do
     b.logtitle = "Report for odp tests."
     cd odp_path
 
-    make_opt = ""
-    if not local_valid then
-        make_opt = "USE_PACKAGES=1"
-    end
-
-    b.run(:cmd => "make long #{make_opt} CONFIGS='#{valid_configs.join(" ")}'")
-
     valid_configs.each(){|conf|
-        cd File.join(odp_path, "build", "long", conf, "bin")
+        board=conf.split("_")[1]
+        platform=conf.split("_")[0]
+
+        testEnv = $env.merge({ :test_name => "long-#{conf}"})
+
+        cd File.join(ENV["K1_TOOLCHAIN_DIR"], "share/odp/long/", board, platform)
         b.ctest( {
                      :ctest_args => "-L #{valid_type}",
                      :fail_msg => "Failed to validate #{conf}",
-                     :success_msg => "Successfully validated #{conf}"
+                     :success_msg => "Successfully validated #{conf}",
+                     :env => testEnv,
                  })
+    }
+end
+
+
+b.target("valid-packages") do
+    b.logtitle = "Report for odp tests."
+
+    valid_configs.each(){|conf|
+        board=conf.split("_")[1]
+        platform=conf.split("_")[0]
+        [ "platform/mppa/test", "test/performance", "helper/test"].each(){|dir|
+            cd File.join(ENV["K1_TOOLCHAIN_DIR"], "share/odp/tests", board,
+                         platform, dir)
+            testEnv = $env.merge({ :test_name => "valid-#{conf}-#{dir}"})
+           b.ctest( {
+                         :ctest_args => "",
+                         :fail_msg => "Failed to validate #{conf}",
+                         :success_msg => "Successfully validated #{conf}",
+                         :env => testEnv,
+                     })
+        }
     }
 end
 
@@ -149,12 +176,7 @@ b.target("apps") do
     b.logtitle = "Report for odp apps."
     cd odp_path
 
-    make_opt = ""
-    if not local_valid then
-        make_opt = "USE_PACKAGES=1"
-    end
-
-    b.run(:cmd => "make apps-install #{make_opt}")
+    b.run(:cmd => "make apps-install")
 
 end
 
@@ -171,10 +193,10 @@ b.target("package") do
     b.logtitle = "Report for odp package."
     cd odp_path
 
-    b.run(:cmd => "cd install/; tar cf ../odp.tar local/k1tools/lib/ local/k1tools/share/odp/firmware local/k1tools/share/odp/build/ local/k1tools/share/odp/skel/ local/k1tools/k1*/include local/k1tools/doc/ local/k1tools/lib64", :env => env)
-    b.run(:cmd => "cd install/; tar cf ../odp-tests.tar local/k1tools/share/odp/*/tests local/k1tools/share/odp/*/examples", :env => env)
-    b.run(:cmd => "cd install/; tar cf ../odp-apps-internal.tar local/k1tools/share/odp/apps", :env => env)
-    b.run(:cmd => "cd install/; tar cf ../odp-cunit.tar local/k1tools/kalray_internal/cunit", :env => env)
+    b.run(:cmd => "cd install/; tar cf ../odp.tar local/k1tools/lib/ local/k1tools/share/odp/firmware local/k1tools/share/odp/build/ local/k1tools/share/odp/skel/ local/k1tools/k1*/include local/k1tools/doc/ local/k1tools/lib64", :env => $env)
+    b.run(:cmd => "cd install/; tar cf ../odp-tests.tar local/k1tools/share/odp/tests local/k1tools/share/odp/long", :env => $env)
+    b.run(:cmd => "cd install/; tar cf ../odp-apps-internal.tar local/k1tools/share/odp/apps", :env => $env)
+    b.run(:cmd => "cd install/; tar cf ../odp-cunit.tar local/k1tools/kalray_internal/cunit", :env => $env)
 
     (version,releaseID,sha1) = repo.describe()
     release_info = b.release_info(version,releaseID,sha1)
@@ -240,7 +262,7 @@ b.target("clean") do
     b.logtitle = "Report for odp clean."
 
     cd odp_path
-    b.run(:cmd => "make clean", :env => env)
+    b.run(:cmd => "make clean", :env => $env)
 end
 
 b.target("dkms") do

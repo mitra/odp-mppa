@@ -25,12 +25,10 @@ int main(int argc, char **argv)
 		fprintf(stderr, "error: odp_init_local() failed.\n");
 		return 1;
 	}
-
 	if (0 != odp_term_local()) {
 		fprintf(stderr, "error: odp_term_local() failed.\n");
 		return 1;
 	}
-
 	if (0 != odp_term_global()) {
 		fprintf(stderr, "error: odp_term_global() failed.\n");
 		return 1;

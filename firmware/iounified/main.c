@@ -7,8 +7,9 @@
 #include "odp_rpc_internal.h"
 #include "rpc-server.h"
 #include "pcie.h"
+#include "boot.h"
 
-int main()
+int main (int argc, char *argv[])
 {
 
 	int ret;
@@ -25,13 +26,7 @@ int main()
 		exit(1);
 	}
 
-	while (1) {
-		odp_rpc_t *msg;
-
-		if (odp_rpc_server_handle(&msg) < 0) {
-			fprintf(stderr, "[RPC] Error: Unhandled message\n");
-			exit(1);
-		}
-	}
+	boot_clusters(argc, argv);
+	join_clusters();
 	return 0;
 }

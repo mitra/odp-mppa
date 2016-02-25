@@ -19,8 +19,12 @@ static uint64_t __rpc_ev_masks[BSP_NB_DMA_IO_MAX][4];
 static uint64_t __rpc_fair_masks[BSP_NB_DMA_IO_MAX][4];
 
 static struct {
-	void    *recv_buf;
-} g_clus_priv[BSP_NB_CLUSTER_MAX];
+	char    recv_buf[RPC_PKT_SIZE];
+} g_clus_priv[RPC_MAX_CLIENTS]
+#ifndef K1B_EXPLORER
+ __attribute__ ((aligned(64), section(".upper_internal_memory")))
+#endif
+;
 
 static inline int rxToMsg(unsigned ifId, unsigned tag,
 			   odp_rpc_t **msg, uint8_t **payload)
@@ -29,19 +33,12 @@ static inline int rxToMsg(unsigned ifId, unsigned tag,
 #if defined(K1B_EXPLORER)
 	(void)ifId;
 	remoteClus = (tag - RPC_BASE_RX);
-#elif defined(__ioddr__)
-	remoteClus = ifId + 4 * (tag - RPC_BASE_RX);
-#elif defined(__ioeth__)
-	int locIfId = ifId;
-  #if defined(__k1b__)
-	locIfId = locIfId - 4;
-  #endif
-	remoteClus = 4 * locIfId + (tag - RPC_BASE_RX);
 #else
-#error "Neither ioddr nor ioeth"
+	int locIfId = ifId - 4;
+	remoteClus = 4 * locIfId + ((tag - RPC_BASE_RX)) / 4 * 16 + ((tag - RPC_BASE_RX) % 4);
 #endif
 
-	odp_rpc_t *cmd = g_clus_priv[remoteClus].recv_buf;
+	odp_rpc_t *cmd = (void*)g_clus_priv[remoteClus].recv_buf;
 	*msg = cmd;
 	INVALIDATE(cmd);
 
@@ -59,14 +56,10 @@ static inline int rxToMsg(unsigned ifId, unsigned tag,
 static int cluster_init_dnoc_rx(int clus_id)
 {
 	mppa_noc_ret_t ret;
-	g_clus_priv[clus_id].recv_buf = malloc(RPC_PKT_SIZE);
-	if (!g_clus_priv[clus_id].recv_buf)
-		return 1;
-
 	int ifId;
 	int rxId;
 
-	ifId = get_rpc_dma_id(clus_id);
+	ifId = get_rpc_local_dma_id(clus_id);
 	rxId = get_rpc_tag_id(clus_id);
 	__rpc_ev_masks[ifId][rxId / 64] |= 1ULL << (rxId % 64);
 
@@ -93,23 +86,6 @@ static int cluster_init_dnoc_rx(int clus_id)
 	return 0;
 }
 
-int odp_rpc_server_start(void)
-{
-	int i;
-
-	for (i = 0; i < BSP_NB_CLUSTER_MAX; ++i) {
-		int ret = cluster_init_dnoc_rx(i);
-		if (ret)
-			return ret;
-	}
-
-#ifdef VERBOSE
-	printf("[RPC] Server started...\n");
-#endif
-	g_rpc_init = 1;
-
-	return 0;
-}
 static int get_if_rx_id(unsigned interface_id)
 {
 	int i;
@@ -132,9 +108,11 @@ static int get_if_rx_id(unsigned interface_id)
 }
 
 static int dma_id;
+
+static
 int odp_rpc_server_poll_msg(odp_rpc_t **msg, uint8_t **payload)
 {
-	const int base_if = (__bsp_flavour == BSP_ETH_530) ? 4 : 0;
+	const int base_if = 4;
 	int idx;
 
 	for (idx = 0; idx < BSP_NB_DMA_IO; ++idx) {
@@ -159,16 +137,16 @@ int odp_rpc_server_ack(odp_rpc_t * msg, odp_rpc_cmd_ack_t ack)
 	msg->data_len = 0;
 	msg->inl_data = ack.inl_data;
 
-	unsigned interface = get_rpc_dma_id(msg->dma_id);
-
+	unsigned interface = get_rpc_local_dma_id(msg->dma_id);
 	return odp_rpc_send_msg(interface, msg->dma_id, msg->dnoc_tag, msg, NULL);
 }
 
+static
 int odp_rpc_server_handle(odp_rpc_t ** unhandled_msg)
 {
 	int remoteClus;
 	odp_rpc_t *msg;
-	uint8_t *payload;
+	uint8_t *payload = NULL;
 	remoteClus = odp_rpc_server_poll_msg(&msg, &payload);
 	if(remoteClus >= 0) {
 		for (int i = 0; i < __n_rpc_handlers; ++i) {
@@ -206,4 +184,56 @@ void  __attribute__ ((constructor)) __bas_rpc_constructor()
 		fprintf(stderr, "Failed to register BAS RPC handlers\n");
 		exit(EXIT_FAILURE);
 	}
+}
+
+
+/** Boot ack */
+static char rpc_server_stack[8192] __attribute__ ((aligned(64), section(".upper_internal_memory")));
+int odp_rpc_server_thread()
+{
+	if (__k1_get_cluster_id() != 160 &&
+	    __k1_get_cluster_id() != 224) {
+		return -1;
+	}
+
+	while (1) {
+		odp_rpc_t *msg;
+
+		if (odp_rpc_server_handle(&msg) < 0) {
+			fprintf(stderr, "[RPC] Error: Unhandled message\n");
+			exit(1);
+		}
+	}
+	return 0;
+}
+
+int odp_rpc_server_start(void)
+{
+	int i;
+
+	for (i = 0; i < RPC_MAX_CLIENTS; ++i) {
+		int ret = cluster_init_dnoc_rx(i);
+		if (ret)
+			return ret;
+	}
+
+#ifdef VERBOSE
+	printf("[RPC] Server started...\n");
+#endif
+	g_rpc_init = 1;
+
+	if (__k1_get_cluster_id() == 128 ||
+	    __k1_get_cluster_id() == 192) {
+		/* Boot only if we are in an IODDR */
+		_K1_PE_STACK_ADDRESS[4] = rpc_server_stack + sizeof(rpc_server_stack) - 16;
+		_K1_PE_START_ADDRESS[4] = &odp_rpc_server_thread;
+		_K1_PE_ARGS_ADDRESS[4] = 0;
+
+		__builtin_k1_dinval();
+		__builtin_k1_wpurge();
+		__builtin_k1_fence();
+		__k1_poweron(4);
+	}
+
+	return 0;
 }

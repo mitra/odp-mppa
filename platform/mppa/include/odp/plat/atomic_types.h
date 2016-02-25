@@ -52,12 +52,7 @@ typedef struct odp_atomic_u64_s odp_atomic_u64_t;
 
 typedef struct odp_atomic_u32_s odp_atomic_u32_t;
 
-#define INVALIDATE_AREA(p, s) do {									\
-		const char *__ptr;									\
-		for (__ptr = (char*)(p); __ptr < ((char*)(p)) + (s); __ptr += _K1_DCACHE_LINE_SIZE) {	\
-			__k1_dcache_invalidate_line((__k1_uintptr_t) __ptr);				\
-		}											\
-		__k1_dcache_invalidate_line((__k1_uintptr_t) __ptr);					\
+#define INVALIDATE_AREA(p, s) do {	__k1_dcache_invalidate_mem_area((__k1_uintptr_t)(void*)p, s);	\
 	}while(0)
 
 #define INVALIDATE(p) INVALIDATE_AREA((p), sizeof(*p))

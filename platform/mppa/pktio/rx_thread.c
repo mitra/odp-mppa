@@ -338,9 +338,11 @@ static void _poll_masks(int th_id)
 				if (hdr_list->tail == &hdr_list->head)
 					continue;
 
-				hdr_list->head = odp_buffer_ring_push_list(&rx_hdl.ifce[i].ring,
-									   hdr_list->head,
-									   &hdr_list->count);
+				hdr_list->count =
+					odp_buffer_ring_push_sort_list(&rx_hdl.ifce[i].ring,
+												   &hdr_list->head,
+												   &hdr_list->tail,
+												   hdr_list->count);
 				if (!hdr_list->count) {
 					/* All were flushed */
 					hdr_list->tail = &hdr_list->head;
@@ -377,7 +379,7 @@ static void *_rx_thread_start(void *arg)
 		odp_rwlock_read_lock(&rx_hdl.lock);
 		uint64_t update_id = odp_atomic_load_u64(&rx_hdl.update_id);
 		if (update_id != last_update) {
-			INVALIDATE(&rx_hdl);
+			__builtin_k1_dinval();
 			last_update = update_id;
 		}
 
@@ -582,6 +584,7 @@ int rx_thread_link_open(rx_config_t *rx_config, int n_ports, int rr_policy)
 			rx_th_t *th = &rx_hdl.th[i];
 
 			th->pools[ifce->pool_id].n_rx += nrx_per_th;
+			memset(&th->ifce[rx_config->pktio_id], sizeof(rx_ifce_th_t), 0);
 
 			for (int j = 0; j < 4; ++j) {
 				th->ev_masks[j] |= ev_masks[i][j];
@@ -610,7 +613,7 @@ int rx_thread_link_close(uint8_t pktio_id)
 
 	odp_rwlock_write_lock(&rx_hdl.lock);
 	{
-		INVALIDATE(ifce);
+		INVALIDATE(&rx_hdl);
 
 		if (ifce->status == RX_IFCE_DOWN) {
 			odp_rwlock_write_unlock(&rx_hdl.lock);

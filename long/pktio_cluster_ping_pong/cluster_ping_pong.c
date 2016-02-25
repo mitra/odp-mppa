@@ -104,7 +104,16 @@ static int run_ping_pong()
 	for (i = 0; i < PKT_SIZE; i++)
 		buf[i] = i;
 
-	test_assert_ret(odp_pktio_send(pktio, &packet, 1) == 1);
+	int sent = 0;
+	for (i = 0; i < 10; ++i){
+		sent = odp_pktio_send(pktio, &packet, 1);
+		if (sent) {
+			break;
+		} else {
+			odp_time_wait_ns(100000000ULL);
+		}
+	}
+	test_assert_ret(sent == 1);
 
 	while (1) {
 		ret = odp_pktio_recv(pktio, recv_pkts, 1);

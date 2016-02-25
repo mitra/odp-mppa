@@ -93,9 +93,9 @@ static int pcie_rpc_send_pcie_open(pkt_pcie_t *pcie)
 		.flags = 0,
 	};
 
-	odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(pcie->slot_id, cluster_id),
-			 odp_rpc_get_ioddr_tag_id(pcie->slot_id, cluster_id),
-			 &cmd, NULL);
+	odp_rpc_do_query(odp_rpc_get_io_dma_id(pcie->slot_id, cluster_id),
+					 odp_rpc_get_io_tag_id(cluster_id),
+					 &cmd, NULL);
 
 	ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * RPC_TIMEOUT_1S);
 	if (ret < 0) {
@@ -280,9 +280,9 @@ static int pcie_close(pktio_entry_t * const pktio_entry)
 	/* Free packets being sent by DMA */
 	tx_uc_flush(pcie_get_ctx(pcie));
 
-	odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(slot_id, cluster_id),
-			 odp_rpc_get_ioddr_tag_id(slot_id, cluster_id),
-			 &cmd, NULL);
+	odp_rpc_do_query(odp_rpc_get_io_dma_id(slot_id, cluster_id),
+					 odp_rpc_get_io_tag_id(cluster_id),
+					 &cmd, NULL);
 
 	ret = odp_rpc_wait_ack(&ack_msg, NULL, 5 * RPC_TIMEOUT_1S);
 	if (ret < 0) {
@@ -295,7 +295,7 @@ static int pcie_close(pktio_entry_t * const pktio_entry)
 	ack.inl_data = ack_msg->inl_data;
 
 	/* Push Context to handling threads */
-	rx_thread_link_close(slot_id * MAX_PCIE_INTERFACES + pcie_eth_if_id);
+	rx_thread_link_close(pcie->rx_config.pktio_id);
 
 	return ack.status;
 }
@@ -325,7 +325,7 @@ static int pcie_recv(pktio_entry_t *pktio_entry, odp_packet_t pkt_table[],
 		uint8_t * const base_addr =
 			((uint8_t *)pkt_hdr->buf_hdr.addr) +
 			pkt_hdr->headroom;
-
+		INVALIDATE(pkt_hdr);
 		packet_parse_reset(pkt_hdr);
 
 		uint32_t size;

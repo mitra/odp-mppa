@@ -7,7 +7,7 @@
 #include "odp_rpc_internal.h"
 #include "rpc-server.h"
 
-int main()
+int main (int argc __attribute__((unused)), char *argv[] __attribute__((unused)))
 {
 
 	int ret;
@@ -18,13 +18,5 @@ int main()
 		exit(EXIT_FAILURE);
 	}
 
-	while (1) {
-		odp_rpc_t *msg;
-
-		if (odp_rpc_server_handle(&msg) < 0) {
-			fprintf(stderr, "[RPC] Error: Unhandled message\n");
-			exit(1);
-		}
-	}
-	return 0;
+	return odp_rpc_server_thread();
 }

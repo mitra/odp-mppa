@@ -3,7 +3,7 @@ O ?= ./output
 project-name := odp
 
 TOPDIR := $(dir $(realpath $(lastword $(MAKEFILE_LIST))))
-ODP_ARCH ?= k1b-kalray-mos
+ODP_ARCH ?= k1b-kalray-mos_konic80
 APST_DIR ?= $(shell pwd)/install
 ODP_TOOLCHAIN_DIR ?= $(K1_TOOLCHAIN_DIR)
 include $(ODP_TOOLCHAIN_DIR)/share/odp/build/mk/platforms.inc
@@ -12,19 +12,23 @@ INCLUDE_DIR=$($(ODP_ARCH)_INC_DIR)
 # Kalray internal system name
 SYSTEM_NAME = $(subst -kalray,,$(ODP_ARCH))
 CORE_ARCH = $(firstword $(subst -, ,$(ODP_ARCH)))
-OS_BOARD_NAME = $(lastword $(subst -, ,$(ODP_ARCH)))
+OS_PLAT_NAME  = $(firstword $(subst _, ,$(ODP_ARCH)))
+OS_BOARD_NAME = $(lastword $(subst _, ,$(ODP_ARCH)))
 
 # -mos option according to real os name
 OS_mos := bare
 OS_nodeos := nodeos
 OS_rtems := rtems
+BOARD_developer := developer
 BOARD_simu := developer
 BOARD_explorer := explorer
+BOARD_konic80 := konic80
 
 # extract OS name and board name
-REAL_OS_NAME = $(firstword $(subst _, ,$(OS_BOARD_NAME)))
+REAL_OS_NAME = $(lastword $(subst -, ,$(OS_PLAT_NAME)))
 OS_NAME = $(OS_$(REAL_OS_NAME))
-BOARD_NAME = $(if $(findstring _,$(OS_BOARD_NAME)),$(BOARD_$(lastword $(subst _, ,$(OS_BOARD_NAME)))),developer)
+BOARD_NAME = $(BOARD_$(lastword $(subst _, ,$(OS_BOARD_NAME))))
+
 
 cluster-system := $(OS_NAME)
 arch = $(CORE_ARCH)
@@ -40,7 +44,7 @@ endif
 FIRMWARE_DIR = $(ODP_TOOLCHAIN_DIR)/share/odp/firmware/
 
 cluster-cflags := -I$(ODP_TOOLCHAIN_DIR)/$(INCLUDE_DIR)/include
-cluster-lflags := -L$(ODP_TOOLCHAIN_DIR)/lib/$(ODP_ARCH)/
+cluster-lflags := -L$(ODP_TOOLCHAIN_DIR)/lib/odp/$(OS_BOARD_NAME)/$(OS_PLAT_NAME)/
 cluster-lflags += -lodphelper -lodp -lcrypto  $(LIB_NOC_LFLAGS) $($(ODP_ARCH)_LDFLAGS) -Wl,--gc-sections
 
 # Empty direct assignement to allows += to work in included Makefiles
@@ -51,8 +55,27 @@ cluster-tests :=
 mppa-tests :=
 sim-runner-opts := --mboard=developer --march=bostan
 
+$(realpath .)/firmware-$(OS_BOARD_NAME)/firmware.kelf-nameinmpk := firmware.kelf
+$(TEST_NAME)-objs := $(cluster-bin) $(realpath .)/firmware-$(OS_BOARD_NAME)/firmware.kelf
+
+build: all
 
 install: all
 		 @if [ "$(APST_DIR)" == "" ]; then echo "ERROR: APST_DIR" not set; exit 1; fi
 		 mkdir -p $(APST_DIR)/$(TEST_NAME)
 		 install $(addprefix output/bin/,$($(TEST_NAME)-multibinary)) $(addprefix $(APP_DIR)/,$($(TEST_NAME)-scripts)) $($(TEST_NAME)-extras) $(APST_DIR)/$(TEST_NAME)
+
+pre-build-hooks := build-firmware
+clean-hooks := clean-firmware
+
+build-firmware:
+	+mkdir -p ./firmware-$(OS_BOARD_NAME) && cd ./firmware-$(OS_BOARD_NAME) && \
+	$(MAKE) -f $(APP_DIR)/firmware/Makefile ODP_FIRMWARE_CONFIG="k1b-kalray_$(OS_BOARD_NAME)" \
+	ODP_TOOLCHAIN_DIR="$(ODP_TOOLCHAIN_DIR)" all
+
+clean-firmware:
+	if [ -d ./firmware-$(OS_BOARD_NAME) ]; then cd ./firmware-$(OS_BOARD_NAME) && \
+	$(MAKE) -f $(APP_DIR)/firmware/Makefile ODP_FIRMWARE_CONFIG="k1b-kalray_$(OS_BOARD_NAME)" \
+	ODP_TOOLCHAIN_DIR="$(ODP_TOOLCHAIN_DIR)" clean; else true; fi
+
+

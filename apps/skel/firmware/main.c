@@ -37,14 +37,7 @@ int main(int argc __attribute__((unused)),
 		printf("Cluster booted\n");
 	}
 
+	join_clusters();
 
-	while (1) {
-		odp_rpc_t *msg;
-		/* Loop to handle RPC messages */
-		if (odp_rpc_server_handle(&msg) < 0) {
-			fprintf(stderr, "[RPC] Error: Unhandled message\n");
-			exit(1);
-		}
-	}
 	return 0;
 }

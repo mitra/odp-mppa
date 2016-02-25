@@ -54,6 +54,8 @@ int odp_rpc_client_term(void){
 		return -1;
 
 	mppa_noc_dnoc_rx_free(0, rx_port);
+	g_rpc_init = 0;
+	rx_port = -1;
 
 	return 0;
 }
@@ -63,9 +65,12 @@ int odp_rpc_client_get_default_server(void)
 	if (rpc_default_server_id >= 0)
 		return rpc_default_server_id;
 
-	rpc_default_server_id = 0;
+	int io_id = 0;
 	if (__k1_spawn_type() == __MPPA_MPPA_SPAWN)
-		rpc_default_server_id = __k1_spawner_id() / 128 - 1;
+		io_id = __k1_spawner_id() / 128 - 1;
+
+	rpc_default_server_id = odp_rpc_get_io_dma_id(io_id,
+												  __k1_get_cluster_id());
 
 	if (getenv("SYNC_IODDR_ID")) {
 		rpc_default_server_id = atoi(getenv("SYNC_IODDR_ID"));
@@ -77,11 +82,13 @@ int odp_rpc_client_get_default_server(void)
 static const char * rpc_cmd_names[ODP_RPC_CMD_N_CMD] = {
 	[ODP_RPC_CMD_BAS_INVL]    = "INVALID",
 	[ODP_RPC_CMD_BAS_PING]    = "PING",
-	[ODP_RPC_CMD_BAS_SYNC]    = "SYNC",
-	[ODP_RPC_CMD_BAS_EXIT]    = "EXIT",
 	[ODP_RPC_CMD_ETH_OPEN]    = "ETH OPEN",
 	[ODP_RPC_CMD_ETH_CLOS]    = "ETH CLOSE",
+	[ODP_RPC_CMD_ETH_STATE]   = "ETH SET STATE",
 	[ODP_RPC_CMD_ETH_PROMISC] = "ETH PROMISC",
+	[ODP_RPC_CMD_ETH_OPEN_DEF]= "ETH OPEN FALLTHROUGH",
+	[ODP_RPC_CMD_ETH_CLOS_DEF]= "ETH CLOSE FALLTHROUGH",
+	[ODP_RPC_CMD_ETH_DUAL_MAC]= "ETH DUAL MAC",
 	[ODP_RPC_CMD_PCIE_OPEN]   = "PCIE OPEN",
 	[ODP_RPC_CMD_PCIE_CLOS]   = "PCIE CLOSE",
 	[ODP_RPC_CMD_C2C_OPEN]    = "C2C OPEN",
@@ -111,6 +118,7 @@ void odp_rpc_print_msg(const odp_rpc_t * cmd)
 	}
 	switch (cmd->pkt_type){
 	case ODP_RPC_CMD_ETH_OPEN:
+	case ODP_RPC_CMD_ETH_OPEN_DEF:
 		{
 			odp_rpc_cmd_eth_open_t open = { .inl_data = cmd->inl_data };
 			printf("\t\tifId: %d\n"
@@ -122,12 +130,20 @@ void odp_rpc_print_msg(const odp_rpc_t * cmd)
 		}
 		break;
 	case ODP_RPC_CMD_ETH_CLOS:
+	case ODP_RPC_CMD_ETH_CLOS_DEF:
 		{
 			odp_rpc_cmd_eth_clos_t clos = { .inl_data = cmd->inl_data };
 			printf("\t\tifId: %d\n", clos.ifId);
 		}
 		break;
+	case ODP_RPC_CMD_ETH_DUAL_MAC:
+		{
+			odp_rpc_cmd_eth_dual_mac_t dmac = { .inl_data = cmd->inl_data };
+			printf("\t\tenabled: %d\n", dmac.enabled);
+		}
+		break;
 	case ODP_RPC_CMD_ETH_PROMISC:
+	case ODP_RPC_CMD_ETH_STATE:
 		{
 			odp_rpc_cmd_eth_promisc_t promisc = { .inl_data = cmd->inl_data };
 			printf("\t\tifId: %d\n"
@@ -179,8 +195,6 @@ void odp_rpc_print_msg(const odp_rpc_t * cmd)
 		break;
 	case ODP_RPC_CMD_BAS_INVL:
 	case ODP_RPC_CMD_BAS_PING:
-	case ODP_RPC_CMD_BAS_SYNC:
-	case ODP_RPC_CMD_BAS_EXIT:
 	default:
 		break;
 	}
@@ -230,9 +244,12 @@ int odp_rpc_send_msg(uint16_t local_interface, uint16_t dest_id,
 	header._.tag = dest_tag;
 	header._.valid = 1;
 
-	int externalAddress = __k1_get_cluster_id() + local_interface;
-#ifdef K1B_EXPLORER
-	externalAddress = __k1_get_cluster_id() + (local_interface % 4);
+	int externalAddress = odp_rpc_get_cluster_id(local_interface);
+
+#ifdef VERBOSE
+	printf("[RPC] Sending message from %d (%d) to %d/%d\n",
+	       local_interface, externalAddress, dest_id, dest_tag);
+	odp_rpc_print_msg(cmd);
 #endif
 	rret = mppa_routing_get_dnoc_unicast_route(externalAddress,
 						   dest_id, &config, &header);

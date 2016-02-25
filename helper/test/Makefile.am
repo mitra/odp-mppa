@@ -1,5 +1,4 @@
 include $(top_srcdir)/test/Makefile.inc
-bindir      = $(datarootdir)/tests/helpers/
 
 AM_CFLAGS += -I$(srcdir)/common
 AM_LDFLAGS += -static
@@ -8,7 +7,6 @@ TESTS_ENVIRONMENT += TEST_DIR=${builddir}
 
 EXECUTABLES = odp_chksum$(EXEEXT) \
               odp_thread$(EXEEXT) \
-              odp_process$(EXEEXT)\
               odph_pause$(EXEEXT)\
               odp_table$(EXEEXT)
 

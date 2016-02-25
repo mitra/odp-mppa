@@ -133,9 +133,9 @@ static int cluster_rpc_send_c2c_open(odp_pktio_param_t * params, pkt_cluster_t *
 	};
 	const unsigned int rpc_server_id = odp_rpc_client_get_default_server();
 
-	odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(rpc_server_id, cluster_id),
-			 odp_rpc_get_ioddr_tag_id(rpc_server_id, cluster_id),
-			 &cmd, NULL);
+	odp_rpc_do_query(rpc_server_id,
+					 odp_rpc_get_io_tag_id(cluster_id),
+					 &cmd, NULL);
 
 	ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * RPC_TIMEOUT_1S);
 	if (ret < 0) {
@@ -175,9 +175,9 @@ static int cluster_rpc_send_c2c_query(pkt_cluster_t *cluster)
 	};
 	const unsigned int rpc_server_id = odp_rpc_client_get_default_server();
 
-	odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(rpc_server_id, cluster_id),
-			 odp_rpc_get_ioddr_tag_id(rpc_server_id, cluster_id),
-			 &cmd, NULL);
+	odp_rpc_do_query(rpc_server_id,
+					 odp_rpc_get_io_tag_id(cluster_id),
+					 &cmd, NULL);
 
 	ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * RPC_TIMEOUT_1S);
 	if (ret < 0) {
@@ -206,6 +206,8 @@ static int cluster_rpc_send_c2c_query(pkt_cluster_t *cluster)
 		cluster->remote.min_rx + 1;
 	cluster->mtu = ack.cmd.c2c_query.mtu;
 	cluster->remote.cnoc_rx = ack.cmd.c2c_query.cnoc_rx;
+	cluster->tx_config.header._.tag = cluster->remote.min_rx;
+
 	return 0;
 }
 
@@ -376,9 +378,9 @@ static int cluster_close(pktio_entry_t * const pktio_entry ODP_UNUSED)
 	/* Free packets being sent by DMA */
 	tx_uc_flush(c2c_get_ctx(clus));
 
-	odp_rpc_do_query(odp_rpc_get_ioddr_dma_id(rpc_server_id, cluster_id),
-			 odp_rpc_get_ioddr_tag_id(rpc_server_id, cluster_id),
-			 &cmd, NULL);
+	odp_rpc_do_query(rpc_server_id,
+					 odp_rpc_get_io_tag_id(cluster_id),
+					 &cmd, NULL);
 
 	ret = odp_rpc_wait_ack(&ack_msg, NULL, 5 * RPC_TIMEOUT_1S);
 	if (ret < 0) {
@@ -390,8 +392,7 @@ static int cluster_close(pktio_entry_t * const pktio_entry ODP_UNUSED)
 	}
 
 	/* Push Context to handling threads */
-	rx_thread_link_close( MAX_RX_ETH_IF +
-			      MAX_RX_PCIE_IF + clus->clus_id);
+	rx_thread_link_close(clus->rx_config.pktio_id);
 
 	return 0;
 }
@@ -431,7 +432,7 @@ static int cluster_recv(pktio_entry_t *const pktio_entry,
 	if (clus->remote.cnoc_rx < 0) {
 		/* We need to sync with the target first */
 		if (cluster_rpc_send_c2c_query(clus)){
-			return -1;
+			return 0;
 		}
 	}
 
@@ -457,6 +458,7 @@ static int cluster_recv(pktio_entry_t *const pktio_entry,
 			((uint8_t *)pkt_hdr->buf_hdr.addr) +
 			pkt_hdr->headroom;
 
+		INVALIDATE(pkt_hdr);
 		packet_parse_reset(pkt_hdr);
 
 		tx_uc_header_t info;
@@ -495,9 +497,8 @@ static int cluster_send(pktio_entry_t *const pktio_entry,
 		/* We need to sync with the target first */
 		if (cluster_rpc_send_c2c_query(pkt_cluster)){
 			odp_spinlock_unlock(&pkt_cluster->wlock);
-			return -1;
+			return 0;
 		}
-		pkt_cluster->tx_config.header._.tag = pkt_cluster->remote.min_rx;
 	}
 
 	tx_uc_ctx_t *ctx = c2c_get_ctx(pkt_cluster);

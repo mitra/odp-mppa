@@ -78,7 +78,7 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth, int
 	odp_rpc_cmd_eth_open_t open_cmd = {
 		{
 			.ifId = eth->port_id,
-			.dma_if = eth->rx_config.dma_if,
+			.dma_if = __k1_get_cluster_id() + eth->rx_config.dma_if,
 			.min_rx = eth->rx_config.min_port,
 			.max_rx = eth->rx_config.max_port,
 			.loopback = eth->loopback,
@@ -101,9 +101,9 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth, int
 		.flags = 0,
 	};
 
-	odp_rpc_do_query(odp_rpc_get_ioeth_dma_id(eth->slot_id, cluster_id),
-			 odp_rpc_get_ioeth_tag_id(eth->slot_id, cluster_id),
-			 &cmd, rules);
+	odp_rpc_do_query(odp_rpc_get_io_dma_id(eth->slot_id, cluster_id),
+					 odp_rpc_get_io_tag_id(cluster_id),
+					 &cmd, rules);
 
 	ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * RPC_TIMEOUT_1S);
 	if (ret < 0) {
@@ -130,7 +130,35 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth, int
 
 #define PARSE_HASH_ERR(msg) do { error_msg = msg; goto error_parse; } while (0) ;
 
-static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t *rules) {
+static int update_entry(pkt_rule_entry_t *entry) {
+	if ( entry->cmp_mask != 0 ) {
+		int upper_byte = 7 - (__k1_clz(entry->cmp_mask) - ( 32 - 8 ));
+		union {
+			uint64_t d;
+			uint8_t b[8];
+		} original_value, reordered_value;
+		reordered_value.d = 0ULL;
+		original_value.d = entry->cmp_value;
+		for ( int src = upper_byte, dst = 0; src >= 0; --src, ++dst ) {
+			reordered_value.b[dst] = original_value.b[src];
+		}
+		uint64_t bitmask = 0ULL;
+		uint8_t cmp_mask = entry->cmp_mask;
+		while ( cmp_mask ) {
+			int byte_id = __k1_ctz(cmp_mask);
+			cmp_mask &= ~( 1 << byte_id );
+			bitmask |= 0xffULL << (byte_id * 8);
+		}
+		if ( reordered_value.d & ~bitmask ) {
+			return 1;
+		}
+		entry->cmp_value = reordered_value.d;
+	}
+	return 0;
+}
+
+static const char* parse_hashpolicy(const char* pptr, int *nb_rules,
+				    pkt_rule_t *rules, int lane) {
 	const char *start_ptr = pptr;
 	int rule_id = -1;
 	int entry_id = 0;
@@ -147,12 +175,16 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t 
 				rule_id++;
 				if ( rule_id > 7 )
 					PARSE_HASH_ERR("nb rules > 8");
+				if ( rule_id > 1 && lane < 4)
+					PARSE_HASH_ERR("nb rules > 2 on 1/10G port");
 				entry_id = -1;
 				opened_rule = true;
 				pptr++;
 				break;
 			case PKT_RULE_PRIO_SIGN:
-				if ( !( opened_rule == true && opened_entry == false && entry_id == -1 ) )
+				if ( !( opened_rule == true &&
+					opened_entry == false &&
+					entry_id == -1 ) )
 					PARSE_HASH_ERR("misplaced priority sign");
 				pptr++;
 				int priority = strtoul(pptr, &eptr, 0);
@@ -167,8 +199,8 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t 
 				if ( opened_entry == true || opened_rule == false)
 					PARSE_HASH_ERR("open entry");
 				entry_id++;
-				if ( entry_id > 9 )
-					PARSE_HASH_ERR("nb entries > 10");
+				if ( entry_id > 8 )
+					PARSE_HASH_ERR("nb entries > 9");
 				opened_entry = true;
 				pptr++;
 				break;
@@ -183,6 +215,8 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t 
 					PARSE_HASH_ERR("close entry");
 				opened_entry = false;
 				rules[rule_id].nb_entries = entry_id + 1;
+				if ( update_entry(&rules[rule_id].entries[entry_id]) )
+					PARSE_HASH_ERR("compare value and mask does not fit");
 				pptr++;
 				break;
 			case PKT_ENTRY_OFFSET_SIGN:
@@ -211,7 +245,7 @@ static const char* parse_hashpolicy(const char* pptr, int *nb_rules, pkt_rule_t 
 				if ( opened_entry == false )
 					PARSE_HASH_ERR("cmp_value entry");
 				pptr++;
-				int cmp_value = strtoul(pptr, &eptr, 0);
+				uint64_t cmp_value = strtoull(pptr, &eptr, 0);
 				if(pptr == eptr)
 					PARSE_HASH_ERR("bad comparison mask");
 				rules[rule_id].entries[entry_id].cmp_value = cmp_value;
@@ -245,7 +279,7 @@ end:
 			if ( rules[_rule_id].entries[_entry_id].cmp_mask == 0 &&
 					rules[_rule_id].entries[_entry_id].cmp_value != 0 ) {
 				ODP_ERR("rule %d entry %d: "
-								"mask 0x%x value %"PRIu64"\n"
+								"mask 0x%02x value %016llx\n"
 								"compare value can't be set when compare mask is 0\n",
 								_rule_id, _entry_id,
 								rules[_rule_id].entries[_entry_id].cmp_mask,
@@ -350,13 +384,14 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 				ODP_ERR("hashpolicy can only be set once\n");
 				return -1;
 			}
-			rules = calloc(1, sizeof(rules));
+			rules = calloc(1, sizeof(pkt_rule_t) * 8);
 			if ( rules == NULL ) {
 				ODP_ERR("hashpolicy alloc failed\n");
 				return -1;
 			}
 			pptr += strlen("hashpolicy=");
-			pptr = parse_hashpolicy(pptr, &nb_rules, rules);
+			pptr = parse_hashpolicy(pptr, &nb_rules,
+						rules, port_id);
 			if ( pptr == NULL ) {
 				return -1;
 			}
@@ -458,7 +493,7 @@ static int eth_close(pktio_entry_t * const pktio_entry)
 	int ret;
 	odp_rpc_cmd_eth_clos_t close_cmd = {
 		{
-			.ifId = eth->port_id = port_id
+			.ifId = port_id
 
 		}
 	};
@@ -473,9 +508,9 @@ static int eth_close(pktio_entry_t * const pktio_entry)
 	/* Free packets being sent by DMA */
 	tx_uc_flush(eth_get_ctx(eth));
 
-	odp_rpc_do_query(odp_rpc_get_ioeth_dma_id(slot_id, cluster_id),
-			 odp_rpc_get_ioeth_tag_id(slot_id, cluster_id),
-			 &cmd, NULL);
+	odp_rpc_do_query(odp_rpc_get_io_dma_id(slot_id, cluster_id),
+					 odp_rpc_get_io_tag_id(cluster_id),
+					 &cmd, NULL);
 
 	ret = odp_rpc_wait_ack(&ack_msg, NULL, 5 * RPC_TIMEOUT_1S);
 	if (ret < 0) {
@@ -488,9 +523,58 @@ static int eth_close(pktio_entry_t * const pktio_entry)
 	ack.inl_data = ack_msg->inl_data;
 
 	/* Push Context to handling threads */
-	rx_thread_link_close(slot_id * MAX_ETH_PORTS + port_id);
+	rx_thread_link_close(eth->rx_config.pktio_id);
 
 	return ack.status;
+}
+
+static int eth_set_state(pktio_entry_t * const pktio_entry, int enabled)
+{
+
+	pkt_eth_t *eth = &pktio_entry->s.pkt_eth;
+	int slot_id = eth->slot_id;
+	int port_id = eth->port_id;
+	odp_rpc_t *ack_msg;
+	odp_rpc_cmd_ack_t ack;
+	int ret;
+	odp_rpc_cmd_eth_state_t state_cmd = {
+		{
+			.ifId = port_id,
+			.enabled = enabled,
+		}
+	};
+	unsigned cluster_id = __k1_get_cluster_id();
+	odp_rpc_t cmd = {
+		.pkt_type = ODP_RPC_CMD_ETH_STATE,
+		.data_len = 0,
+		.flags = 0,
+		.inl_data = state_cmd.inl_data
+	};
+
+	odp_rpc_do_query(odp_rpc_get_io_dma_id(slot_id, cluster_id),
+					 odp_rpc_get_io_tag_id(cluster_id),
+					 &cmd, NULL);
+
+	ret = odp_rpc_wait_ack(&ack_msg, NULL, 5 * RPC_TIMEOUT_1S);
+	if (ret < 0) {
+		fprintf(stderr, "[ETH] RPC Error\n");
+		return 1;
+	} else if (ret == 0){
+		fprintf(stderr, "[ETH] Query timed out\n");
+		return 1;
+	}
+	ack.inl_data = ack_msg->inl_data;
+	return ack.status;
+}
+
+static int eth_start(pktio_entry_t * const pktio_entry)
+{
+	return eth_set_state(pktio_entry, 1);
+}
+
+static int eth_stop(pktio_entry_t * const pktio_entry)
+{
+	return eth_set_state(pktio_entry, 0);
 }
 
 static int eth_mac_addr_get(pktio_entry_t *pktio_entry,
@@ -521,6 +605,7 @@ static int eth_recv(pktio_entry_t *pktio_entry, odp_packet_t pkt_table[],
 			((uint8_t *)pkt_hdr->buf_hdr.addr) +
 			pkt_hdr->headroom;
 
+		INVALIDATE(pkt_hdr);
 		packet_parse_reset(pkt_hdr);
 
 		union mppa_ethernet_header_info_t info;
@@ -580,8 +665,8 @@ const pktio_if_ops_t eth_pktio_ops = {
 	.term = eth_destroy,
 	.open = eth_open,
 	.close = eth_close,
-	.start = NULL,
-	.stop = NULL,
+	.start = eth_start,
+	.stop = eth_stop,
 	.recv = eth_recv,
 	.send = eth_send,
 	.mtu_get = eth_mtu_get,

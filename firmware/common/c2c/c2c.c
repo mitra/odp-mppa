@@ -20,7 +20,7 @@ typedef struct {
 	uint16_t rx_size   :16;
 } c2c_status_t;
 
-static c2c_status_t c2c_status[BSP_NB_CLUSTER_MAX][BSP_NB_CLUSTER_MAX];
+static c2c_status_t c2c_status[RPC_MAX_CLIENTS][RPC_MAX_CLIENTS];
 
 odp_rpc_cmd_ack_t  c2c_open(unsigned src_cluster, odp_rpc_t *msg)
 {

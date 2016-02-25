@@ -8,7 +8,7 @@
 
 #define MPPA_PCIE_RM_COUNT		4
 
-#define RX_RM_START		1
+#define RX_RM_START		5
 #define RX_RM_COUNT		2
 #define PCIE_TX_RM		(RX_RM_START + RX_RM_COUNT)
 

@@ -38,7 +38,7 @@ static int pcie_setup_tx(unsigned int iface_id, unsigned int *tx_id,
 
 	MPPA_NOC_DNOC_TX_CONFIG_INITIALIZER_DEFAULT(config, 0);
 
-	rret = mppa_routing_get_dnoc_unicast_route(__k1_get_cluster_id() + iface_id,
+	rret = mppa_routing_get_dnoc_unicast_route(odp_rpc_get_cluster_id(iface_id),
 											   cluster_id, &config, &header);
 	if (rret) {
 		dbg_printf("Routing failed\n");
@@ -146,7 +146,7 @@ static odp_rpc_cmd_ack_t pcie_open(unsigned remoteClus, odp_rpc_t * msg)
 
 	ack.cmd.pcie_open.min_tx_tag = min_tx_tag; /* RX ID ! */
 	ack.cmd.pcie_open.max_tx_tag = max_tx_tag; /* RX ID ! */
-	ack.cmd.pcie_open.tx_if = __k1_get_cluster_id() + if_id;
+	ack.cmd.pcie_open.tx_if = odp_rpc_get_cluster_id(if_id);
 	/* FIXME, we send the same MTU as the one received */
 	ack.cmd.pcie_open.mtu = open_cmd.pkt_size;
 	memcpy(ack.cmd.pcie_open.mac,

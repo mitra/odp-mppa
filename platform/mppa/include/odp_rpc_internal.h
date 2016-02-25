@@ -1,6 +1,7 @@
 #ifndef __FIRMWARE__IOETH__RPC__H__
 #define __FIRMWARE__IOETH__RPC__H__
 
+#include <HAL/hal/hal.h>
 #ifndef RPC_FIRMWARE
 #include <odp/debug.h>
 #else
@@ -8,12 +9,7 @@
 #endif
 
 #ifndef INVALIDATE_AREA
-#define INVALIDATE_AREA(p, s) do {									\
-		const char *__ptr;									\
-		for (__ptr = (char*)(p); __ptr < ((char*)(p)) + (s); __ptr += _K1_DCACHE_LINE_SIZE) {	\
-			__k1_dcache_invalidate_line((__k1_uintptr_t) __ptr);				\
-		}											\
-		__k1_dcache_invalidate_line((__k1_uintptr_t) __ptr);					\
+#define INVALIDATE_AREA(p, s) do {	__k1_dcache_invalidate_mem_area((__k1_uintptr_t)(void*)p, s);	\
 	}while(0)
 #endif
 #ifndef INVALIDATE
@@ -42,7 +38,7 @@ enum {
 };
 
 // cmp_mask and hash_mask are bytemask
-typedef struct {
+typedef struct pkt_rule_entry {
 	uint64_t cmp_value;
 	uint16_t offset;
 	uint8_t  cmp_mask;
@@ -51,7 +47,7 @@ typedef struct {
 
 // a set of rules is like: hashpolicy=[P0{@6#0xfc}{@12/0xf0=32}][P2{@0/0xff=123456}{@20#0xff}]
 // P (for priority) is optional, [0..7]
-typedef struct {
+typedef struct pkt_rule {
 	pkt_rule_entry_t entries[10];
 	uint8_t nb_entries : 4;
 	uint8_t priority   : 4;
@@ -61,7 +57,7 @@ typedef struct {
 	uint64_t data[4];
 } odp_rpc_inl_data_t;
 
-typedef struct {
+typedef struct odp_rpc {
 	uint16_t pkt_type;
 	uint16_t data_len;       /* Packet is data len * 8B long. data_len < RPC_MAX_PAYLOAD / 8 */
 	uint8_t  dma_id;         /* Source cluster ID */
@@ -78,12 +74,14 @@ typedef struct {
 typedef enum {
 	ODP_RPC_CMD_BAS_INVL = 0 /**< BASE: Invalid command. Skip */,
 	ODP_RPC_CMD_BAS_PING     /**< BASE: Ping command. server sends back ack = 0 */,
-	ODP_RPC_CMD_BAS_SYNC     /**< SYNC: Sync command. */,
-	ODP_RPC_CMD_BAS_EXIT     /**< SYNC: Sync command. */,
 
-	ODP_RPC_CMD_ETH_OPEN     /**< ETH: Forward Rx traffic to a cluster */,
-	ODP_RPC_CMD_ETH_CLOS     /**< ETH: Stop forwarding Rx trafic to a cluster */,
+	ODP_RPC_CMD_ETH_OPEN     /**< ETH: Configure trafic forward to/from Eth in IOETH */,
+	ODP_RPC_CMD_ETH_CLOS     /**< ETH: Free forward resources to/from Eth in IOETH */,
 	ODP_RPC_CMD_ETH_PROMISC  /**< ETH: KSet/Clear promisc mode */,
+	ODP_RPC_CMD_ETH_OPEN_DEF /**< ETH: Forward unmatch Rx traffic to a cluster */,
+	ODP_RPC_CMD_ETH_CLOS_DEF /**< ETH: Stop forwarding unmatch Rx traffic to a cluster */,
+	ODP_RPC_CMD_ETH_DUAL_MAC /**< ETH: Enable dual-mac mode (ODP + Linux) */,
+	ODP_RPC_CMD_ETH_STATE    /**< ETH: Start or Stop trafic forwarding */,
 
 	ODP_RPC_CMD_PCIE_OPEN    /**< PCIe: Forward Rx traffic to a cluster */,
 	ODP_RPC_CMD_PCIE_CLOS    /**< PCIe: Stop forwarding Rx trafic to a cluster */,
@@ -99,20 +97,26 @@ typedef enum {
 
 typedef union {
 	struct {
-		uint8_t ifId : 3; /* 0-3, 4 for 40G */
-		uint8_t dma_if : 8;
-		uint8_t min_rx : 8;
-		uint8_t max_rx : 8;
-		uint8_t loopback : 1;
-		uint8_t rx_enabled : 1;
-		uint8_t tx_enabled : 1;
-		uint8_t jumbo : 1;
-		uint8_t nb_rules : 4;
+		uint8_t ifId : 3;        /**< 0-3, 4 for 40G */
+		uint8_t dma_if : 8;      /**< External address of the local DMA */
+		uint8_t min_rx : 8;      /**< Minimum Rx Tag for Eth2Clus */
+		uint8_t max_rx : 8;      /**< Maximum Rx tag for Eth2Clus */
+		uint8_t loopback : 1;    /**< Put interface in loopback mode (no MAC) */
+		uint8_t rx_enabled : 1;  /**< Enable packet reception (Eth2Clus). */
+		uint8_t tx_enabled : 1;  /**< Enable packet transmission (Clus2Eth) */
+		uint8_t jumbo : 1;       /**< Enable Jumbo frame support */
+		uint8_t nb_rules : 4;    /**< Number of rule to the has policy.
+								  *   Rules are provided in the payload */
 	};
 	odp_rpc_inl_data_t inl_data;
 } odp_rpc_cmd_eth_open_t;
 /** @internal Compile time assert */
 _ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_eth_open_t) == sizeof(odp_rpc_inl_data_t), "ODP_RPC_CMD_ETH_OPEN_T__SIZE_ERROR");
+
+typedef odp_rpc_cmd_eth_open_t odp_rpc_cmd_eth_open_def_t;
+/** @internal Compile time assert */
+_ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_eth_open_def_t) == sizeof(odp_rpc_inl_data_t),
+		   "ODP_RPC_CMD_ETH_OPEN_DEF_T__SIZE_ERROR");
 
 typedef union {
 	struct {
@@ -123,6 +127,12 @@ typedef union {
 } odp_rpc_cmd_eth_promisc_t;
 /** @internal Compile time assert */
 _ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_eth_promisc_t) == sizeof(odp_rpc_inl_data_t), "ODP_RPC_CMD_ETH_PROMISC_T__SIZE_ERROR");
+
+typedef odp_rpc_cmd_eth_promisc_t odp_rpc_cmd_eth_state_t;
+/** @internal Compile time assert */
+_ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_eth_state_t) == sizeof(odp_rpc_inl_data_t),
+		   "ODP_RPC_CMD_ETH_STATE_T__SIZE_ERROR");
+
 
 typedef union {
 	struct {
@@ -146,9 +156,23 @@ typedef union {
 /** @internal Compile time assert */
 _ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_eth_clos_t) == sizeof(odp_rpc_inl_data_t), "ODP_RPC_CMD_ETH_CLOS_T__SIZE_ERROR");
 
+typedef odp_rpc_cmd_eth_clos_t odp_rpc_cmd_eth_clos_def_t;
+/** @internal Compile time assert */
+_ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_eth_clos_def_t) == sizeof(odp_rpc_inl_data_t),
+		   "ODP_RPC_CMD_ETH_CLOS_DEF_T__SIZE_ERROR");
+
 typedef odp_rpc_cmd_eth_clos_t odp_rpc_cmd_pcie_clos_t;
 /** @internal Compile time assert */
 _ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_pcie_clos_t) == sizeof(odp_rpc_inl_data_t), "ODP_RPC_CMD_PCIE_CLOS_T__SIZE_ERROR");
+
+typedef union {
+	struct {
+		uint8_t enabled : 1;
+	};
+	odp_rpc_inl_data_t inl_data;
+} odp_rpc_cmd_eth_dual_mac_t;
+/** @internal Compile time assert */
+_ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_eth_dual_mac_t) == sizeof(odp_rpc_inl_data_t), "ODP_RPC_CMD_ETH_DUAL_MAC_T__SIZE_ERROR");
 
 typedef union {
 	struct {
@@ -224,65 +248,56 @@ typedef union {
 /** @internal Compile time assert */
 _ODP_STATIC_ASSERT(sizeof(odp_rpc_cmd_ack_t) == sizeof(odp_rpc_inl_data_t), "ODP_RPC_CMD_ACK_T__SIZE_ERROR");
 
-static inline int odp_rpc_get_ioddr_dma_id(unsigned ddr_id, unsigned cluster_id){
+static inline int odp_rpc_get_cluster_id(int local_if){
+	int reg_cluster_id = __k1_get_cluster_id();
+	int base_cluster_id = (reg_cluster_id / 64 * 64) + (reg_cluster_id % 32);
+
+#ifdef K1B_EXPLORER
+	local_if = local_if % 4;
+#endif
+
+	if (local_if >= 4)
+		return base_cluster_id + 32 + local_if - 4;
+
+	return base_cluster_id + local_if;
+}
+
+static inline int odp_rpc_densify_cluster_id(unsigned cluster_id){
+	if(cluster_id == 128)
+		cluster_id = 16;
+	else if(cluster_id == 192)
+		cluster_id = 20;
+	return cluster_id;
+}
+
+static inline int odp_rpc_get_io_dma_id(unsigned io_id, unsigned cluster_id){
+	int dense_id = odp_rpc_densify_cluster_id(cluster_id);
+	int dma_offset = (dense_id / 4) % 4;
 #if defined(K1B_EXPLORER)
-	(void)ddr_id;
-	(void)cluster_id;
-	return 128;
-#else
-	switch(ddr_id){
+	dma_offset = 0;
+#endif
+
+	switch(io_id){
 	case 0:
 		/* North */
-		return 128 + cluster_id % 4;
+		return 160 + dma_offset;
 	case 1:
 		/* South */
-		return 192 + cluster_id % 4;
+		return 224 + dma_offset;
 	default:
 		return -1;
 	}
-#endif
 }
 
-static inline int odp_rpc_get_ioddr_tag_id(unsigned ddr_id, unsigned cluster_id){
-#if defined(K1B_EXPLORER)
-	(void)ddr_id;
-	(void)cluster_id;
-	return RPC_BASE_RX + cluster_id;
-#else
-	(void) ddr_id;
-	return RPC_BASE_RX + (cluster_id / 4);
-#endif
-}
+static inline int odp_rpc_get_io_tag_id(unsigned cluster_id){
+	int dense_id = odp_rpc_densify_cluster_id(cluster_id);
+	int tag_offset = (dense_id / 16) * 4 + dense_id % 4;
 
-static inline int odp_rpc_get_ioeth_dma_id(unsigned eth_slot, unsigned cluster_id){
-#if defined(K1B_EXPLORER)
-	(void)cluster_id;
-	/* Only DMA4 available on explorer + eth530 */
-	switch(eth_slot){
-	case 0:
-		/* East */
-		return 160;
-	case 1:
-		/* West */
-		return 224;
-	default:
-		return -1;
-	}
-#else
-	/* IO is unified so send IODDR coordinates instead */
-	return odp_rpc_get_ioddr_dma_id(eth_slot, cluster_id);
-#endif
-}
-
-static inline int odp_rpc_get_ioeth_tag_id(unsigned eth_slot, unsigned cluster_id){
 #if defined(K1B_EXPLORER)
 	/* Only DMA4 available on explorer + eth530 */
-	(void) eth_slot;
-	return RPC_BASE_RX + cluster_id;
-#else
-	/* IO is unified so send IODDR coordinates instead */
-	return odp_rpc_get_ioddr_tag_id(eth_slot, cluster_id);
+	tag_offset = dense_id;
 #endif
+	return RPC_BASE_RX + tag_offset;
 }
 
 extern int g_rpc_init;
