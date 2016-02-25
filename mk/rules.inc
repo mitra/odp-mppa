@@ -16,11 +16,11 @@ $(ARCH_DIR)/cunit/$(1)/Makefile: $(TOP_DIR)/cunit/configure
 
 cunit-$(1)-build: $(ARCH_DIR)/cunit/$(1)/CUnit/Sources/.libs/libcunit.a
 $(ARCH_DIR)/cunit/$(1)/CUnit/Sources/.libs/libcunit.a: $(ARCH_DIR)/cunit/$(1)/Makefile
-	$(MAKE) -C$(ARCH_DIR)/cunit/$(1) V=1
+	$$(MAKE) -C$(ARCH_DIR)/cunit/$(1) V=1
 
 cunit-$(1)-install: $(CUNIT_INST_DIR)/$(1)/lib/libcunit.a
 $(CUNIT_INST_DIR)/$(1)/lib/libcunit.a: $(ARCH_DIR)/cunit/$(1)/CUnit/Sources/.libs/libcunit.a
-	$(MAKE) -C$(ARCH_DIR)/cunit/$(1) V=1 install
+	$$(MAKE) -C$(ARCH_DIR)/cunit/$(1) V=1 install
 
 cunit-$(1)-valid:
 cunit-$(1)-clean:
@@ -39,7 +39,7 @@ $(ARCH_DIR)/odp-debug/$(1)/Makefile: $(TOP_DIR)/configure $(CUNIT_INST_DIR)/$(1)
 	--enable-test-perf $(DEBUG_FLAGS) $($(1)_CONF_OPTS) --disable-debug-print $(DEBUG_CONF_FLAGS) $(_DEBUG_CONF_FLAGS)
 
 odp-debug-$(1)-build: $(ARCH_DIR)/odp-debug/$(1)/Makefile
-	$(MAKE) -C$(ARCH_DIR)/odp-debug/$(1)/ V=1 all
+	$$(MAKE) -C$(ARCH_DIR)/odp-debug/$(1)/ V=1 all
 odp-debug-$(1)-clean:
 	rm -Rf $(ARCH_DIR)/odp-debug/$(1)
 
@@ -56,24 +56,24 @@ $(ARCH_DIR)/odp/$(1)/Makefile: $(TOP_DIR)/configure $(CUNIT_INST_DIR)/$(1)/lib/l
 	--enable-test-perf $(DEBUG_FLAGS) $($(1)_CONF_OPTS) --disable-debug-print $(DEBUG_CONF_FLAGS)
 
 odp-$(1)-build: $(ARCH_DIR)/odp/$(1)/Makefile
-	$(MAKE) -C$(ARCH_DIR)/odp/$(1)/ V=1 all
+	$$(MAKE) -C$(ARCH_DIR)/odp/$(1)/ V=1 all
 
 odp-$(1)-install-lib: odp-$(1)-build
 	if [ "$($(1)_INSTALL)" == "true" ]; then \
-		$(MAKE) -C$(ARCH_DIR)/odp/$(1) V=1 install; \
-		$(MAKE) -C$(ARCH_DIR)/odp/$(1)/test V=1 install-strip; \
-		$(MAKE) -C$(ARCH_DIR)/odp/$(1)/example V=1 install; \
+		$$(MAKE) -C$(ARCH_DIR)/odp/$(1) V=1 install; \
+		$$(MAKE) -C$(ARCH_DIR)/odp/$(1)/test V=1 install-strip; \
+		$$(MAKE) -C$(ARCH_DIR)/odp/$(1)/example V=1 install; \
 	else true; fi
 
 odp-$(1)-install-doc: odp-$(1)-build
 	if [ "$($(1)_INSTALL_DOC)" == "true" ]; then \
-		$(MAKE) -C$(ARCH_DIR)/odp/$(1) V=1 doxygen-pdf && \
+		$$(MAKE) -C$(ARCH_DIR)/odp/$(1) V=1 doxygen-pdf && \
 		mkdir -p $(ODP_$(1)_DOC_INST) && \
 		install $(ARCH_DIR)/odp/$(1)/doc/output/opendataplane.pdf $(ODP_$(1)_DOC_INST)/opendataplane.pdf && \
 		rm -Rf   $(ODP_$(1)_DOC_INST)/opendataplane && \
 		mkdir -p $(ODP_$(1)_DOC_INST)/opendataplane && \
 		cp -Rf $(ARCH_DIR)/odp/$(1)/doc/output/html/* $(ODP_$(1)_DOC_INST)/opendataplane && \
-		$(MAKE) -C$(ARCH_DIR)/odp/$(1)/doc V=1 all && \
+		$$(MAKE) -C$(ARCH_DIR)/odp/$(1)/doc V=1 all && \
 		mkdir -p $(ODP_$(1)_DOC_INST)/images/ && \
 		cp -Rf $(ARCH_DIR)/odp/$(1)/doc/images/*.png $(ODP_$(1)_DOC_INST)/images/ && \
 		mkdir -p $(ODP_$(1)_DOC_INST)/users-guide/ && \
@@ -84,9 +84,9 @@ odp-$(1)-install-doc: odp-$(1)-build
 odp-$(1)-install: odp-$(1)-install-lib odp-$(1)-install-doc
 
 odp-$(1)-valid: odp-$(1)-build extra-install firmware-install
-	$(MAKE) -C$(ARCH_DIR)/odp/$(1)/test/validation $($(1)_MAKE_VALID) check
-	$(MAKE) -C$(ARCH_DIR)/odp/$(1)/platform/$($(1)_PLATFORM)/test/ check
-	$(MAKE) -C$(ARCH_DIR)/odp/$(1)/test/performance $($(1)_MAKE_VALID) check
+	$$(MAKE) -C$(ARCH_DIR)/odp/$(1)/test/validation $($(1)_MAKE_VALID) check
+	$$(MAKE) -C$(ARCH_DIR)/odp/$(1)/platform/$($(1)_PLATFORM)/test/ check
+	$$(MAKE) -C$(ARCH_DIR)/odp/$(1)/test/performance $($(1)_MAKE_VALID) check
 
 odp-$(1)-clean:
 	rm -Rf $(ARCH_DIR)/odp/$(1)
@@ -104,14 +104,14 @@ $(eval $(1)-$(2)-ENV := CC="$($(1)_CC)" CFLAGS="$($(1)_CFLAGS)" \
 firmware-$(2)-$(1)-configure: firmware/$(2)/Makefile
 firmware-$(2)-$(1)-build: firmware/$(2)/Makefile
 	mkdir -p $(ARCH_DIR)/firmware/$(2)/$(1)
-	cd $(ARCH_DIR)/firmware/$(2)/$(1) && $(MAKE) -f $(TOP_DIR)/firmware/$(2)/Makefile all $($(1)-$(2)-ENV)
+	cd $(ARCH_DIR)/firmware/$(2)/$(1) && $$(MAKE) -f $(TOP_DIR)/firmware/$(2)/Makefile all $($(1)-$(2)-ENV)
 
 firmware-$(2)-$(1)-install: firmware-$(2)-$(1)-build
-	cd $(ARCH_DIR)/firmware/$(2)/$(1) && $(MAKE) -f $(TOP_DIR)/firmware/$(2)/Makefile install $($(1)-$(2)-ENV)
+	cd $(ARCH_DIR)/firmware/$(2)/$(1) && $$(MAKE) -f $(TOP_DIR)/firmware/$(2)/Makefile install $($(1)-$(2)-ENV)
 firmware-$(2)-$(1)-valid: firmware-$(2)-$(1)-build
-	cd $(ARCH_DIR)/firmware/$(2)/$(1) && $(MAKE) -f $(TOP_DIR)/firmware/$(2)/Makefile valid $($(1)-$(2)-ENV)
+	cd $(ARCH_DIR)/firmware/$(2)/$(1) && $$(MAKE) -f $(TOP_DIR)/firmware/$(2)/Makefile valid $($(1)-$(2)-ENV)
 firmware-$(2)-$(1)-long: firmware-$(2)-$(1)-build
-	cd $(ARCH_DIR)/firmware/$(2)/$(1) && $(MAKE) -f $(TOP_DIR)/firmware/$(2)/Makefile long $($(1)-$(2)-ENV)
+	cd $(ARCH_DIR)/firmware/$(2)/$(1) && $$(MAKE) -f $(TOP_DIR)/firmware/$(2)/Makefile long $($(1)-$(2)-ENV)
 firmware-$(2)-$(1)-clean:
 	rm -Rf $(ARCH_DIR)/firmware/$(2)/$(1)
 endef
@@ -155,7 +155,7 @@ $(eval $(1)-ENV := CC="$($(1)_CC)" CFLAGS="$($(1)_CFLAGS)" \
 
 app-$(1)-configure: apps/$(1)/Makefile
 app-$(1)-install: app-$(1)-build
-	cd $(ARCH_DIR)/apps/$(1) && $(MAKE) -f $(TOP_DIR)/apps/$(1)/Makefile install \
+	cd $(ARCH_DIR)/apps/$(1) && $$(MAKE) -f $(TOP_DIR)/apps/$(1)/Makefile install \
 	APST_DIR=$(APST_DIR) ODP_TOOLCHAIN_DIR=$(K1ST_DIR)/
 
 app-$(1)-long:
@@ -163,7 +163,7 @@ app-$(1)-valid:
 
 app-$(1)-build: apps/$(1)/Makefile
 	mkdir -p $(ARCH_DIR)/apps/$(1)
-	cd $(ARCH_DIR)/apps/$(1) && $(MAKE) -f $(TOP_DIR)/apps/$(1)/Makefile \
+	cd $(ARCH_DIR)/apps/$(1) && $$(MAKE) -f $(TOP_DIR)/apps/$(1)/Makefile \
 	ODP_TOOLCHAIN_DIR=$(K1ST_DIR)/ all
 app-$(1)-clean:
 	rm -Rf $(ARCH_DIR)/apps/$(1)
@@ -178,16 +178,16 @@ define LONG_RULE
 
 long-$(1)-$(2)-configure: long/$(2)/Makefile
 long-$(1)-$(2)-install: long-$(1)-$(2)-build
-	cd $(ARCH_DIR)/long/$(1)/$(2) && $(MAKE) -f $(TOP_DIR)/long/$(2)/Makefile install \
+	cd $(ARCH_DIR)/long/$(1)/$(2) && $$(MAKE) -f $(TOP_DIR)/long/$(2)/Makefile install \
 	LONT_DIR=$(LONT_DIR) ODP_TOOLCHAIN_DIR=$(K1ST_DIR)/ ODP_ARCH=$(1)
 
 long-$(1)-$(2)-valid: long-$(1)-$(2)-build extra-install
-	cd $(ARCH_DIR)/long/$(1)/$(2) && $(MAKE) -f $(TOP_DIR)/long/$(2)/Makefile valid \
+	cd $(ARCH_DIR)/long/$(1)/$(2) && $$(MAKE) -f $(TOP_DIR)/long/$(2)/Makefile valid \
 	LONT_DIR=$(LONT_DIR) ODP_TOOLCHAIN_DIR=$(K1ST_DIR)/ ODP_ARCH=$(1)
 
 long-$(1)-$(2)-build: long-$(1)-$(2)-configure
 	mkdir -p $(ARCH_DIR)/long/$(1)/$(2)
-	cd $(ARCH_DIR)/long/$(1)/$(2) && $(MAKE) -f $(TOP_DIR)/long/$(2)/Makefile \
+	cd $(ARCH_DIR)/long/$(1)/$(2) && $$(MAKE) -f $(TOP_DIR)/long/$(2)/Makefile \
 	LONT_DIR=$(LONT_DIR) ODP_TOOLCHAIN_DIR=$(K1ST_DIR)/ ODP_ARCH=$(1) all
 
 long-$(1)-$(2)-clean:
@@ -238,7 +238,7 @@ define DO_RULES_SEQ
 # $(1) = RULE
 .PHONY: $(1)
 $(1): $($(1)_DEPS)
-	set -e; for rule in $(foreach COMPONENT, $(COMPONENTS), $(COMPONENT)-$(1)); do $(MAKE) $$$${rule}; done
+	set -e; for rule in $(foreach COMPONENT, $(COMPONENTS), $(COMPONENT)-$(1)); do $$(MAKE) $$$${rule}; done
 
 CHECK_LIST += $(foreach COMPONENT, $(COMPONENTS),$(COMPONENT)-$(1))
 endef
