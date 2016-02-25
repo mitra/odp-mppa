@@ -23,9 +23,9 @@ int mppa_ethernet_generate_mac(unsigned int ioeth_id, unsigned int ifce_id, uint
 		return -1;
 	}
 
-	if (__k1_get_cluster_id() != 128) {
+	if (__k1_get_cluster_id() != 128 && __k1_get_cluster_id() != 160) {
 		/* no fuses on this cluser */
-		fprintf(stderr, "[ETH] Warning: Serial number accessible only on IODDR0!\n");
+		fprintf(stderr, "[ETH] Warning: Serial number accessible only on IO0!\n");
 		timestamp = 0ULL;
 	} else {
 		uint64_t serial;
