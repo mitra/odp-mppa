@@ -96,7 +96,7 @@ extra-install: $(K1ST_DIR)/lib64/libodp_syscall.so $(K1ST_DIR)/share/odp/build/m
 extra-long:
 
 $(K1ST_DIR)/lib64/libodp_syscall.so: $(TOP_DIR)/syscall/run.sh
-	+$< $@
+	+$< $(K1ST_DIR)
 $(K1ST_DIR)/share/odp/build/mk/platforms.inc: $(TOP_DIR)/mk/platforms.inc
 	install -D $< $@
 $(K1ST_DIR)/share/odp/build/apps/Makefile.apps: $(TOP_DIR)/apps/Makefile.apps
