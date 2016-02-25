@@ -338,9 +338,11 @@ static void _poll_masks(int th_id)
 				if (hdr_list->tail == &hdr_list->head)
 					continue;
 
-				hdr_list->head = odp_buffer_ring_push_list(&rx_hdl.ifce[i].ring,
-									   hdr_list->head,
-									   &hdr_list->count);
+				hdr_list->count =
+					odp_buffer_ring_push_sort_list(&rx_hdl.ifce[i].ring,
+												   &hdr_list->head,
+												   &hdr_list->tail,
+												   hdr_list->count);
 				if (!hdr_list->count) {
 					/* All were flushed */
 					hdr_list->tail = &hdr_list->head;
