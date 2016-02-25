@@ -194,7 +194,11 @@ static void eth_init(void)
 	for (int eth_if = 0; eth_if < N_ETH_LANE; ++eth_if) {
 		_eth_status_init(&status[eth_if]);
 		ethtool_init_lane(eth_if);
-		mppa_ethernet_generate_mac(160 + 64 *( (__k1_get_cluster_id() - 128) / 64), eth_if,
+
+		int eth_clus_id = 160;
+		if (__k1_get_cluster_id() == 192 || __k1_get_cluster_id() == 224)
+			eth_clus_id = 224;
+		mppa_ethernet_generate_mac(eth_clus_id, eth_if,
 					   status[eth_if].mac_address[0]);
 		memcpy(status[eth_if].mac_address[1], status[eth_if].mac_address[0], ETH_ALEN);
 		status[eth_if].mac_address[1][ETH_ALEN - 1] |= 1;
