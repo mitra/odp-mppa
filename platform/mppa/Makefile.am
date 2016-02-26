@@ -83,6 +83,18 @@ odpplatinclude_HEADERS = \
 		  $(srcdir)/include/odp/plat/timer_types.h \
 		  $(srcdir)/include/odp/plat/version_types.h
 
+odprpcincludedir= $(includedir)/odp/rpc
+odprpcinclude_HEADERS = \
+		  $(srcdir)/include/odp/rpc/api.h \
+		  $(srcdir)/include/odp/rpc/c2c.h \
+		  $(srcdir)/include/odp/rpc/defines.h \
+		  $(srcdir)/include/odp/rpc/eth.h \
+		  $(srcdir)/include/odp/rpc/helpers.h \
+		  $(srcdir)/include/odp/rpc/pcie.h \
+		  $(srcdir)/include/odp/rpc/rnd.h \
+		  $(srcdir)/include/odp/rpc/rpc.h
+
+
 noinst_HEADERS = \
 		  $(srcdir)/include/odp_align_internal.h \
 		  $(srcdir)/include/odp_atomic_internal.h \
@@ -101,7 +113,6 @@ noinst_HEADERS = \
 		  $(srcdir)/include/odp_packet_io_queue.h \
 		  $(srcdir)/include/odp_pool_internal.h \
 		  $(srcdir)/include/odp_queue_internal.h \
-		  $(srcdir)/include/odp_rpc_internal.h \
 		  $(srcdir)/include/odp_rx_internal.h \
 		  $(srcdir)/include/odp_schedule_internal.h \
 		  $(srcdir)/include/odp_spin_internal.h \

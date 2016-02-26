@@ -7,8 +7,8 @@
 
 #include <mppa/osconfig.h>
 #include <HAL/hal/hal.h>
-#include <odp/plat/atomic_types.h>
 #include "netdev.h"
+#include "internal/cache.h"
 
 #define DDR_BUFFER_BASE_ADDR	0x80000000
 

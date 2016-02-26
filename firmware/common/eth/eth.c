@@ -4,12 +4,12 @@
 #include <assert.h>
 #include <stdio.h>
 #include <HAL/hal/hal.h>
-
-#include <odp_rpc_internal.h>
+#include <odp/rpc/rpc.h>
 
 #include "rpc-server.h"
-#include "eth.h"
-#include "mac.h"
+#include "internal/rpc-server.h"
+#include "internal/eth.h"
+#include "internal/mac.h"
 
 eth_status_t status[N_ETH_LANE];
 eth_lb_status_t lb_status;
@@ -23,10 +23,10 @@ static inline int get_eth_dma_id(unsigned cluster_id){
 	return offset + ETH_BASE_TX;
 }
 
-odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg,
+odp_rpc_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg,
 			    uint8_t *payload, unsigned fallthrough)
 {
-	odp_rpc_cmd_ack_t ack = { .status = 0};
+	odp_rpc_ack_t ack = { .status = 0};
 	odp_rpc_cmd_eth_open_t data = { .inl_data = msg->inl_data };
 	const int nocIf = get_eth_dma_id(data.dma_if);
 	const unsigned int eth_if = data.ifId % 4; /* 4 is actually 0 in 40G mode */
@@ -113,9 +113,9 @@ odp_rpc_cmd_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg,
 	return ack;
 }
 
-odp_rpc_cmd_ack_t  eth_set_state(unsigned remoteClus, odp_rpc_t *msg)
+odp_rpc_ack_t  eth_set_state(unsigned remoteClus, odp_rpc_t *msg)
 {
-	odp_rpc_cmd_ack_t ack = { .status = 0 };
+	odp_rpc_ack_t ack = { .status = 0 };
 	odp_rpc_cmd_eth_state_t data = { .inl_data = msg->inl_data };
 	const unsigned int eth_if = data.ifId % 4; /* 4 is actually 0 in 40G mode */
 
@@ -146,9 +146,9 @@ odp_rpc_cmd_ack_t  eth_set_state(unsigned remoteClus, odp_rpc_t *msg)
 	return ack;
 }
 
-odp_rpc_cmd_ack_t  eth_close(unsigned remoteClus, odp_rpc_t *msg)
+odp_rpc_ack_t  eth_close(unsigned remoteClus, odp_rpc_t *msg)
 {
-	odp_rpc_cmd_ack_t ack = { .status = 0 };
+	odp_rpc_ack_t ack = { .status = 0 };
 	odp_rpc_cmd_eth_clos_t data = { .inl_data = msg->inl_data };
 	const unsigned int eth_if = data.ifId % 4; /* 4 is actually 0 in 40G mode */
 
@@ -178,10 +178,10 @@ odp_rpc_cmd_ack_t  eth_close(unsigned remoteClus, odp_rpc_t *msg)
 	return ack;
 }
 
-odp_rpc_cmd_ack_t  eth_dual_mac(unsigned remoteClus __attribute__((unused)),
+odp_rpc_ack_t  eth_dual_mac(unsigned remoteClus __attribute__((unused)),
 				odp_rpc_t *msg)
 {
-	odp_rpc_cmd_ack_t ack = { .status = 0 };
+	odp_rpc_ack_t ack = { .status = 0 };
 	odp_rpc_cmd_eth_dual_mac_t data = { .inl_data = msg->inl_data };
 	if (ethtool_set_dual_mac(data.enabled))
 		ack.status = -1;
@@ -207,7 +207,7 @@ static void eth_init(void)
 
 static int eth_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload)
 {
-	odp_rpc_cmd_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
+	odp_rpc_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
 
 	switch (msg->pkt_type){
 	case ODP_RPC_CMD_ETH_OPEN:

@@ -4,7 +4,6 @@
 #include <assert.h>
 #include <HAL/hal/hal.h>
 
-#include "odp_rpc_internal.h"
 #include "rpc-server.h"
 
 int main (int argc __attribute__((unused)), char *argv[] __attribute__((unused)))

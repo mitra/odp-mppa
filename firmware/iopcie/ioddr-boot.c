@@ -7,9 +7,7 @@
 #include <mppa_bsp.h>
 #include <mppa/osconfig.h>
 
-#include "odp_rpc_internal.h"
 #include "rpc-server.h"
-#include "rnd_generator.h"
 #include "pcie.h"
 #include "boot.h"
 

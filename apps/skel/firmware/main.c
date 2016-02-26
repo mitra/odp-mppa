@@ -5,7 +5,6 @@
 #include <HAL/hal/hal.h>
 #include <unistd.h>
 
-#include "odp_rpc_internal.h"
 #include "rpc-server.h"
 #include "boot.h"
 

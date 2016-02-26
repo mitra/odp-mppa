@@ -1,4 +1,4 @@
-#include "lib_trng.h"
+#include "internal/lib_trng.h"
 #include <HAL/hal/hal.h>
 
 

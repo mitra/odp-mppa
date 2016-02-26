@@ -4,10 +4,10 @@
 #include <assert.h>
 #include <string.h>
 #include <mppa_bsp.h>
+#include <odp/rpc/rpc.h>
 
-#include "lib_trng.h"
-#include "odp_rpc_internal.h"
-#include "rpc-server.h"
+#include "internal/lib_trng.h"
+#include "internal/rpc-server.h"
 
 #define TRNG_AB01_PARAM_NOISE 12
 #define TRNG_AB01_PARAM_DIV   4

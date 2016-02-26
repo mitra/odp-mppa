@@ -2,8 +2,8 @@
 #include <errno.h>
 #include <mppa_noc.h>
 
-#include "pcie_internal.h"
-#include "netdev.h"
+#include "internal/pcie.h"
+#include "internal/netdev.h"
 #include "noc2pci.h"
 
 void mppa_pcie_noc_rx_buffer_consumed(uint64_t data)

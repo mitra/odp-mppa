@@ -16,9 +16,9 @@
 #include <odp_debug_internal.h>
 #include <odp/hints.h>
 #include <odp/random.h>
+#include <odp/rpc/rpc.h>
 
 #include <stdint.h>
-#include <odp_rpc_internal.h>
 #include <odp_packet_internal.h>
 
 #include <string.h>
@@ -930,7 +930,7 @@ odp_random_data(uint8_t *buf, int32_t len, odp_bool_t use_entropy ODP_UNUSED)
 		odp_rpc_do_query(rpc_server_id,
 						 odp_rpc_get_io_tag_id(cluster_id),
 						 &cmd, NULL);
-		int ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * RPC_TIMEOUT_1S);
+		int ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * ODP_RPC_TIMEOUT_1S);
 		if (ret < 0) {
 			fprintf(stderr, "[RND] RPC Error\n");
 			return 1;

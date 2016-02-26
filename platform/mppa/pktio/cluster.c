@@ -7,13 +7,13 @@
 #include <HAL/hal/hal.h>
 #include <odp/errno.h>
 #include <errno.h>
+#include <odp/rpc/rpc.h>
 
 #include <mppa_bsp.h>
 #include <mppa_routing.h>
 #include <mppa_noc.h>
 
 #include <odp_classification_internal.h>
-#include "odp_rpc_internal.h"
 #include "odp_tx_uc_internal.h"
 #include "odp_rx_internal.h"
 
@@ -102,7 +102,7 @@ static int cluster_rpc_send_c2c_open(odp_pktio_param_t * params, pkt_cluster_t *
 {
 	unsigned cluster_id = __k1_get_cluster_id();
 	odp_rpc_t *ack_msg;
-	odp_rpc_cmd_ack_t ack;
+	odp_rpc_ack_t ack;
 	int ret;
 
 	/*
@@ -137,7 +137,7 @@ static int cluster_rpc_send_c2c_open(odp_pktio_param_t * params, pkt_cluster_t *
 					 odp_rpc_get_io_tag_id(cluster_id),
 					 &cmd, NULL);
 
-	ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * RPC_TIMEOUT_1S);
+	ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * ODP_RPC_TIMEOUT_1S);
 	if (ret < 0) {
 		fprintf(stderr, "[C2C] RPC Error\n");
 		return 1;
@@ -159,7 +159,7 @@ static int cluster_rpc_send_c2c_query(pkt_cluster_t *cluster)
 {
 	unsigned cluster_id = __k1_get_cluster_id();
 	odp_rpc_t *ack_msg;
-	odp_rpc_cmd_ack_t ack;
+	odp_rpc_ack_t ack;
 	int ret;
 
 	odp_rpc_cmd_c2c_query_t query_cmd = {
@@ -179,7 +179,7 @@ static int cluster_rpc_send_c2c_query(pkt_cluster_t *cluster)
 					 odp_rpc_get_io_tag_id(cluster_id),
 					 &cmd, NULL);
 
-	ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * RPC_TIMEOUT_1S);
+	ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * ODP_RPC_TIMEOUT_1S);
 	if (ret < 0) {
 		fprintf(stderr, "[C2C] RPC Error\n");
 		__odp_errno = EPIPE;
@@ -382,7 +382,7 @@ static int cluster_close(pktio_entry_t * const pktio_entry ODP_UNUSED)
 					 odp_rpc_get_io_tag_id(cluster_id),
 					 &cmd, NULL);
 
-	ret = odp_rpc_wait_ack(&ack_msg, NULL, 5 * RPC_TIMEOUT_1S);
+	ret = odp_rpc_wait_ack(&ack_msg, NULL, 5 * ODP_RPC_TIMEOUT_1S);
 	if (ret < 0) {
 		fprintf(stderr, "[CLUS] RPC Error\n");
 		return 1;

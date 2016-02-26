@@ -3,13 +3,14 @@
 #include <inttypes.h>
 #include <assert.h>
 #include <HAL/hal/hal.h>
-
-#include <odp_rpc_internal.h>
+#include <odp/rpc/rpc.h>
 
 #include <mppa_bsp.h>
 #include <mppa_routing.h>
 #include <mppa_noc.h>
 #include "rpc-server.h"
+#include "internal/rpc-server.h"
+#include "internal/cache.h"
 
 #define RPC_PKT_SIZE (sizeof(odp_rpc_t) + RPC_MAX_PAYLOAD)
 
@@ -131,7 +132,7 @@ int odp_rpc_server_poll_msg(odp_rpc_t **msg, uint8_t **payload)
 	return -1;
 }
 
-int odp_rpc_server_ack(odp_rpc_t * msg, odp_rpc_cmd_ack_t ack)
+int odp_rpc_server_ack(odp_rpc_t * msg, odp_rpc_ack_t ack)
 {
 	msg->ack = 1;
 	msg->data_len = 0;
@@ -161,7 +162,7 @@ int odp_rpc_server_handle(odp_rpc_t ** unhandled_msg)
 
 static int bas_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload)
 {
-	odp_rpc_cmd_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
+	odp_rpc_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
 
 	(void)remoteClus;
 	(void)payload;

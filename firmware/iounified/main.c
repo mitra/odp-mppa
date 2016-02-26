@@ -4,7 +4,6 @@
 #include <assert.h>
 #include <HAL/hal/hal.h>
 
-#include "odp_rpc_internal.h"
 #include "rpc-server.h"
 #include "pcie.h"
 #include "boot.h"

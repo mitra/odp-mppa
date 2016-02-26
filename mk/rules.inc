@@ -8,6 +8,9 @@ cunit-$(1)-configure: $(ARCH_DIR)/cunit/$(1)/Makefile
 $(eval ODP_$(1)_DOC_INST := $(K1ST_DIR)/doc/ODP/$($(1)_PLATFORM))
 $(eval ODP_$(1)_OS_NAME := $(firstword $(subst _, ,$(1))))
 $(eval ODP_$(1)_BOARD_NAME := $(lastword $(subst _, ,$(1))))
+$(eval ODP_$(1)_ARCH_BUILDDIR := $(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME))
+$(eval ODP_$(1)_BUILDDIR := $(ARCH_DIR)/odp/$(ODP_$(1)_ARCH_BUILDDIR))
+$(eval ODP_$(1)_DEBUG_BUILDDIR := $(ARCH_DIR)/odp-debug/$(ODP_$(1)_ARCH_BUILDDIR))
 $(ARCH_DIR)/cunit/$(1)/Makefile: $(TOP_DIR)/cunit/configure
 	mkdir -p $$$$(dirname $$@) && cd $$$$(dirname $$@) && \
 	$($(1)_CONF_ENV) CPPFLAGS="$($(1)_CFLAGS)" LDFLAGS="$($(1)_LDFLAGS) $($(1)_CFLAGS)" \
@@ -26,67 +29,72 @@ cunit-$(1)-valid:
 cunit-$(1)-clean:
 	rm -Rf $(ARCH_DIR)/cunit/$(1) $(CUNIT_INST_DIR)/$(1)
 
-odp-debug-$(1)-configure: $(ARCH_DIR)/odp-debug/$(1)/Makefile
-$(ARCH_DIR)/odp-debug/$(1)/Makefile: $(TOP_DIR)/configure $(CUNIT_INST_DIR)/$(1)/lib/libcunit.a $(MAKE_DEPS)
+odp-debug-$(1)-configure: $(ODP_$(1)_DEBUG_BUILDDIR)/Makefile
+$(ODP_$(1)_DEBUG_BUILDDIR)/Makefile: $(TOP_DIR)/configure $(CUNIT_INST_DIR)/$(1)/lib/libcunit.a $(MAKE_DEPS)
 	mkdir -p $$$$(dirname $$@) && cd $$$$(dirname $$@) && \
 	$($(1)_CONF_ENV) CPPFLAGS="$($(1)_CFLAGS)" LDFLAGS="$($(1)_LDFLAGS) $($(1)_CFLAGS)" \
 	 $$< --host=$(1) --with-platform=$($(1)_PLATFORM) \
 	--with-cunit-path=$(CUNIT_INST_DIR)/$(1)/ --enable-test-vald \
 	--prefix=$(K1ST_DIR) \
-	--datarootdir=$(K1ST_DIR)share/odp-debug/tests/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME) \
-	--libdir=$(K1ST_DIR)lib/odp-debug/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME) \
+	--datarootdir=$(K1ST_DIR)share/odp-debug/tests/$(ODP_$(1)_ARCH_BUILDDIR) \
+	--libdir=$(K1ST_DIR)lib/odp-debug/$(ODP_$(1)_ARCH_BUILDDIR) \
 	--includedir=$(K1ST_DIR)$($(1)_INC_DIR)/include \
 	--enable-test-perf $(DEBUG_FLAGS) $($(1)_CONF_OPTS) --disable-debug-print $(DEBUG_CONF_FLAGS) $(_DEBUG_CONF_FLAGS)
 
-odp-debug-$(1)-build: $(ARCH_DIR)/odp-debug/$(1)/Makefile
-	$$(MAKE) -C$(ARCH_DIR)/odp-debug/$(1)/ V=1 all
+odp-debug-$(1)-build: $(ODP_$(1)_DEBUG_BUILDDIR)/Makefile
+	$$(MAKE) -C$$$$(basename $$@)V=1 all
 odp-debug-$(1)-clean:
-	rm -Rf $(ARCH_DIR)/odp-debug/$(1)
+	rm -Rf $(ODP_$(1)_DEBUG_BUILDDIR)
 
-odp-$(1)-configure: $(ARCH_DIR)/odp/$(1)/Makefile
-$(ARCH_DIR)/odp/$(1)/Makefile: $(TOP_DIR)/configure $(CUNIT_INST_DIR)/$(1)/lib/libcunit.a $(MAKE_DEPS)
+odp-$(1)-configure: $(ODP_$(1)_BUILDDIR)/Makefile
+$(ODP_$(1)_BUILDDIR)/Makefile: $(TOP_DIR)/configure $(CUNIT_INST_DIR)/$(1)/lib/libcunit.a $(MAKE_DEPS)
 	mkdir -p $$$$(dirname $$@) && cd $$$$(dirname $$@) && \
 	$($(1)_CONF_ENV) CPPFLAGS="$($(1)_CFLAGS)" LDFLAGS="$($(1)_LDFLAGS) $($(1)_CFLAGS)" \
 	 $$< --host=$(1) --with-platform=$($(1)_PLATFORM) \
 	--with-cunit-path=$(CUNIT_INST_DIR)/$(1)/ --enable-test-vald \
 	--prefix=$(K1ST_DIR) --enable-user-guides \
-	--datarootdir=$(K1ST_DIR)share/odp/tests/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME) \
-	--libdir=$(K1ST_DIR)lib/odp/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME) \
+	--datarootdir=$(K1ST_DIR)share/odp/tests/$(ODP_$(1)_ARCH_BUILDDIR) \
+	--libdir=$(K1ST_DIR)lib/odp/$(ODP_$(1)_ARCH_BUILDDIR) \
 	--includedir=$(K1ST_DIR)$($(1)_INC_DIR)/include \
 	--enable-test-perf $(DEBUG_FLAGS) $($(1)_CONF_OPTS) --disable-debug-print $(DEBUG_CONF_FLAGS)
 
-odp-$(1)-build: $(ARCH_DIR)/odp/$(1)/Makefile
-	$$(MAKE) -C$(ARCH_DIR)/odp/$(1)/ V=1 all
+odp-$(1)-build: $(ODP_$(1)_BUILDDIR)/Makefile
+	$$(MAKE) -C$$$$(dirname $$<) V=1 all
 
 odp-$(1)-install-lib: odp-$(1)-build
 	if [ "$($(1)_INSTALL)" == "true" ]; then \
-		$$(MAKE) -C$(ARCH_DIR)/odp/$(1) V=1 install; \
-		$$(MAKE) -C$(ARCH_DIR)/odp/$(1)/test V=1 install-strip; \
-		$$(MAKE) -C$(ARCH_DIR)/odp/$(1)/example V=1 install; \
+		$$(MAKE) -C$(ODP_$(1)_BUILDDIR) V=1 install; \
+		$$(MAKE) -C$(ODP_$(1)_BUILDDIR)/test V=1 install-strip; \
+		$$(MAKE) -C$(ODP_$(1)_BUILDDIR)/example V=1 install; \
+	else true; fi
+
+odp-$(1)-install-headers: odp-$(1)-configure
+	if [ "$($(1)_INSTALL)" == "true" ]; then \
+		$$(MAKE) -C$(ODP_$(1)_BUILDDIR)/platform/mppa V=1 install-odprpcincludeHEADERS; \
 	else true; fi
 
 odp-$(1)-install-doc: odp-$(1)-build
 	if [ "$($(1)_INSTALL_DOC)" == "true" ]; then \
-		$$(MAKE) -C$(ARCH_DIR)/odp/$(1) V=1 doxygen-pdf && \
+		$$(MAKE) -C$(ODP_$(1)_BUILDDIR) V=1 doxygen-pdf && \
 		mkdir -p $(ODP_$(1)_DOC_INST) && \
-		install $(ARCH_DIR)/odp/$(1)/doc/output/opendataplane.pdf $(ODP_$(1)_DOC_INST)/opendataplane.pdf && \
+		install $(ODP_$(1)_BUILDDIR)/doc/output/opendataplane.pdf $(ODP_$(1)_DOC_INST)/opendataplane.pdf && \
 		rm -Rf   $(ODP_$(1)_DOC_INST)/opendataplane && \
 		mkdir -p $(ODP_$(1)_DOC_INST)/opendataplane && \
-		cp -Rf $(ARCH_DIR)/odp/$(1)/doc/output/html/* $(ODP_$(1)_DOC_INST)/opendataplane && \
-		$$(MAKE) -C$(ARCH_DIR)/odp/$(1)/doc V=1 all && \
+		cp -Rf $(ODP_$(1)_BUILDDIR)/doc/output/html/* $(ODP_$(1)_DOC_INST)/opendataplane && \
+		$$(MAKE) -C$(ODP_$(1)_BUILDDIR)/doc V=1 all && \
 		mkdir -p $(ODP_$(1)_DOC_INST)/images/ && \
-		cp -Rf $(ARCH_DIR)/odp/$(1)/doc/images/*.png $(ODP_$(1)_DOC_INST)/images/ && \
+		cp -Rf $(ODP_$(1)_BUILDDIR)/doc/images/*.png $(ODP_$(1)_DOC_INST)/images/ && \
 		mkdir -p $(ODP_$(1)_DOC_INST)/users-guide/ && \
-		cp -Rf $(ARCH_DIR)/odp/$(1)/doc/output/users-guide.html $(ODP_$(1)_DOC_INST)/users-guide/ && \
+		cp -Rf $(ODP_$(1)_BUILDDIR)/doc/output/users-guide.html $(ODP_$(1)_DOC_INST)/users-guide/ && \
 		true; \
 	else true; fi
 
 odp-$(1)-install: odp-$(1)-install-lib odp-$(1)-install-doc
 
 odp-$(1)-valid: odp-$(1)-build extra-install firmware-install
-	$$(MAKE) -C$(ARCH_DIR)/odp/$(1)/test/validation $($(1)_MAKE_VALID) check
-	$$(MAKE) -C$(ARCH_DIR)/odp/$(1)/platform/$($(1)_PLATFORM)/test/ check
-	$$(MAKE) -C$(ARCH_DIR)/odp/$(1)/test/performance $($(1)_MAKE_VALID) check
+	$$(MAKE) -C$(ODP_$(1)_BUILDDIR)/test/validation $($(1)_MAKE_VALID) check
+	$$(MAKE) -C$(ODP_$(1)_BUILDDIR)/platform/$($(1)_PLATFORM)/test/ check
+	$$(MAKE) -C$(ODP_$(1)_BUILDDIR)/test/performance $($(1)_MAKE_VALID) check
 
 odp-$(1)-clean:
 	rm -Rf $(ARCH_DIR)/odp/$(1)
@@ -101,7 +109,7 @@ define FIRMWARE_RULE
 #$(2) Firmware type
 $(eval $(1)-$(2)-ENV := ODP_FIRMWARE_CONFIG="$(1)" INSTDIR="$(firmware_$(1)_INSTDIR)" ODP_TOOLCHAIN_DIR="$(K1ST_DIR)")
 firmware-$(2)-$(1)-configure: firmware/$(2)/Makefile
-firmware-$(2)-$(1)-build: firmware/$(2)/Makefile extra-install
+firmware-$(2)-$(1)-build: firmware/$(2)/Makefile extra-install odp-k1b-kalray-mos_developer-install-headers
 	mkdir -p $(ARCH_DIR)/firmware/$(2)/$(1)
 	cd $(ARCH_DIR)/firmware/$(2)/$(1) && $$(MAKE) -f $(TOP_DIR)/firmware/$(2)/Makefile all $($(1)-$(2)-ENV)
 
@@ -205,14 +213,14 @@ long-$(1)-install: $(foreach APP, $(LONGS), long-$(1)-$(APP)-install)
 	  echo '# Generated test file'; \
 	  echo 'SET(ENV{LD_LIBRARY_PATH} ../lib/host/:$$$$ENV{LD_LIBRARY_PATH})'; \
 	  echo 'SET(ENV{PATH} ./:$$$$ENV{PATH})'; \
-	  for test in $$$$(cd $(LONT_DIR)/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME)/;\
+	  for test in $$$$(cd $(LONT_DIR)/$(ODP_$(1)_ARCH_BUILDDIR)/;\
 	  	  	   	   find . -mindepth 2 -name CTestTestfile.cmake -exec dirname {} \;); do \
 		  echo "SUBDIRS($$$$test)"; \
 	  done \
-	 ) > $(LONT_DIR)/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME)/CTestTestfile.cmake
+	 ) > $(LONT_DIR)/$(ODP_$(1)_ARCH_BUILDDIR)/CTestTestfile.cmake
 
 long-$(1)-valid: $(foreach APP, $(LONGS), long-$(1)-$(APP)-install) extra-install
-	cd $(LONT_DIR)/$(ODP_$(1)_BOARD_NAME)/$(ODP_$(1)_OS_NAME) && ctest -L $(if $(findstring simu,$(1)),sim,jtag)
+	cd $(LONT_DIR)/$(ODP_$(1)_ARCH_BUILDDIR) && ctest -L $(if $(findstring simu,$(1)),sim,jtag)
 
 long-$(1)-build: $(foreach APP, $(LONGS), long-$(1)-$(APP)-build)
 

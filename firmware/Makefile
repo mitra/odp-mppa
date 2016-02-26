@@ -1,6 +1,7 @@
 FIRMDIR    := $(shell basename $(SRCDIR))
 BUILDDIR   := $(shell pwd)
 MAKEFILE   := $(lastword $(MAKEFILE_LIST))
+FIRM_TOPDIR:= $(realpath $(dir $(MAKEFILE)))
 TOP_SRCDIR := $(realpath $(dir $(MAKEFILE))/..)
 SRCFILES   += $(shell find $(SRCDIRS) -name "[^.]*.c")
 ASMFILES   += $(shell find $(SRCDIRS) -name "[^.]*.S")
@@ -18,10 +19,9 @@ CC            = $(firmware_$(ODP_FIRMWARE_CONFIG)_CC)
 PLAT_CFLAGS   = $(firmware_$(ODP_FIRMWARE_CONFIG)_CFLAGS)
 PLAT_LDFLAGS  = $(firmware_$(ODP_FIRMWARE_CONFIG)_CFLAGS)
 
-
-ODP_INCDIR  = $(TOP_SRCDIR)/platform/mppa/include
-ODP_SRCDIR  = $(TOP_SRCDIR)/platform/mppa/
-_CFLAGS    += -I$(ODP_INCDIR) -I$(TOP_SRCDIR)/include
+# Add extra include to get ODP definitions
+ODP_INCDIR  = $(ODP_TOOLCHAIN_DIR)/k1-elf/include
+_CFLAGS    += -I$(ODP_INCDIR) -I$(FIRM_TOPDIR)/common
 _CFLAGS    += $(CFLAGS) -g3 -Wall -Wextra -Werror -std=gnu99 $(patsubst %, -I%, $(SRCDIRS))
 _LDFLAGS   += $(LDFLAGS)
 

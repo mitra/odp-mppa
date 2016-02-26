@@ -16,7 +16,7 @@ k1b-kalray-nodeos_developer_CONF_OPTS   :=
 k1b-kalray-nodeos_developer_CFLAGS      := -march=k1b -DK1_NODEOS
 k1b-kalray-nodeos_developer_LDFLAGS     :=
 k1b-kalray-nodeos_developer_PLATFORM    := mppa
-k1b-kalray-nodeos_developer_INC_DIR     := k1b-nodeos
+k1b-kalray-nodeos_developer_INC_DIR     := k1-nodeos
 k1b-kalray-nodeos_developer_MAKE_VALID  := -j1
 k1b-kalray-nodeos_developer_INSTALL     := true
 CONFIGS += k1b-kalray-nodeos_developer
@@ -26,7 +26,7 @@ k1b-kalray-nodeos_explorer_CONF_OPTS   :=
 k1b-kalray-nodeos_explorer_CFLAGS      := -march=k1b -DK1_NODEOS -mboard=explorer -DK1B_EXPLORER
 k1b-kalray-nodeos_explorer_LDFLAGS     :=
 k1b-kalray-nodeos_explorer_PLATFORM    := mppa
-k1b-kalray-nodeos_explorer_INC_DIR     := k1b-nodeos
+k1b-kalray-nodeos_explorer_INC_DIR     := k1-nodeos
 k1b-kalray-nodeos_explorer_MAKE_VALID  := -j1
 k1b-kalray-nodeos_explorer_INSTALL     := true
 _CONFIGS += k1b-kalray-nodeos_explorer
@@ -36,7 +36,7 @@ k1b-kalray-nodeos_simu_CONF_OPTS   :=
 k1b-kalray-nodeos_simu_CFLAGS      := -march=k1b -DK1_NODEOS -DMAGIC_SCALL
 k1b-kalray-nodeos_simu_LDFLAGS     :=
 k1b-kalray-nodeos_simu_PLATFORM    := mppa
-k1b-kalray-nodeos_simu_INC_DIR     := k1b-nodeos
+k1b-kalray-nodeos_simu_INC_DIR     := k1-nodeos
 k1b-kalray-nodeos_simu_MAKE_VALID  :=
 k1b-kalray-nodeos_simu_INSTALL     := true
 CONFIGS += k1b-kalray-nodeos_simu
@@ -46,7 +46,7 @@ k1b-kalray-nodeos_konic80_CONF_OPTS   :=
 k1b-kalray-nodeos_konic80_CFLAGS      := -march=k1b -DK1_NODEOS -mboard=konic80
 k1b-kalray-nodeos_konic80_LDFLAGS     :=
 k1b-kalray-nodeos_konic80_PLATFORM    := mppa
-k1b-kalray-nodeos_konic80_INC_DIR     := k1b-nodeos
+k1b-kalray-nodeos_konic80_INC_DIR     := k1-nodeos
 k1b-kalray-nodeos_konic80_MAKE_VALID  := -j1
 k1b-kalray-nodeos_konic80_INSTALL     := true
 CONFIGS += k1b-kalray-nodeos_konic80
@@ -56,7 +56,7 @@ k1b-kalray-mos_developer_CONF_OPTS   :=
 k1b-kalray-mos_developer_CFLAGS      := -march=k1b -mhypervisor -DK1_MOS
 k1b-kalray-mos_developer_LDFLAGS     := -mhypervisor -lvbsp -lutask -Wl,--defsym=USER_STACK_SIZE=5120
 k1b-kalray-mos_developer_PLATFORM    := mppa
-k1b-kalray-mos_developer_INC_DIR     := k1b-elf
+k1b-kalray-mos_developer_INC_DIR     := k1-elf
 k1b-kalray-mos_developer_MAKE_VALID  := -j1
 k1b-kalray-mos_developer_INSTALL     := true
 k1b-kalray-mos_developer_INSTALL_DOC := true
@@ -67,7 +67,7 @@ k1b-kalray-mos_explorer_CONF_OPTS   :=
 k1b-kalray-mos_explorer_CFLAGS      := -march=k1b -mhypervisor -DK1_MOS -mboard=explorer -DK1B_EXPLORER
 k1b-kalray-mos_explorer_LDFLAGS     := -mhypervisor -lvbsp -lutask -Wl,--defsym=USER_STACK_SIZE=5120
 k1b-kalray-mos_explorer_PLATFORM    := mppa
-k1b-kalray-mos_explorer_INC_DIR     := k1b-elf
+k1b-kalray-mos_explorer_INC_DIR     := k1-elf
 k1b-kalray-mos_explorer_MAKE_VALID  := -j1
 k1b-kalray-mos_explorer_INSTALL     := true
 _CONFIGS += k1b-kalray-mos_explorer
@@ -77,7 +77,7 @@ k1b-kalray-mos_konic80_CONF_OPTS   :=
 k1b-kalray-mos_konic80_CFLAGS      := -march=k1b -mhypervisor -DK1_MOS -mboard=konic80
 k1b-kalray-mos_konic80_LDFLAGS     := -mhypervisor -lvbsp -lutask -Wl,--defsym=USER_STACK_SIZE=5120
 k1b-kalray-mos_konic80_PLATFORM    := mppa
-k1b-kalray-mos_konic80_INC_DIR     := k1b-elf
+k1b-kalray-mos_konic80_INC_DIR     := k1-elf
 k1b-kalray-mos_konic80_MAKE_VALID  := -j1
 k1b-kalray-mos_konic80_INSTALL     := true
 CONFIGS += k1b-kalray-mos_konic80
@@ -87,7 +87,7 @@ k1b-kalray-mos_simu_CONF_OPTS   :=
 k1b-kalray-mos_simu_CFLAGS      := -march=k1b -mhypervisor -DK1_MOS -DMAGIC_SCALL
 k1b-kalray-mos_simu_LDFLAGS     := -mhypervisor -lvbsp -lutask -Wl,--defsym=USER_STACK_SIZE=5120
 k1b-kalray-mos_simu_PLATFORM    := mppa
-k1b-kalray-mos_simu_INC_DIR     := k1b-elf
+k1b-kalray-mos_simu_INC_DIR     := k1-elf
 k1b-kalray-mos_simu_MAKE_VALID  :=
 k1b-kalray-mos_simu_INSTALL     := true
 CONFIGS += k1b-kalray-mos_simu

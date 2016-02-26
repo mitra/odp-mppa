@@ -4,7 +4,7 @@
 #include <assert.h>
 #include <HAL/hal/hal.h>
 
-#include <odp_rpc_internal.h>
+#include <odp/rpc/rpc.h>
 #include <mppa_eth_core.h>
 #include <mppa_eth_loadbalancer_core.h>
 #include <mppa_eth_phy.h>
@@ -14,7 +14,8 @@
 #include <mppa_eth_io_utils.h>
 #include <mppa_eth_qsfp_utils.h>
 #include "rpc-server.h"
-#include "eth.h"
+#include "internal/rpc-server.h"
+#include "internal/eth.h"
 
 enum mppa_eth_mac_ethernet_mode_e mac_get_default_mode(unsigned lane_id)
 {

@@ -9,6 +9,7 @@
 #include <HAL/hal/hal.h>
 #include <odp/errno.h>
 #include <errno.h>
+#include <odp/rpc/rpc.h>
 
 #ifdef K1_NODEOS
 #include <pthread.h>
@@ -18,7 +19,6 @@
 
 #include <odp_classification_internal.h>
 #include "odp_pool_internal.h"
-#include "odp_rpc_internal.h"
 #include "odp_rx_internal.h"
 #include "odp_tx_uc_internal.h"
 
@@ -69,7 +69,7 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth, int
 {
 	unsigned cluster_id = __k1_get_cluster_id();
 	odp_rpc_t *ack_msg;
-	odp_rpc_cmd_ack_t ack;
+	odp_rpc_ack_t ack;
 	int ret;
 
 	/*
@@ -105,7 +105,7 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth, int
 					 odp_rpc_get_io_tag_id(cluster_id),
 					 &cmd, rules);
 
-	ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * RPC_TIMEOUT_1S);
+	ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * ODP_RPC_TIMEOUT_1S);
 	if (ret < 0) {
 		fprintf(stderr, "[ETH] RPC Error\n");
 		return 1;
@@ -489,7 +489,7 @@ static int eth_close(pktio_entry_t * const pktio_entry)
 	int slot_id = eth->slot_id;
 	int port_id = eth->port_id;
 	odp_rpc_t *ack_msg;
-	odp_rpc_cmd_ack_t ack;
+	odp_rpc_ack_t ack;
 	int ret;
 	odp_rpc_cmd_eth_clos_t close_cmd = {
 		{
@@ -512,7 +512,7 @@ static int eth_close(pktio_entry_t * const pktio_entry)
 					 odp_rpc_get_io_tag_id(cluster_id),
 					 &cmd, NULL);
 
-	ret = odp_rpc_wait_ack(&ack_msg, NULL, 5 * RPC_TIMEOUT_1S);
+	ret = odp_rpc_wait_ack(&ack_msg, NULL, 5 * ODP_RPC_TIMEOUT_1S);
 	if (ret < 0) {
 		fprintf(stderr, "[ETH] RPC Error\n");
 		return 1;
@@ -535,7 +535,7 @@ static int eth_set_state(pktio_entry_t * const pktio_entry, int enabled)
 	int slot_id = eth->slot_id;
 	int port_id = eth->port_id;
 	odp_rpc_t *ack_msg;
-	odp_rpc_cmd_ack_t ack;
+	odp_rpc_ack_t ack;
 	int ret;
 	odp_rpc_cmd_eth_state_t state_cmd = {
 		{
@@ -555,7 +555,7 @@ static int eth_set_state(pktio_entry_t * const pktio_entry, int enabled)
 					 odp_rpc_get_io_tag_id(cluster_id),
 					 &cmd, NULL);
 
-	ret = odp_rpc_wait_ack(&ack_msg, NULL, 5 * RPC_TIMEOUT_1S);
+	ret = odp_rpc_wait_ack(&ack_msg, NULL, 5 * ODP_RPC_TIMEOUT_1S);
 	if (ret < 0) {
 		fprintf(stderr, "[ETH] RPC Error\n");
 		return 1;

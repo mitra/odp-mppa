@@ -2,8 +2,8 @@
 #include <errno.h>
 #include <mppa_noc.h>
 
-#include "pcie_internal.h"
-#include "netdev.h"
+#include "internal/pcie.h"
+#include "internal/netdev.h"
 #include "noc2pci.h"
 
 rx_thread_t g_rx_threads[RX_THREAD_COUNT];

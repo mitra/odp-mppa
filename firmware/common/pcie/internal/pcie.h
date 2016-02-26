@@ -2,9 +2,10 @@
 #define PCIE_INTERNAL__H
 
 #include <string.h>
+#include <odp/rpc/rpc.h>
 #include "pcie.h"
-#include "odp_rpc_internal.h"
 #include "rpc-server.h"
+#include "internal/rpc-server.h"
 #include "ring.h"
 #include "mppa_pcie_netdev.h"
 

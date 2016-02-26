@@ -9,6 +9,7 @@
 #include <HAL/hal/hal.h>
 #include <odp/errno.h>
 #include <errno.h>
+#include <odp/rpc/rpc.h>
 
 #ifdef K1_NODEOS
 #include <pthread.h>
@@ -18,7 +19,6 @@
 
 #include "odp_classification_internal.h"
 #include "odp_pool_internal.h"
-#include "odp_rpc_internal.h"
 #include "odp_rx_internal.h"
 #include "odp_tx_uc_internal.h"
 #include "ucode_fw/ucode_pcie_v2.h"
@@ -73,7 +73,7 @@ static int pcie_rpc_send_pcie_open(pkt_pcie_t *pcie)
 {
 	unsigned cluster_id = __k1_get_cluster_id();
 	odp_rpc_t *ack_msg;
-	odp_rpc_cmd_ack_t ack;
+	odp_rpc_ack_t ack;
 	int ret;
 	/*
 	 * RPC Msg to IOPCIE  #N so the LB will dispatch to us
@@ -97,7 +97,7 @@ static int pcie_rpc_send_pcie_open(pkt_pcie_t *pcie)
 					 odp_rpc_get_io_tag_id(cluster_id),
 					 &cmd, NULL);
 
-	ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * RPC_TIMEOUT_1S);
+	ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * ODP_RPC_TIMEOUT_1S);
 	if (ret < 0) {
 		fprintf(stderr, "[PCIE] RPC Error\n");
 		return 1;
@@ -261,7 +261,7 @@ static int pcie_close(pktio_entry_t * const pktio_entry)
 	int slot_id = pcie->slot_id;
 	int pcie_eth_if_id = pcie->pcie_eth_if_id;
 	odp_rpc_t *ack_msg;
-	odp_rpc_cmd_ack_t ack;
+	odp_rpc_ack_t ack;
 	int ret;
 	odp_rpc_cmd_pcie_clos_t close_cmd = {
 		{
@@ -284,7 +284,7 @@ static int pcie_close(pktio_entry_t * const pktio_entry)
 					 odp_rpc_get_io_tag_id(cluster_id),
 					 &cmd, NULL);
 
-	ret = odp_rpc_wait_ack(&ack_msg, NULL, 5 * RPC_TIMEOUT_1S);
+	ret = odp_rpc_wait_ack(&ack_msg, NULL, 5 * ODP_RPC_TIMEOUT_1S);
 	if (ret < 0) {
 		fprintf(stderr, "[PCIE] RPC Error\n");
 		return 1;

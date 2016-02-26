@@ -4,8 +4,8 @@
 #include <mppa_routing.h>
 #include <HAL/hal/hal.h>
 
-#include "pcie_internal.h"
-#include "netdev.h"
+#include "internal/pcie.h"
+#include "internal/netdev.h"
 
 struct mppa_pcie_eth_dnoc_tx_cfg g_mppa_pcie_tx_cfg[BSP_NB_IOCLUSTER_MAX][BSP_DNOC_TX_PACKETSHAPER_NB_MAX] = {{{0}}};
 
@@ -79,10 +79,10 @@ static inline int pcie_add_forward(unsigned int pcie_eth_if_id,
 	return netdev_h2c_enqueue_buffer(cfg, &entry);
 }
 
-static odp_rpc_cmd_ack_t pcie_open(unsigned remoteClus, odp_rpc_t * msg)
+static odp_rpc_ack_t pcie_open(unsigned remoteClus, odp_rpc_t * msg)
 {
 	odp_rpc_cmd_pcie_open_t open_cmd = {.inl_data = msg->inl_data};
-	odp_rpc_cmd_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
+	odp_rpc_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
 	struct mppa_pcie_eth_dnoc_tx_cfg *tx_cfg;
 	int if_id = remoteClus % MPPA_PCIE_USABLE_DNOC_IF;
 	unsigned int tx_id;
@@ -157,10 +157,10 @@ static odp_rpc_cmd_ack_t pcie_open(unsigned remoteClus, odp_rpc_t * msg)
 	return ack;
 }
 
-static odp_rpc_cmd_ack_t pcie_close(__attribute__((unused)) unsigned remoteClus,
+static odp_rpc_ack_t pcie_close(__attribute__((unused)) unsigned remoteClus,
 									__attribute__((unused)) odp_rpc_t * msg)
 {
-	odp_rpc_cmd_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
+	odp_rpc_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
 	ack.status = 0;
 
 	return ack;
@@ -168,7 +168,7 @@ static odp_rpc_cmd_ack_t pcie_close(__attribute__((unused)) unsigned remoteClus,
 
 static int pcie_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload)
 {
-	odp_rpc_cmd_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
+	odp_rpc_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
 
 	(void)payload;
 	switch (msg->pkt_type){

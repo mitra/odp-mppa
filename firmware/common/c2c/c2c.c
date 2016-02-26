@@ -4,11 +4,11 @@
 #include <assert.h>
 #include <HAL/hal/hal.h>
 
-#include <odp_rpc_internal.h>
+#include <odp/rpc/rpc.h>
 #include <stdio.h>
 #include <mppa_noc.h>
 
-#include "rpc-server.h"
+#include "internal/rpc-server.h"
 
 typedef struct {
 	uint8_t opened     : 1;
@@ -22,9 +22,9 @@ typedef struct {
 
 static c2c_status_t c2c_status[RPC_MAX_CLIENTS][RPC_MAX_CLIENTS];
 
-odp_rpc_cmd_ack_t  c2c_open(unsigned src_cluster, odp_rpc_t *msg)
+odp_rpc_ack_t  c2c_open(unsigned src_cluster, odp_rpc_t *msg)
 {
-	odp_rpc_cmd_ack_t ack = { .status = 0};
+	odp_rpc_ack_t ack = { .status = 0};
 	odp_rpc_cmd_c2c_open_t data = { .inl_data = msg->inl_data };
 	const unsigned dst_cluster = data.cluster_id;
 
@@ -48,9 +48,9 @@ odp_rpc_cmd_ack_t  c2c_open(unsigned src_cluster, odp_rpc_t *msg)
 	return ack;
 }
 
-odp_rpc_cmd_ack_t  c2c_close(unsigned src_cluster, odp_rpc_t *msg)
+odp_rpc_ack_t  c2c_close(unsigned src_cluster, odp_rpc_t *msg)
 {
-	odp_rpc_cmd_ack_t ack = { .status = 0};
+	odp_rpc_ack_t ack = { .status = 0};
 	odp_rpc_cmd_c2c_clos_t data = { .inl_data = msg->inl_data };
 	const unsigned dst_cluster = data.cluster_id;
 
@@ -68,9 +68,9 @@ odp_rpc_cmd_ack_t  c2c_close(unsigned src_cluster, odp_rpc_t *msg)
 	return ack;
 }
 
-odp_rpc_cmd_ack_t  c2c_query(unsigned src_cluster, odp_rpc_t *msg)
+odp_rpc_ack_t  c2c_query(unsigned src_cluster, odp_rpc_t *msg)
 {
-	odp_rpc_cmd_ack_t ack = { .status = 0};
+	odp_rpc_ack_t ack = { .status = 0};
 	odp_rpc_cmd_c2c_query_t data = { .inl_data = msg->inl_data };
 	const unsigned dst_cluster = data.cluster_id;
 
@@ -100,7 +100,7 @@ odp_rpc_cmd_ack_t  c2c_query(unsigned src_cluster, odp_rpc_t *msg)
 
 static int c2c_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload)
 {
-	odp_rpc_cmd_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
+	odp_rpc_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
 
 	(void)payload;
 	switch (msg->pkt_type){

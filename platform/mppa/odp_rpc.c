@@ -7,16 +7,15 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <HAL/hal/hal.h>
-
-#ifndef BSP_NB_DMA_IO_MAX
-#define BSP_NB_DMA_IO_MAX 1
-#endif
-
-#include "odp_rpc_internal.h"
+#include <odp/rpc/rpc.h>
 
 #include <mppa_bsp.h>
 #include <mppa_routing.h>
 #include <mppa_noc.h>
+
+#define INVALIDATE_AREA(p, s) do {	__k1_dcache_invalidate_mem_area((__k1_uintptr_t)(void*)p, s);	\
+	}while(0)
+#define INVALIDATE(p) INVALIDATE_AREA((p), sizeof(*p))
 
 static struct {
 	odp_rpc_t rpc_cmd;
@@ -80,21 +79,10 @@ int odp_rpc_client_get_default_server(void)
 }
 
 static const char * rpc_cmd_names[ODP_RPC_CMD_N_CMD] = {
-	[ODP_RPC_CMD_BAS_INVL]    = "INVALID",
-	[ODP_RPC_CMD_BAS_PING]    = "PING",
-	[ODP_RPC_CMD_ETH_OPEN]    = "ETH OPEN",
-	[ODP_RPC_CMD_ETH_CLOS]    = "ETH CLOSE",
-	[ODP_RPC_CMD_ETH_STATE]   = "ETH SET STATE",
-	[ODP_RPC_CMD_ETH_PROMISC] = "ETH PROMISC",
-	[ODP_RPC_CMD_ETH_OPEN_DEF]= "ETH OPEN FALLTHROUGH",
-	[ODP_RPC_CMD_ETH_CLOS_DEF]= "ETH CLOSE FALLTHROUGH",
-	[ODP_RPC_CMD_ETH_DUAL_MAC]= "ETH DUAL MAC",
-	[ODP_RPC_CMD_PCIE_OPEN]   = "PCIE OPEN",
-	[ODP_RPC_CMD_PCIE_CLOS]   = "PCIE CLOSE",
-	[ODP_RPC_CMD_C2C_OPEN]    = "C2C OPEN",
-	[ODP_RPC_CMD_C2C_CLOS]    = "C2C CLOSE",
-	[ODP_RPC_CMD_C2C_QUERY]   = "C2C QUERY",
-	[ODP_RPC_CMD_RND_GET]     = "RANDOM GET",
+	ODP_RPC_CMD_NAMES_ETH,
+	ODP_RPC_CMD_NAMES_PCIE,
+	ODP_RPC_CMD_NAMES_C2C,
+	ODP_RPC_CMD_NAMES_RND,
 };
 void odp_rpc_print_msg(const odp_rpc_t * cmd)
 {
@@ -113,7 +101,7 @@ void odp_rpc_print_msg(const odp_rpc_t * cmd)
 	       cmd->data_len, cmd->dma_id,
 	       cmd->dnoc_tag, cmd->flags);
 	if (cmd->ack) {
-		odp_rpc_cmd_ack_t ack = { .inl_data = cmd->inl_data };
+		odp_rpc_ack_t ack = { .inl_data = cmd->inl_data };
 		printf("\t\tstatus: %d\n", ack.status);
 	}
 	switch (cmd->pkt_type){
@@ -201,8 +189,8 @@ void odp_rpc_print_msg(const odp_rpc_t * cmd)
 }
 
 int odp_rpc_send_msg(uint16_t local_interface, uint16_t dest_id,
-		     uint16_t dest_tag, odp_rpc_t * cmd,
-		     void * payload)
+		     uint16_t dest_tag, const odp_rpc_t * cmd,
+		     const void * payload)
 {
 	if ( cmd->data_len > RPC_MAX_PAYLOAD ) {
 		fprintf(stderr, "Error, msg payload %d > max payload %d\n", cmd->data_len, RPC_MAX_PAYLOAD);

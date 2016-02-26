@@ -3,7 +3,7 @@ TEST_NAME := $(lastword $(subst /, ,$(DIR)))
 
 include $(DIR)/../Makefile 
 $(TEST_NAME)-srcs := $(DIR)/main.c $(DIR)/odp_rpc.c
-$(TEST_NAME)-cflags += -DRPC_FIRMWARE -std=gnu99
+$(TEST_NAME)-cflags += -DRPC_FIRMWARE -std=gnu99 -I$(ODP_TOOLCHAIN_DIR)/k1-elf/include
 $(TEST_NAME)-lflags += -DRPC_FIRMWARE -std=gnu99 -lmppanoc  -lmpparouting
 io-system := bare
 io-bin += $(TEST_NAME)

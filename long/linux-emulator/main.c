@@ -2,7 +2,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <mppa_noc.h>
-#include "odp_rpc_internal.h"
+#include <odp/rpc/rpc.h>
 
 typedef struct {
 	uint8_t dma_if;          /**< DMA Rx Interface */
@@ -55,7 +55,7 @@ int main(){
 	unsigned cluster_id = __k1_get_cluster_id();
 	odp_rpc_t *ack_msg;
 	rx_config_t rx_config;
-	odp_rpc_cmd_ack_t ack;
+	odp_rpc_ack_t ack;
 
 	for (volatile int i = 0; i < 20000000; ++i);
 	odp_rpc_client_init();
@@ -73,7 +73,7 @@ int main(){
 		odp_rpc_do_query(odp_rpc_get_io_dma_id(1, cluster_id),
 					 odp_rpc_get_io_tag_id(cluster_id),
 					 &cmd, NULL);
-		ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * RPC_TIMEOUT_1S);
+		ret = odp_rpc_wait_ack(&ack_msg, NULL, 15 * ODP_RPC_TIMEOUT_1S);
 		if (ret < 0) {
 			fprintf(stderr, "[ETH] RPC Error\n");
 			return 1;

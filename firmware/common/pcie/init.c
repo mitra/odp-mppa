@@ -9,8 +9,10 @@
 #include <HAL/hal/hal.h>
 #include <mppa_noc.h>
 
-#include "pcie_internal.h"
+#include "pcie.h"
+#include "internal/pcie.h"
 #include "netdev.h"
+#include "internal/netdev.h"
 
 #define DDR_BASE_ADDR			0x80000000
 #define DIRECTORY_SIZE			(32 * 1024 * 1024)
