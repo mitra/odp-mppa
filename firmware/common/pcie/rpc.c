@@ -181,7 +181,7 @@ static int pcie_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payloa
 	default:
 		return -1;
 	}
-	odp_rpc_server_ack(msg, ack);
+	odp_rpc_server_ack(msg, ack, NULL, 0);
 	return 0;
 }
 

@@ -188,6 +188,7 @@ odp_rpc_ack_t  eth_dual_mac(unsigned remoteClus __attribute__((unused)),
 	return ack;
 }
 
+
 static void eth_init(void)
 {
 	_eth_lb_status_init(&lb_status);
@@ -229,7 +230,7 @@ static int eth_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload
 	default:
 		return -1;
 	}
-	odp_rpc_server_ack(msg, ack);
+	odp_rpc_server_ack(msg, ack, NULL, 0);
 	return 0;
 }
 

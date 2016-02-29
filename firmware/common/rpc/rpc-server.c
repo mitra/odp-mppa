@@ -132,14 +132,15 @@ int odp_rpc_server_poll_msg(odp_rpc_t **msg, uint8_t **payload)
 	return -1;
 }
 
-int odp_rpc_server_ack(odp_rpc_t * msg, odp_rpc_ack_t ack)
+int odp_rpc_server_ack(odp_rpc_t * msg, odp_rpc_ack_t ack,
+		       const uint8_t *payload, uint16_t payload_len)
 {
 	msg->ack = 1;
-	msg->data_len = 0;
+	msg->data_len = payload_len;
 	msg->inl_data = ack.inl_data;
 
 	unsigned interface = get_rpc_local_dma_id(msg->dma_id);
-	return odp_rpc_send_msg(interface, msg->dma_id, msg->dnoc_tag, msg, NULL);
+	return odp_rpc_send_msg(interface, msg->dma_id, msg->dnoc_tag, msg, payload);
 }
 
 static
@@ -173,7 +174,7 @@ static int bas_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload
 	default:
 		return -1;
 	}
-	odp_rpc_server_ack(msg, ack);
+	odp_rpc_server_ack(msg, ack, NULL, 0);
 	return 0;
 }
 
