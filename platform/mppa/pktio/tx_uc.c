@@ -14,6 +14,12 @@
 
 extern char _heap_end;
 
+static inline uint64_t get_mOS_uc_event(int uc_id)
+{
+	mOS_uc_counter_t *trs_ctr = &_scoreboard_start.SCB_UC.event_counter[uc_id];
+	return __builtin_k1_ldu((void*)&trs_ctr->_dword);
+}
+
 uint64_t tx_uc_alloc_uc_slots(tx_uc_ctx_t *ctx,
 			      unsigned int count)
 {
@@ -21,16 +27,14 @@ uint64_t tx_uc_alloc_uc_slots(tx_uc_ctx_t *ctx,
 
 	const uint64_t head =
 		odp_atomic_fetch_add_u64(&ctx->head, count);
-	const uint32_t last_id = head + count - 1;
-	unsigned  ev_counter, diff;
+	const uint64_t last_id = head + count - 1;
+	uint64_t  ev_counter;
 
 	/* Wait for slot */
-	ev_counter = mOS_uc_read_event(ctx->dnoc_uc_id);
-	diff = last_id - ev_counter;
-	while (diff > 0x80000000 || ev_counter + MAX_JOB_PER_UC <= last_id) {
+	ev_counter = get_mOS_uc_event(ctx->dnoc_uc_id);
+	while (ev_counter + MAX_JOB_PER_UC <= last_id) {
 		odp_spin();
-		ev_counter = mOS_uc_read_event(ctx->dnoc_uc_id);
-		diff = last_id - ev_counter;
+		ev_counter = get_mOS_uc_event(ctx->dnoc_uc_id);
 	}
 
 	/* Free previous packets */
