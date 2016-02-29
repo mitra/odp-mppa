@@ -188,7 +188,35 @@ odp_rpc_ack_t  eth_dual_mac(unsigned remoteClus __attribute__((unused)),
 	return ack;
 }
 
+odp_rpc_ack_t eth_get_stat(unsigned remoteClus __attribute__((unused)),
+			   odp_rpc_t *msg, uint8_t *ack_payload,
+			   uint16_t *ack_payload_len)
+{
+	odp_rpc_ack_t ack = { .status = 0 };
+	odp_rpc_cmd_eth_get_stat_t data = { .inl_data = msg->inl_data };
 
+	*ack_payload_len = 0;
+	if (data.ifId != 4 && data.ifId > N_ETH_LANE) {
+		ack.status = -1;
+		return ack;
+	}
+	if (data.ifId == 4 && status[0].initialized != ETH_LANE_ON_40G) {
+		ack.status = -1;
+		return ack;
+	} else if (data.ifId < N_ETH_LANE &&
+		   status[data.ifId].initialized !=! ETH_LANE_ON) {
+		ack.status = -1;
+		return ack;
+	}
+	ack.cmd.eth_get_stat.link_status = ethtool_poll_lane(data.ifId);
+
+	if (data.link_stats) {
+		*ack_payload_len = sizeof(odp_rpc_payload_eth_get_stat_t);
+		ethtool_lane_stats(data.ifId,
+				   (odp_rpc_payload_eth_get_stat_t *)ack_payload);
+	}
+	return ack;
+}
 static void eth_init(void)
 {
 	_eth_lb_status_init(&lb_status);
@@ -209,6 +237,8 @@ static void eth_init(void)
 static int eth_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload)
 {
 	odp_rpc_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
+	uint16_t ack_payload_len = 0;
+	uint8_t ack_payload[RPC_MAX_PAYLOAD] __attribute__((aligned(8)));
 
 	switch (msg->pkt_type){
 	case ODP_RPC_CMD_ETH_OPEN:
@@ -230,7 +260,7 @@ static int eth_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload
 	default:
 		return -1;
 	}
-	odp_rpc_server_ack(msg, ack, NULL, 0);
+	odp_rpc_server_ack(msg, ack, ack_payload, ack_payload_len);
 	return 0;
 }
 

@@ -39,6 +39,10 @@ int ethtool_disable_cluster(unsigned remoteClus, unsigned if_id);
 int ethtool_start_lane(unsigned if_id, int loopback);
 int ethtool_stop_lane(unsigned if_id);
 
+int ethtool_poll_lane(unsigned if_id);
+int ethtool_lane_stats(unsigned if_id,
+		       odp_rpc_payload_eth_get_stat_t *stats);
+
 int ethtool_set_dual_mac(int enabled);
 
 typedef enum {

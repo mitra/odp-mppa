@@ -787,3 +787,67 @@ int ethtool_set_dual_mac(int enable)
 	lb_status.dual_mac = enable;
 	return 0;
 }
+
+int ethtool_poll_lane(unsigned if_id)
+{
+	const int eth_if = if_id % 4;
+	enum mppa_eth_mac_ethernet_mode_e link_speed =
+		ethtool_get_mac_speed(if_id);
+	if (!mppa_eth_utils_mac_poll_state(eth_if, link_speed)) {
+		/* Link is up */
+		return 1;
+	}
+	/* Link is down */
+	return 0;
+}
+int ethtool_lane_stats(unsigned if_id,
+		       odp_rpc_payload_eth_get_stat_t *stats)
+{
+	const int eth_if = if_id % 4;
+
+	stats->in_octets =
+		mppabeth_mac_get_good_rx_bytes_nb((void *)&(mppa_ethernet[0]->mac),
+						   eth_if);
+	stats->in_ucast_pkts =
+		mppabeth_mac_get_good_rx_packet_nb((void *)&(mppa_ethernet[0]->mac),
+						   eth_if)-
+		mppabeth_mac_get_rx_multicast((void *)&(mppa_ethernet[0]->mac),
+					      eth_if) -
+		mppabeth_mac_get_rx_broadcast((void *)&(mppa_ethernet[0]->mac),
+					      eth_if);
+	stats->in_discards =
+		mppabeth_lb_get_dropped_counter((void*)&(mppa_ethernet[0]->lb),
+						eth_if);;
+	stats->in_errors =
+ 		mppabeth_mac_get_total_rx_packet_nb((void *)&(mppa_ethernet[0]->mac),
+						    eth_if) -
+ 		mppabeth_mac_get_good_rx_packet_nb((void *)&(mppa_ethernet[0]->mac),
+						   eth_if);
+
+	stats->in_unknown_protos = 0;
+	stats->out_octets =
+ 		mppabeth_mac_get_total_tx_bytes_nb((void *)&(mppa_ethernet[0]->mac),
+						   eth_if);
+
+	stats->out_ucast_pkts =
+		mppabeth_mac_get_total_tx_packet_nb((void *)&(mppa_ethernet[0]->mac),
+						   eth_if)-
+		mppabeth_mac_get_tx_multicast((void *)&(mppa_ethernet[0]->mac),
+					      eth_if) -
+		mppabeth_mac_get_tx_broadcast((void *)&(mppa_ethernet[0]->mac),
+					      eth_if);
+
+	stats->out_discards = 0;
+	for (int i = 0; i < MPPA_ETHERNET_TX_FIFO_IF_NUMBER; ++i){
+		for (int j = 0; j < MPPA_ETHERNET_LANE_ETH_FIFO_NUMBER; ++j){
+			stats->out_discards +=
+				mppa_ethernet[0]->tx.fifo_if[i].lane[eth_if].eth_fifo[j].dropped_pkt_cnt.reg;
+		}
+	}
+	stats->out_errors =
+		mppa_ethernet[0]->mac.lane_stat[0].tx_bad_fcs.reg +
+		mppa_ethernet[0]->mac.lane_stat[0].tx_bad_size.reg;
+
+	return 0;
+}
+
