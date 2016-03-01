@@ -18,11 +18,6 @@ ifeq ($(CONFIG_MPPA_TRACE), 1)
 	EXTRA_CFLAGS += -fno-inline
 endif
 
-MULTI_IO ?= 0
-ifeq ($(MULTI_IO), 1)
-	EXTRA_CFLAGS += -DMULTI_IO
-endif
-
 mppapcie_netdev-objs += mppa_pcie_netdev.o
 
 all:
