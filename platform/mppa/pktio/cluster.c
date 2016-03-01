@@ -378,9 +378,21 @@ static int cluster_close(pktio_entry_t * const pktio_entry ODP_UNUSED)
 	/* Free packets being sent by DMA */
 	tx_uc_flush(c2c_get_ctx(clus));
 
+	if (clus->remote.cnoc_rx >= 0) {
+		odp_spinlock_lock(&g_cnoc_tx_lock);
+		if (cluster_configure_cnoc_tx(clus)){
+			/* Faile to configure cnoc tx */
+			odp_spinlock_unlock(&g_cnoc_tx_lock);
+			return 1;
+		}
+		/* Clear all credits on remote side */
+		mppa_noc_cnoc_tx_push(NOC_CLUS_IFACE_ID, g_cnoc_tx_id, -1);
+		odp_spinlock_unlock(&g_cnoc_tx_lock);
+	}
+
 	odp_rpc_do_query(rpc_server_id,
-					 odp_rpc_get_io_tag_id(cluster_id),
-					 &cmd, NULL);
+			 odp_rpc_get_io_tag_id(cluster_id),
+			 &cmd, NULL);
 
 	ret = odp_rpc_wait_ack(&ack_msg, NULL, 5 * ODP_RPC_TIMEOUT_1S);
 	if (ret < 0) {
@@ -507,6 +519,14 @@ static int cluster_send(pktio_entry_t *const pktio_entry,
 	int remote_pkt_count =
 		mppa_noc_cnoc_rx_get_value(NOC_CLUS_IFACE_ID,
 					   pkt_cluster->local.cnoc_rx);
+
+	if (remote_pkt_count == -1) {
+		/* Remote was closed. Try to reinit the pktio */
+		odp_spinlock_unlock(&pkt_cluster->wlock);
+		pkt_cluster->remote.min_rx = pkt_cluster->remote.max_rx = -1;
+		pkt_cluster->remote.cnoc_rx = -1;
+		return 0;
+	}
 
 	/* Is there enough room to send a packet ? */
 	unsigned credit = pkt_cluster->remote.n_credits -

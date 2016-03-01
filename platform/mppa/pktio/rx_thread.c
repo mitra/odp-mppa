@@ -270,6 +270,7 @@ static int _reload_rx(int th_id, int rx_id)
 		 * will be counted by the pkt == ODP_PACKET_INVALID */
 		if_th->dropped_pkts += dropped + 1;
 		rx_hdl.tag[rx_id].broken = true;
+		rx_hdl.tag[rx_id].reconf_id += (dropped + 1) << 8;
 
 		/* We didn't actually used the spare one */
 		rx_hdl.tag[rx_id].pkt = ODP_PACKET_INVALID;
