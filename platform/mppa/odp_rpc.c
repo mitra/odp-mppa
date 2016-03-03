@@ -79,6 +79,7 @@ int odp_rpc_client_get_default_server(void)
 }
 
 static const char * rpc_cmd_names[ODP_RPC_CMD_N_CMD] = {
+	ODP_RPC_CMD_NAMES_BAS,
 	ODP_RPC_CMD_NAMES_ETH,
 	ODP_RPC_CMD_NAMES_PCIE,
 	ODP_RPC_CMD_NAMES_C2C,

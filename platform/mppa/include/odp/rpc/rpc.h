@@ -10,6 +10,7 @@ typedef struct {
 } odp_rpc_inl_data_t;
 
 /* Command modules */
+#include <odp/rpc/bas.h>
 #include <odp/rpc/eth.h>
 #include <odp/rpc/pcie.h>
 #include <odp/rpc/c2c.h>
@@ -30,10 +31,8 @@ typedef struct odp_rpc {
 } odp_rpc_t;
 
 typedef enum {
-	ODP_RPC_CMD_BAS_INVL = 0 /**< BASE: Invalid command. Skip */,
-	ODP_RPC_CMD_BAS_PING     /**< BASE: Ping command. server sends back ack = 0 */,
-
 	/* Import commands from modules */
+	ODP_RPC_CMD_LIST_BAS,
 	ODP_RPC_CMD_LIST_ETH,
 	ODP_RPC_CMD_LIST_PCIE,
 	ODP_RPC_CMD_LIST_C2C,
@@ -46,6 +45,7 @@ typedef union {
 		uint8_t status;
 		union {
 			uint8_t foo;                    /* Dummy entry for init */
+			ODP_RPC_ACK_LIST_BAS
 			ODP_RPC_ACK_LIST_ETH
 			ODP_RPC_ACK_LIST_PCIE
 			ODP_RPC_ACK_LIST_C2C

@@ -86,6 +86,7 @@ odpplatinclude_HEADERS = \
 odprpcincludedir= $(includedir)/odp/rpc
 odprpcinclude_HEADERS = \
 		  $(srcdir)/include/odp/rpc/api.h \
+		  $(srcdir)/include/odp/rpc/bas.h \
 		  $(srcdir)/include/odp/rpc/c2c.h \
 		  $(srcdir)/include/odp/rpc/defines.h \
 		  $(srcdir)/include/odp/rpc/eth.h \
