@@ -3,7 +3,6 @@
 
 #include <odp/rpc/defines.h>
 #include <odp/rpc/helpers.h>
-#include <odp/rpc/api.h>
 
 typedef struct {
 	uint64_t data[4];

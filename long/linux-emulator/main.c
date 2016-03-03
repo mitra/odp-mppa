@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <mppa_noc.h>
 #include <odp/rpc/rpc.h>
+#include <odp/rpc/api.h>
 
 typedef struct {
 	uint8_t dma_if;          /**< DMA Rx Interface */

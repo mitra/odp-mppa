@@ -5,6 +5,7 @@
 #include <string.h>
 #include <mppa_bsp.h>
 #include <odp/rpc/rpc.h>
+#include <odp/rpc/api.h>
 
 #include "internal/lib_trng.h"
 #include "internal/rpc-server.h"

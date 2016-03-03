@@ -12,4 +12,15 @@
 #define RPC_BASE_RX 10
 #define RPC_MAX_PAYLOAD 168 * 8 /* max payload in bytes */
 
+#ifndef ODP_RPC_PRINT
+#define ODP_RPC_PRINT(x...) printf(##x)
+#endif
+
+#ifndef ODP_RPC_PREFIX
+#define ODP_RPC_PREFIX odp_rpc
+#endif
+
+#define _ODP_RPC_CONCAT(x, y) x ## _ ## y
+#define _ODP_RPC_FUNCTION(x, y) _ODP_RPC_CONCAT(x, y)
+#define ODP_RPC_FUNCTION(x) _ODP_RPC_FUNCTION(ODP_RPC_PREFIX, x)
 #endif /* __ODP_RPC_DEFINES_H__ */
