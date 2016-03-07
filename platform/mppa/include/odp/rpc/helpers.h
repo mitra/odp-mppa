@@ -18,10 +18,10 @@ static inline int ODP_RPC_FUNCTION(get_cluster_id)(int local_if){
 }
 
 static inline int ODP_RPC_FUNCTION(densify_cluster_id)(unsigned cluster_id){
-	if(cluster_id == 128)
-		cluster_id = 16;
-	else if(cluster_id == 192)
-		cluster_id = 20;
+	if(cluster_id >= 128 && cluster_id <= 131)
+		cluster_id = 16 + (cluster_id - 128);
+	else if(cluster_id >= 192 && cluster_id <= 195)
+		cluster_id = 20 + (cluster_id - 192);
 	return cluster_id;
 }
 
