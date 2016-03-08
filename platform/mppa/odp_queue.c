@@ -670,7 +670,7 @@ odp_buffer_hdr_t *queue_deq(queue_entry_t *queue)
 		return NULL;
 	}
 
-	INVALIDATE(buf_hdr);
+	INVALIDATE((odp_packet_hdr_t*)buf_hdr);
 
 	/* Note that order should really be assigned on enq to an
 	 * ordered queue rather than deq, however the logic is simpler
@@ -728,7 +728,7 @@ int queue_deq_multi(queue_entry_t *queue, odp_buffer_hdr_t *buf_hdr[], int num)
 	}
 
 	for (i = 0; i < num && hdr; i++) {
-		INVALIDATE(hdr);
+		INVALIDATE((odp_packet_hdr_t*)hdr);
 		buf_hdr[i]       = hdr;
 		hdr              = hdr->next;
 		buf_hdr[i]->next = NULL;
