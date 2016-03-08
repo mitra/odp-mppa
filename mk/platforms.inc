@@ -54,7 +54,8 @@ CONFIGS += k1b-kalray-nodeos_konic80
 k1b-kalray-mos_developer_CONF_ENV    := CC=k1-gcc  CXX=k1-g++ STRIP=k1-strip
 k1b-kalray-mos_developer_CONF_OPTS   :=
 k1b-kalray-mos_developer_CFLAGS      := -march=k1b -mhypervisor -DK1_MOS
-k1b-kalray-mos_developer_LDFLAGS     := -mhypervisor -lvbsp -lutask -Wl,--defsym=USER_STACK_SIZE=5120
+k1b-kalray-mos_developer_LDFLAGS     := -mhypervisor -lvbsp -lutask -Wl,--defsym=USER_STACK_SIZE=5120 \
+				   -Wl,--undefined=DEBUGGER_HAVE_USER_MODE_SUPPORT
 k1b-kalray-mos_developer_PLATFORM    := mppa
 k1b-kalray-mos_developer_INC_DIR     := k1-elf
 k1b-kalray-mos_developer_MAKE_VALID  := -j1
@@ -65,7 +66,8 @@ CONFIGS += k1b-kalray-mos_developer
 k1b-kalray-mos_explorer_CONF_ENV    := CC=k1-gcc  CXX=k1-g++ STRIP=k1-strip
 k1b-kalray-mos_explorer_CONF_OPTS   :=
 k1b-kalray-mos_explorer_CFLAGS      := -march=k1b -mhypervisor -DK1_MOS -mboard=explorer -DK1B_EXPLORER
-k1b-kalray-mos_explorer_LDFLAGS     := -mhypervisor -lvbsp -lutask -Wl,--defsym=USER_STACK_SIZE=5120
+k1b-kalray-mos_explorer_LDFLAGS     := -mhypervisor -lvbsp -lutask -Wl,--defsym=USER_STACK_SIZE=5120 \
+				   -Wl,--undefined=DEBUGGER_HAVE_USER_MODE_SUPPORT
 k1b-kalray-mos_explorer_PLATFORM    := mppa
 k1b-kalray-mos_explorer_INC_DIR     := k1-elf
 k1b-kalray-mos_explorer_MAKE_VALID  := -j1
@@ -75,7 +77,8 @@ _CONFIGS += k1b-kalray-mos_explorer
 k1b-kalray-mos_konic80_CONF_ENV    := CC=k1-gcc  CXX=k1-g++ STRIP=k1-strip
 k1b-kalray-mos_konic80_CONF_OPTS   :=
 k1b-kalray-mos_konic80_CFLAGS      := -march=k1b -mhypervisor -DK1_MOS -mboard=konic80
-k1b-kalray-mos_konic80_LDFLAGS     := -mhypervisor -lvbsp -lutask -Wl,--defsym=USER_STACK_SIZE=5120
+k1b-kalray-mos_konic80_LDFLAGS     := -mhypervisor -lvbsp -lutask -Wl,--defsym=USER_STACK_SIZE=5120 \
+				   -Wl,--undefined=DEBUGGER_HAVE_USER_MODE_SUPPORT
 k1b-kalray-mos_konic80_PLATFORM    := mppa
 k1b-kalray-mos_konic80_INC_DIR     := k1-elf
 k1b-kalray-mos_konic80_MAKE_VALID  := -j1
@@ -85,7 +88,8 @@ CONFIGS += k1b-kalray-mos_konic80
 k1b-kalray-mos_simu_CONF_ENV    := CC=k1-gcc  CXX=k1-g++ STRIP=k1-strip
 k1b-kalray-mos_simu_CONF_OPTS   :=
 k1b-kalray-mos_simu_CFLAGS      := -march=k1b -mhypervisor -DK1_MOS -DMAGIC_SCALL
-k1b-kalray-mos_simu_LDFLAGS     := -mhypervisor -lvbsp -lutask -Wl,--defsym=USER_STACK_SIZE=5120
+k1b-kalray-mos_simu_LDFLAGS     := -mhypervisor -lvbsp -lutask -Wl,--defsym=USER_STACK_SIZE=5120 \
+				   -Wl,--undefined=DEBUGGER_HAVE_USER_MODE_SUPPORT
 k1b-kalray-mos_simu_PLATFORM    := mppa
 k1b-kalray-mos_simu_INC_DIR     := k1-elf
 k1b-kalray-mos_simu_MAKE_VALID  :=
