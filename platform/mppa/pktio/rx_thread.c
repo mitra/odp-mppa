@@ -341,14 +341,12 @@ static void _poll_masks(int th_id)
 
 				hdr_list->count =
 					odp_buffer_ring_push_sort_list(&rx_hdl.ifce[i].ring,
-												   &hdr_list->head,
-												   &hdr_list->tail,
-												   hdr_list->count);
+								       &hdr_list->head,
+								       &hdr_list->tail,
+								       hdr_list->count);
 				if (!hdr_list->count) {
 					/* All were flushed */
 					hdr_list->tail = &hdr_list->head;
-					hdr_list->count = 0;
-					if_mask ^= (1 << i);
 				} else {
 					/* Not all buffers were flushed to the ring */
 					if_mask_incomplete = 1 << i;

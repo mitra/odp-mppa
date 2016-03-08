@@ -112,9 +112,9 @@ void odp_buffer_ring_push_multi(odp_buffer_ring_t *ring,
 }
 
 unsigned odp_buffer_ring_push_sort_list(odp_buffer_ring_t *ring,
-										odp_buffer_hdr_t **head,
-										odp_buffer_hdr_t ***tail,
-										unsigned n_buffers)
+					odp_buffer_hdr_t **head,
+					odp_buffer_hdr_t ***tail,
+					unsigned n_buffers)
 {
 	const unsigned total_bufs = n_buffers;
 	uint32_t prod_head, prod_next, cons_tail;
@@ -159,10 +159,13 @@ unsigned odp_buffer_ring_push_sort_list(odp_buffer_ring_t *ring,
 	}
 
 	do {
+		n_buffers = total_bufs;
 		prod_head =  odp_atomic_load_u32(&ring->prod_head);
 		cons_tail = odp_atomic_load_u32(&ring->cons_tail);
 
-		if(prod_head < cons_tail && prod_head + n_buffers >= cons_tail) {
+		if (prod_head == cons_tail && n_buffers >= ring->buf_num) {
+			n_buffers = ring->buf_num - 1;
+		} else if(prod_head < cons_tail && prod_head + n_buffers >= cons_tail) {
 			n_buffers = cons_tail - prod_head - 1;
 		} else if(prod_head > cons_tail && prod_head + n_buffers >= cons_tail + ring->buf_num) {
 			n_buffers = cons_tail + ring->buf_num - prod_head - 1;
