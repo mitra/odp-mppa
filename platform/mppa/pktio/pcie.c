@@ -89,7 +89,8 @@ static int pcie_rpc_send_pcie_open(pkt_pcie_t *pcie)
 	};
 	odp_rpc_t cmd = {
 		.data_len = 0,
-		.pkt_type = ODP_RPC_CMD_PCIE_OPEN,
+		.pkt_class = ODP_RPC_CLASS_PCIE,
+		.pkt_subtype = ODP_RPC_CMD_PCIE_OPEN,
 		.inl_data = open_cmd.inl_data,
 		.flags = 0,
 	};
@@ -272,7 +273,8 @@ static int pcie_close(pktio_entry_t * const pktio_entry)
 	};
 	unsigned cluster_id = __k1_get_cluster_id();
 	odp_rpc_t cmd = {
-		.pkt_type = ODP_RPC_CMD_PCIE_CLOS,
+		.pkt_class = ODP_RPC_CLASS_PCIE,
+		.pkt_subtype = ODP_RPC_CMD_PCIE_CLOS,
 		.data_len = 0,
 		.flags = 0,
 		.inl_data = close_cmd.inl_data

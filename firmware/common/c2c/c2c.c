@@ -101,9 +101,11 @@ odp_rpc_ack_t  c2c_query(unsigned src_cluster, odp_rpc_t *msg)
 static int c2c_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload)
 {
 	odp_rpc_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
+	if (msg->pkt_class != ODP_RPC_CLASS_C2C)
+		return -1;
 
 	(void)payload;
-	switch (msg->pkt_type){
+	switch (msg->pkt_subtype){
 	case ODP_RPC_CMD_C2C_OPEN:
 		ack = c2c_open(remoteClus, msg);
 		break;
@@ -122,10 +124,5 @@ static int c2c_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload
 
 void  __attribute__ ((constructor)) __c2c_rpc_constructor()
 {
-	if(__n_rpc_handlers < MAX_RPC_HANDLERS) {
-		__rpc_handlers[__n_rpc_handlers++] = c2c_rpc_handler;
-	} else {
-		fprintf(stderr, "Failed to register C2C RPC handlers\n");
-		exit(EXIT_FAILURE);
-	}
+	__rpc_handlers[ODP_RPC_CLASS_C2C] = c2c_rpc_handler;
 }

@@ -128,7 +128,8 @@ static int cluster_rpc_send_c2c_open(odp_pktio_param_t * params, pkt_cluster_t *
 	}
 	odp_rpc_t cmd = {
 		.data_len = 0,
-		.pkt_type = ODP_RPC_CMD_C2C_OPEN,
+		.pkt_class = ODP_RPC_CLASS_C2C,
+		.pkt_subtype = ODP_RPC_CMD_C2C_OPEN,
 		.inl_data = open_cmd.inl_data,
 		.flags = 0,
 	};
@@ -170,7 +171,8 @@ static int cluster_rpc_send_c2c_query(pkt_cluster_t *cluster)
 	};
 	odp_rpc_t cmd = {
 		.data_len = 0,
-		.pkt_type = ODP_RPC_CMD_C2C_QUERY,
+		.pkt_class = ODP_RPC_CLASS_C2C,
+		.pkt_subtype = ODP_RPC_CMD_C2C_QUERY,
 		.inl_data = query_cmd.inl_data,
 		.flags = 0,
 	};
@@ -369,7 +371,8 @@ static int cluster_close(pktio_entry_t * const pktio_entry ODP_UNUSED)
 	};
 	unsigned cluster_id = __k1_get_cluster_id();
 	odp_rpc_t cmd = {
-		.pkt_type = ODP_RPC_CMD_C2C_CLOS,
+		.pkt_class = ODP_RPC_CLASS_C2C,
+		.pkt_subtype = ODP_RPC_CMD_C2C_CLOS,
 		.data_len = 0,
 		.flags = 0,
 		.inl_data = close_cmd.inl_data

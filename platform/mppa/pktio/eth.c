@@ -97,7 +97,8 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth, int
 	}
 	odp_rpc_t cmd = {
 		.data_len = nb_rules * sizeof(pkt_rule_t),
-		.pkt_type = ODP_RPC_CMD_ETH_OPEN,
+		.pkt_class = ODP_RPC_CLASS_ETH,
+		.pkt_subtype = ODP_RPC_CMD_ETH_OPEN,
 		.inl_data = open_cmd.inl_data,
 		.flags = 0,
 	};
@@ -500,7 +501,8 @@ static int eth_close(pktio_entry_t * const pktio_entry)
 	};
 	unsigned cluster_id = __k1_get_cluster_id();
 	odp_rpc_t cmd = {
-		.pkt_type = ODP_RPC_CMD_ETH_CLOS,
+		.pkt_class = ODP_RPC_CLASS_ETH,
+		.pkt_subtype = ODP_RPC_CMD_ETH_CLOS,
 		.data_len = 0,
 		.flags = 0,
 		.inl_data = close_cmd.inl_data
@@ -546,7 +548,8 @@ static int eth_set_state(pktio_entry_t * const pktio_entry, int enabled)
 	};
 	unsigned cluster_id = __k1_get_cluster_id();
 	odp_rpc_t cmd = {
-		.pkt_type = ODP_RPC_CMD_ETH_STATE,
+		.pkt_class = ODP_RPC_CLASS_ETH,
+		.pkt_subtype = ODP_RPC_CMD_ETH_STATE,
 		.data_len = 0,
 		.flags = 0,
 		.inl_data = state_cmd.inl_data

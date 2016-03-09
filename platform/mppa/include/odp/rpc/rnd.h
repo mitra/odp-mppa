@@ -3,8 +3,10 @@
 
 #include <odp/rpc/defines.h>
 
-#define ODP_RPC_CMD_LIST_RND										\
-	ODP_RPC_CMD_RND_GET      /**< RND: Get a buffer with random data generated on IO cluster */
+typedef enum {
+	ODP_RPC_CMD_RND_GET      /**< RND: Get a buffer with random data generated on IO cluster */,
+	ODP_RPC_CMD_RND_N_CMD
+} odp_rpc_cmd_rnd_e;
 
 #define ODP_RPC_CMD_NAMES_RND			\
 	"RANDOM GET"

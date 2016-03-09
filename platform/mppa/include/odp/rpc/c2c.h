@@ -3,10 +3,12 @@
 
 #include <odp/rpc/defines.h>
 
-#define ODP_RPC_CMD_LIST_C2C											\
-	ODP_RPC_CMD_C2C_OPEN    /**< Cluster2Cluster: Declare as ready to receive message */,			\
-		ODP_RPC_CMD_C2C_CLOS    /**< Cluster2Cluster: Declare as not ready to receive message */,	\
-		ODP_RPC_CMD_C2C_QUERY   /**< Cluster2Cluster: Query the amount of creadit available for tx */
+typedef enum {
+	ODP_RPC_CMD_C2C_OPEN    /**< Cluster2Cluster: Declare as ready to receive message */,
+	ODP_RPC_CMD_C2C_CLOS    /**< Cluster2Cluster: Declare as not ready to receive message */,
+	ODP_RPC_CMD_C2C_QUERY   /**< Cluster2Cluster: Query the amount of creadit available for tx */,
+	ODP_RPC_CMD_C2C_N_CMD
+} odp_rpc_cmd_c2c_e;
 
 #define ODP_RPC_CMD_NAMES_C2C			\
 	"C2C OPEN",				\

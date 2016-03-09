@@ -15,7 +15,7 @@
 
 #define RPC_PKT_SIZE (sizeof(odp_rpc_t) + RPC_MAX_PAYLOAD)
 
-odp_rpc_handler_t __rpc_handlers[MAX_RPC_HANDLERS];
+odp_rpc_handler_t __rpc_handlers[ODP_RPC_N_CLASS];
 int __n_rpc_handlers;
 static uint64_t __rpc_ev_masks[BSP_NB_DMA_IO_MAX][4];
 static uint64_t __rpc_fair_masks[BSP_NB_DMA_IO_MAX][4];
@@ -152,13 +152,21 @@ int odp_rpc_server_handle(odp_rpc_t ** unhandled_msg)
 	uint8_t *payload = NULL;
 	remoteClus = odp_rpc_server_poll_msg(&msg, &payload);
 	if(remoteClus >= 0) {
-		for (int i = 0; i < __n_rpc_handlers; ++i) {
-			if (!__rpc_handlers[i](remoteClus, msg, payload))
-				return 1;
+		if (msg->pkt_class >= ODP_RPC_N_CLASS ||
+		    __rpc_handlers[msg->pkt_class] == NULL) {
+			/* Unhandled message type */
+			*unhandled_msg = msg;
+			return -1;
 		}
-		*unhandled_msg = msg;
-		return -1;
+		if (__rpc_handlers[msg->pkt_class](remoteClus, msg, payload)) {
+			/* Error in handling or unhandled subtype*/
+			*unhandled_msg = msg;
+			return -1;
+		}
+		/* Message was handled */
+		return 1;
 	}
+	/* No message */
 	return 0;
 }
 
@@ -166,9 +174,13 @@ static int bas_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload
 {
 	odp_rpc_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
 
+	if (msg->pkt_class != ODP_RPC_CLASS_BAS)
+		return -1;
+
 	(void)remoteClus;
 	(void)payload;
-	switch (msg->pkt_type){
+
+	switch (msg->pkt_subtype){
 	case ODP_RPC_CMD_BAS_PING:
 		ack.status = 0;
 		break;
@@ -181,12 +193,7 @@ static int bas_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload
 
 void  __attribute__ ((constructor)) __bas_rpc_constructor()
 {
-	if(__n_rpc_handlers < MAX_RPC_HANDLERS) {
-		__rpc_handlers[__n_rpc_handlers++] = bas_rpc_handler;
-	} else {
-		fprintf(stderr, "Failed to register BAS RPC handlers\n");
-		exit(EXIT_FAILURE);
-	}
+	__rpc_handlers[ODP_RPC_CLASS_BAS] = bas_rpc_handler;
 }
 
 

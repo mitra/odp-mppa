@@ -240,7 +240,10 @@ static int eth_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload
 	uint16_t ack_payload_len = 0;
 	uint8_t ack_payload[RPC_MAX_PAYLOAD] __attribute__((aligned(8)));
 
-	switch (msg->pkt_type){
+	if (msg->pkt_class != ODP_RPC_CLASS_ETH)
+		return -1;
+
+	switch (msg->pkt_subtype){
 	case ODP_RPC_CMD_ETH_OPEN:
 		ack = eth_open(remoteClus, msg, payload, 0);
 		break;
@@ -271,10 +274,5 @@ void  __attribute__ ((constructor)) __eth_rpc_constructor()
 #endif
 
 	eth_init();
-	if(__n_rpc_handlers < MAX_RPC_HANDLERS) {
-		__rpc_handlers[__n_rpc_handlers++] = eth_rpc_handler;
-	} else {
-		fprintf(stderr, "Failed to register ETH RPC handlers\n");
-		exit(EXIT_FAILURE);
-	}
+	__rpc_handlers[ODP_RPC_CLASS_ETH] = eth_rpc_handler;
 }
