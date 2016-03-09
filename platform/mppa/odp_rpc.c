@@ -131,12 +131,14 @@ void odp_rpc_print_msg(const odp_rpc_t * cmd)
 	       "\tData : %u\n"
 	       "\tDMA  : %u\n"
 	       "\tTag  : %u\n"
-	       "\tFlag : %x\n"
+	       "\tFlag :\n"
+	       "\t\tAck : %u\n"
+	       "\t\tRPC Err: : %x\n"
 	       "\tInl Data:\n",
 	       cmd->pkt_class, cmd->pkt_subtype,
 	       rpc_cmd_names[cmd->pkt_class][cmd->pkt_subtype],
 	       cmd->data_len, cmd->dma_id,
-	       cmd->dnoc_tag, cmd->flags);
+	       cmd->dnoc_tag, cmd->ack, cmd->rpc_err);
 
 	if (cmd->ack) {
 		odp_rpc_ack_t ack = { .inl_data = cmd->inl_data };
