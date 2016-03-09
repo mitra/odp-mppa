@@ -4,14 +4,6 @@
 #define MAX_RPC_HANDLERS 32
 #define RPC_MAX_CLIENTS (BSP_NB_CLUSTER_MAX + BSP_NB_IOCLUSTER_MAX * 4)
 
-#define RPC_ERRNO_HANDLED 1
-#define RPC_ERRNO_NOMSG 0
-#define RPC_ERRNO_UNHANDLED_COS -2
-#define RPC_ERRNO_UNHANDLED_SUBTYPE -3
-#define RPC_ERRNO_VERSION_MISMATCH -4
-#define RPC_ERRNO_INTERNAL_ERROR -5
-#define RPC_ERRNO_BAD_CMD -6
-
 typedef int (*odp_rpc_handler_t)(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload);
 
 int odp_rpc_server_ack(odp_rpc_t * msg, odp_rpc_ack_t ack,

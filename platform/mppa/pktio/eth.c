@@ -9,7 +9,6 @@
 #include <HAL/hal/hal.h>
 #include <odp/errno.h>
 #include <errno.h>
-#include <odp/rpc/rpc.h>
 #include <odp/rpc/api.h>
 
 #ifdef K1_NODEOS

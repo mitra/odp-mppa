@@ -7,7 +7,6 @@
 #include <stdio.h>
 #include <inttypes.h>
 #include <HAL/hal/hal.h>
-#include <odp/rpc/rpc.h>
 #include <odp/rpc/api.h>
 
 #include <mppa_bsp.h>
@@ -346,7 +345,7 @@ int odp_rpc_do_query(uint16_t dest_id,
 	return odp_rpc_send_msg(0, dest_id, dest_tag, cmd, payload);
 }
 
-int odp_rpc_wait_ack(odp_rpc_t ** cmd, void ** payload, uint64_t timeout)
+odp_rpc_cmd_err_e odp_rpc_wait_ack(odp_rpc_t ** cmd, void ** payload, uint64_t timeout)
 {
 	int ret;
 
@@ -361,11 +360,14 @@ int odp_rpc_wait_ack(odp_rpc_t ** cmd, void ** payload, uint64_t timeout)
 
 	}
 	if (!ret)
-		return 0;
+		return ODP_RPC_ERR_TIMEOUT;
 
 	odp_rpc_t * msg = &odp_rpc_ack_buf.rpc_cmd;
 	INVALIDATE(msg);
 	*cmd = msg;
+
+	if (msg->rpc_err)
+		return msg->rpc_err;
 
 	if (payload && msg->data_len) {
 		if ( msg->data_len > RPC_MAX_PAYLOAD ) {

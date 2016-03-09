@@ -15,6 +15,16 @@ typedef struct {
 #include <odp/rpc/c2c.h>
 #include <odp/rpc/rnd.h>
 
+typedef enum {
+	ODP_RPC_ERR_NONE = 0,
+	ODP_RPC_ERR_BAD_COS = 1,
+	ODP_RPC_ERR_BAD_SUBTYPE = 2,
+	ODP_RPC_ERR_VERSION_MISMATCH = 3,
+	ODP_RPC_ERR_INTERNAL_ERROR = 4,
+	ODP_RPC_ERR_BAD_CMD = 5,
+	ODP_RPC_ERR_TIMEOUT = 6,
+} odp_rpc_cmd_err_e;
+
 typedef struct odp_rpc {
 	uint8_t  pkt_class;      /* Class of Service */
 	uint8_t  pkt_subtype;    /* Type of the pkt within the class of service */
@@ -25,7 +35,8 @@ typedef struct odp_rpc {
 	uint8_t  dnoc_tag;       /* Source Rx tag for reply */
 	union {
 		struct {
-			uint8_t ack : 1;
+			uint8_t ack     : 1;
+			uint8_t rpc_err : 4;
 		};
 		uint16_t flags;
 	};
