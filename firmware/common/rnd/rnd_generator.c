@@ -103,7 +103,9 @@ rnd_send_buffer(unsigned remoteClus, odp_rpc_t * msg) {
 static int rnd_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload)
 {
 	if (msg->pkt_class != ODP_RPC_CLASS_RND)
-		return -1;
+		return RPC_ERRNO_INTERNAL_ERROR;
+	if (msg->cos_version != ODP_RPC_RND_VERSION)
+		return RPC_ERRNO_VERSION_MISMATCH;
 
 	(void)payload;
 	switch (msg->pkt_subtype){
@@ -111,9 +113,10 @@ static int rnd_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload
 		rnd_send_buffer(remoteClus, msg);
 		break;
 	default:
-		return -1;
+		return RPC_ERRNO_UNHANDLED_SUBTYPE;
 	}
-	return 0;
+
+	return RPC_ERRNO_HANDLED;
 }
 
 void  __attribute__ ((constructor)) __rnd_rpc_constructor()

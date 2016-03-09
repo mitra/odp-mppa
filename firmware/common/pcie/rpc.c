@@ -171,7 +171,9 @@ static int pcie_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payloa
 	odp_rpc_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
 
 	if (msg->pkt_class != ODP_RPC_CLASS_PCIE)
-		return -1;
+		return RPC_ERRNO_INTERNAL_ERROR;
+	if (msg->cos_version != ODP_RPC_PCIE_VERSION)
+		return RPC_ERRNO_VERSION_MISMATCH;
 
 	(void)payload;
 	switch (msg->pkt_subtype){
@@ -182,10 +184,11 @@ static int pcie_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payloa
 		ack = pcie_close(remoteClus, msg);
 		break;
 	default:
-		return -1;
+		return RPC_ERRNO_UNHANDLED_SUBTYPE;
 	}
+
 	odp_rpc_server_ack(msg, ack, NULL, 0);
-	return 0;
+	return RPC_ERRNO_HANDLED;
 }
 
 void  __attribute__ ((constructor)) __pcie_rpc_constructor()

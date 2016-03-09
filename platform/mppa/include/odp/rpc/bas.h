@@ -3,6 +3,9 @@
 
 #include <odp/rpc/defines.h>
 
+/** Version of the BAS CoS */
+#define ODP_RPC_BAS_VERSION 0x1
+
 typedef enum {
 	ODP_RPC_CMD_BAS_INVL = 0 /**< BASE: Invalid command. Skip */,
 	ODP_RPC_CMD_BAS_PING     /**< BASE: Ping command. server sends back ack = 0 */,

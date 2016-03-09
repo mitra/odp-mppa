@@ -17,7 +17,9 @@ typedef struct {
 
 typedef struct odp_rpc {
 	uint8_t  pkt_class;      /* Class of Service */
-	uint16_t pkt_subtype;    /* Type of the pkt within the class of service */
+	uint8_t  pkt_subtype;    /* Type of the pkt within the class of service */
+	uint16_t cos_version;    /* Version of the CoS used. Used to ensure coherency between
+				  * server and client */
 	uint16_t data_len;       /* Packet is data len * 8B long. data_len < RPC_MAX_PAYLOAD / 8 */
 	uint8_t  dma_id;         /* Source cluster ID */
 	uint8_t  dnoc_tag;       /* Source Rx tag for reply */

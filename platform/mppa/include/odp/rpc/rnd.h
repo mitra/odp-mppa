@@ -3,6 +3,9 @@
 
 #include <odp/rpc/defines.h>
 
+/** Version of the RND CoS */
+#define ODP_RPC_RND_VERSION 0x1
+
 typedef enum {
 	ODP_RPC_CMD_RND_GET      /**< RND: Get a buffer with random data generated on IO cluster */,
 	ODP_RPC_CMD_RND_N_CMD

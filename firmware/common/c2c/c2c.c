@@ -101,8 +101,11 @@ odp_rpc_ack_t  c2c_query(unsigned src_cluster, odp_rpc_t *msg)
 static int c2c_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload)
 {
 	odp_rpc_ack_t ack = ODP_RPC_CMD_ACK_INITIALIZER;
+
 	if (msg->pkt_class != ODP_RPC_CLASS_C2C)
-		return -1;
+		return RPC_ERRNO_INTERNAL_ERROR;
+	if (msg->cos_version != ODP_RPC_C2C_VERSION)
+		return RPC_ERRNO_VERSION_MISMATCH;
 
 	(void)payload;
 	switch (msg->pkt_subtype){
@@ -116,10 +119,10 @@ static int c2c_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload
 		ack = c2c_query(remoteClus, msg);
 		break;
 	default:
-		return -1;
+		return RPC_ERRNO_UNHANDLED_SUBTYPE;
 	}
 	odp_rpc_server_ack(msg, ack, NULL, 0);
-	return 0;
+	return RPC_ERRNO_HANDLED;
 }
 
 void  __attribute__ ((constructor)) __c2c_rpc_constructor()

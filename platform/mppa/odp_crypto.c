@@ -921,6 +921,7 @@ odp_random_data(uint8_t *buf, int32_t len, odp_bool_t use_entropy ODP_UNUSED)
 		odp_rpc_t cmd = {
 			.pkt_class = ODP_RPC_CLASS_RND,
 			.pkt_subtype = ODP_RPC_CMD_RND_GET,
+			.cos_version = ODP_RPC_RND_VERSION,
 			.data_len = 0,
 			.flags = 0,
 			.inl_data = (( odp_rpc_cmd_rnd_t ){

@@ -99,6 +99,7 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth, int
 		.data_len = nb_rules * sizeof(pkt_rule_t),
 		.pkt_class = ODP_RPC_CLASS_ETH,
 		.pkt_subtype = ODP_RPC_CMD_ETH_OPEN,
+		.cos_version = ODP_RPC_ETH_VERSION,
 		.inl_data = open_cmd.inl_data,
 		.flags = 0,
 	};
@@ -505,6 +506,7 @@ static int eth_close(pktio_entry_t * const pktio_entry)
 		.pkt_subtype = ODP_RPC_CMD_ETH_CLOS,
 		.data_len = 0,
 		.flags = 0,
+		.cos_version = ODP_RPC_ETH_VERSION,
 		.inl_data = close_cmd.inl_data
 	};
 
@@ -552,6 +554,7 @@ static int eth_set_state(pktio_entry_t * const pktio_entry, int enabled)
 		.pkt_subtype = ODP_RPC_CMD_ETH_STATE,
 		.data_len = 0,
 		.flags = 0,
+		.cos_version = ODP_RPC_ETH_VERSION,
 		.inl_data = state_cmd.inl_data
 	};
 

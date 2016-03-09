@@ -91,6 +91,7 @@ static int pcie_rpc_send_pcie_open(pkt_pcie_t *pcie)
 		.data_len = 0,
 		.pkt_class = ODP_RPC_CLASS_PCIE,
 		.pkt_subtype = ODP_RPC_CMD_PCIE_OPEN,
+		.cos_version = ODP_RPC_PCIE_VERSION,
 		.inl_data = open_cmd.inl_data,
 		.flags = 0,
 	};
@@ -275,6 +276,7 @@ static int pcie_close(pktio_entry_t * const pktio_entry)
 	odp_rpc_t cmd = {
 		.pkt_class = ODP_RPC_CLASS_PCIE,
 		.pkt_subtype = ODP_RPC_CMD_PCIE_CLOS,
+		.cos_version = ODP_RPC_PCIE_VERSION,
 		.data_len = 0,
 		.flags = 0,
 		.inl_data = close_cmd.inl_data

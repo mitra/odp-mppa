@@ -3,6 +3,9 @@
 
 #include <odp/rpc/defines.h>
 
+/** Version of the PCIE CoS */
+#define ODP_RPC_PCIE_VERSION 0x1
+
 typedef enum {
 	ODP_RPC_CMD_PCIE_OPEN    /**< PCIe: Forward Rx traffic to a cluster */,
 	ODP_RPC_CMD_PCIE_CLOS    /**< PCIe: Stop forwarding Rx trafic to a cluster */,
