@@ -156,10 +156,16 @@ void odp_rpc_print_msg(const odp_rpc_t * cmd)
 				odp_rpc_cmd_eth_open_t open = { .inl_data = cmd->inl_data };
 				printf("\t\tifId: %d\n"
 				       "\t\tRx(s): [%d:%d]\n"
-				       "\t\tLoopback: %d\n",
+				       "\t\tLoopback: %u\n"
+				       "\t\tRx Enbl : %d\n"
+				       "\t\tTx Enbl : %d\n"
+				       "\t\tJumbo   : %u\n"
+				       "\t\tNbRules : %u\n",
 				       open.ifId,
 				       open.min_rx, open.max_rx,
-				       open.loopback);
+				       open.loopback,
+				       open.rx_enabled, open.tx_enabled,
+				       open.jumbo, open.nb_rules);
 			}
 			break;
 		case ODP_RPC_CMD_ETH_CLOS:
