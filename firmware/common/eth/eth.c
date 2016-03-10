@@ -89,7 +89,7 @@ odp_rpc_ack_t  eth_open(unsigned remoteClus, odp_rpc_t *msg,
 					 data.nb_rules, (pkt_rule_t*)payload))
 			goto err;
 	}
-	if (ethtool_start_lane(data.ifId, data.loopback))
+	if (ethtool_start_lane(data.ifId, data.loopback, data.verbose))
 		goto err;
 
 	ack.cmd.eth_open.tx_if = externalAddress;

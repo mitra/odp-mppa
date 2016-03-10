@@ -86,6 +86,7 @@ static int eth_rpc_send_eth_open(odp_pktio_param_t * params, pkt_eth_t *eth, int
 			.rx_enabled = 1,
 			.tx_enabled = 1,
 			.nb_rules = nb_rules,
+			.verbose = eth->verbose,
 		}
 	};
 	if (params) {
@@ -328,6 +329,7 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 	int loopback = 0;
 	int nofree = 0;
 	int jumbo = 0;
+	int verbose = 0;
 
 	pkt_rule_t *rules = NULL;
 	int nb_rules = 0;
@@ -403,6 +405,9 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 		} else if (!strncmp(pptr, "jumbo", strlen("jumbo"))){
 			pptr += strlen("jumbo");
 			jumbo = 1;
+		} else if (!strncmp(pptr, "verbose", strlen("verbose"))){
+			pptr += strlen("verbose");
+			verbose = 1;
 		} else if (!strncmp(pptr, "nofree", strlen("nofree"))){
 			pptr += strlen("nofree");
 			nofree = 1;
@@ -434,6 +439,7 @@ static int eth_open(odp_pktio_t id ODP_UNUSED, pktio_entry_t *pktio_entry,
 	eth->pool = pool;
 	eth->loopback = loopback;
 	eth->jumbo = jumbo;
+	eth->verbose = verbose;
 	eth->tx_config.nofree = nofree;
 	eth->tx_config.add_end_marker = 0;
 
