@@ -672,6 +672,75 @@ static int eth_mtu_get(pktio_entry_t *const pktio_entry) {
 	pkt_eth_t *eth = &pktio_entry->s.pkt_eth;
 	return eth->mtu;
 }
+
+static int eth_stats(pktio_entry_t *const pktio_entry,
+		     _odp_pktio_stats_t *stats)
+{
+	pkt_eth_t *eth = &pktio_entry->s.pkt_eth;
+	unsigned cluster_id = __k1_get_cluster_id();
+	odp_rpc_t *ack_msg;
+	odp_rpc_ack_t ack;
+	int ret;
+	void *payload;
+	odp_rpc_payload_eth_get_stat_t *rpc_stats;
+
+	/*
+	 * RPC Msg to IOETH  #N so the LB will dispatch to us
+	 */
+	odp_rpc_cmd_eth_get_stat_t stat_cmd = {
+		{
+			.ifId = eth->port_id,
+			.link_stats = 1,
+		}
+	};
+
+	odp_rpc_t cmd = {
+		.data_len = 0,
+		.pkt_class = ODP_RPC_CLASS_ETH,
+		.pkt_subtype = ODP_RPC_CMD_ETH_GET_STAT,
+		.cos_version = ODP_RPC_ETH_VERSION,
+		.inl_data = stat_cmd.inl_data,
+		.flags = 0,
+	};
+
+	odp_rpc_do_query(odp_rpc_get_io_dma_id(eth->slot_id, cluster_id),
+					 odp_rpc_get_io_tag_id(cluster_id),
+					 &cmd, NULL);
+
+	ret = odp_rpc_wait_ack(&ack_msg, &payload, 2 * ODP_RPC_TIMEOUT_1S);
+	if (ret < 0) {
+		return -1;
+	} else if (ret == 0){
+		return -1;
+	}
+
+	ack.inl_data = ack_msg->inl_data;
+	if (ack.status) {
+		return -1;
+	}
+
+	if (ack_msg->data_len != sizeof(odp_rpc_payload_eth_get_stat_t))
+		return -1;
+
+	rpc_stats = (odp_rpc_payload_eth_get_stat_t*)payload;
+
+	stats->in_octets         = rpc_stats->in_octets;
+	stats->in_ucast_pkts     = rpc_stats->in_ucast_pkts;
+	stats->in_discards       = rpc_stats->in_discards;
+	stats->in_dropped        = 0;
+	stats->in_errors         = rpc_stats->in_errors;
+	stats->in_unknown_protos = 0;
+	stats->out_octets        = rpc_stats->out_octets;
+	stats->out_ucast_pkts    = rpc_stats->out_ucast_pkts;
+	stats->out_discards      = rpc_stats->out_discards;
+	stats->out_errors        = rpc_stats->out_errors;
+
+	if (rx_thread_fetch_stats(eth->rx_config.pktio_id,
+				  &stats->in_dropped, &stats->in_discards))
+		return -1;
+	return 0;
+}
+
 const pktio_if_ops_t eth_pktio_ops = {
 	.init = eth_init,
 	.term = eth_destroy,
@@ -679,6 +748,7 @@ const pktio_if_ops_t eth_pktio_ops = {
 	.close = eth_close,
 	.start = eth_start,
 	.stop = eth_stop,
+	.stats = eth_stats,
 	.recv = eth_recv,
 	.send = eth_send,
 	.mtu_get = eth_mtu_get,
