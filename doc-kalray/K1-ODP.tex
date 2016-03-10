@@ -71,6 +71,31 @@ The K1-ODP files will be installed under the
 \texttt{/usr/local/k1tools} directory.
 
 \section{What's new}
+\subsection{K1-ODP 0.4}
+\begin{itemize}
+\item[-]{New firmware system}
+\item[-]{Remove synchronisation barrier at cluster initialization}
+\item[-]{Add non-standard \texttt{\_odp\_pktio\_stats} function to get
+ethernet counters}
+\item[-]{Ethernet lane is now UP when calling
+  \texttt{odp\_pktio\_start} instead of open}
+\end{itemize}
+
+\subsubsection{Firmwares}
+
+Firmware build system and behaviour has been revised.
+Although the main thread still runs on IODDR, the main does not need
+to poll for message anymore.
+The call to \texttt{odp\_rpc\_server\_start} starts a background
+thread on IOETH that handles all the clusters request directly.
+The main thread should not exit before the spawned clusters ave been
+joined by calling \texttt{join\_clusters}.
+If no clusters were spawned, the firmare should never exit.
+
+Firmware build system has been changed to inherit compilation flags
+from the \texttt{platforms.inc} file already used for building ODP
+applications and now use the same board names.
+
 \subsection{K1-ODP 0.3.3}
 
 \texttt{verbose} option has been added for Ethernet pktio.
