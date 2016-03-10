@@ -757,3 +757,14 @@ int rx_thread_destroy(void)
 	g_rx_thread_init = 0;
 	return 0;
 }
+
+int rx_thread_fetch_stats(uint8_t pktio_id, uint64_t *dropped,
+			  uint64_t *oom)
+{
+	for (uint32_t i = 0; i < odp_global_data.n_rx_thr; ++i) {
+		*oom += LOAD_U64(rx_hdl.th[i].ifce[pktio_id].oom_pkts);
+		*dropped += LOAD_U64(rx_hdl.th[i].ifce[pktio_id].dropped_pkts);
+	}
+
+	return 0;
+}
