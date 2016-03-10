@@ -3,18 +3,23 @@
 
 #include <odp/rpc/defines.h>
 
+/** Version of the ETH CoS */
+#define ODP_RPC_ETH_VERSION 0x1
+
 /** Length of a mac address */
 #define ETH_ALEN 6
 
-#define ODP_RPC_CMD_LIST_ETH										\
-	ODP_RPC_CMD_ETH_OPEN     /**< ETH: Configure trafic forward to/from Eth in IOETH */,		\
-		ODP_RPC_CMD_ETH_CLOS     /**< ETH: Free forward resources to/from Eth in IOETH */,	\
-		ODP_RPC_CMD_ETH_PROMISC  /**< ETH: KSet/Clear promisc mode */,				\
-		ODP_RPC_CMD_ETH_OPEN_DEF /**< ETH: Forward unmatch Rx traffic to a cluster */,		\
-		ODP_RPC_CMD_ETH_CLOS_DEF /**< ETH: Stop forwarding unmatch Rx traffic to a cluster */,	\
-		ODP_RPC_CMD_ETH_DUAL_MAC /**< ETH: Enable dual-mac mode (ODP + Linux) */,		\
-		ODP_RPC_CMD_ETH_STATE    /**< ETH: Start or Stop trafic forwarding */,			\
-		ODP_RPC_CMD_ETH_GET_STAT /**< ETH: GEt link status and statistics */			\
+typedef enum {
+	ODP_RPC_CMD_ETH_OPEN     /**< ETH: Configure trafic forward to/from Eth in IOETH */,
+	ODP_RPC_CMD_ETH_CLOS     /**< ETH: Free forward resources to/from Eth in IOETH */,
+	ODP_RPC_CMD_ETH_PROMISC  /**< ETH: KSet/Clear promisc mode */,
+	ODP_RPC_CMD_ETH_OPEN_DEF /**< ETH: Forward unmatch Rx traffic to a cluster */,
+	ODP_RPC_CMD_ETH_CLOS_DEF /**< ETH: Stop forwarding unmatch Rx traffic to a cluster */,
+	ODP_RPC_CMD_ETH_DUAL_MAC /**< ETH: Enable dual-mac mode (ODP + Linux) */,
+	ODP_RPC_CMD_ETH_STATE    /**< ETH: Start or Stop trafic forwarding */,
+	ODP_RPC_CMD_ETH_GET_STAT /**< ETH: GEt link status and statistics */,
+	ODP_RPC_CMD_ETH_N_CMD
+} odp_rpc_cmd_eth_e;
 
 #define ODP_RPC_CMD_NAMES_ETH			\
 	"ETH OPEN",				\

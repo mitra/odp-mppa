@@ -7,9 +7,7 @@
 #include <mppa_bsp.h>
 #include <mppa/osconfig.h>
 #include <errno.h>
-#include <odp/rpc/rpc.h>
 
-#include "internal/rpc-server.h"
 #include "boot.h"
 
 #define MAX_ARGS                       256
