@@ -180,6 +180,7 @@ typedef struct pktio_if_ops {
 	int (*close)(pktio_entry_t *pktio_entry);
 	int (*start)(pktio_entry_t *pktio_entry);
 	int (*stop)(pktio_entry_t *pktio_entry);
+	int (*stats)(pktio_entry_t *pktio_entry, _odp_pktio_stats_t *stats);
 	int (*recv)(pktio_entry_t *pktio_entry, odp_packet_t pkt_table[],
 		    unsigned len);
 	int (*send)(pktio_entry_t *pktio_entry, odp_packet_t pkt_table[],
