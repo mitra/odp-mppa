@@ -93,6 +93,7 @@ typedef struct {
 	struct {
 		uint8_t loopback : 1;
 		uint8_t jumbo : 1;
+		uint8_t verbose : 1;
 	};
 
 	/* Rx Data */
