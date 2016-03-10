@@ -806,9 +806,17 @@ int ethtool_lane_stats(unsigned if_id,
 {
 	const int eth_if = if_id % 4;
 
+	if(status[eth_if].initialized == ETH_LANE_OFF)
+		return -1;
+
+	if (lb_status.loopback){
+		memset(stats, 0, sizeof(*stats));
+		return 0;
+	}
+
 	stats->in_octets =
 		mppabeth_mac_get_good_rx_bytes_nb((void *)&(mppa_ethernet[0]->mac),
-						   eth_if);
+						  eth_if);
 	stats->in_ucast_pkts =
 		mppabeth_mac_get_good_rx_packet_nb((void *)&(mppa_ethernet[0]->mac),
 						   eth_if)-
@@ -820,19 +828,18 @@ int ethtool_lane_stats(unsigned if_id,
 		mppabeth_lb_get_dropped_counter((void*)&(mppa_ethernet[0]->lb),
 						eth_if);;
 	stats->in_errors =
- 		mppabeth_mac_get_total_rx_packet_nb((void *)&(mppa_ethernet[0]->mac),
+		mppabeth_mac_get_total_rx_packet_nb((void *)&(mppa_ethernet[0]->mac),
 						    eth_if) -
- 		mppabeth_mac_get_good_rx_packet_nb((void *)&(mppa_ethernet[0]->mac),
+		mppabeth_mac_get_good_rx_packet_nb((void *)&(mppa_ethernet[0]->mac),
 						   eth_if);
 
-	stats->in_unknown_protos = 0;
 	stats->out_octets =
- 		mppabeth_mac_get_total_tx_bytes_nb((void *)&(mppa_ethernet[0]->mac),
+		mppabeth_mac_get_total_tx_bytes_nb((void *)&(mppa_ethernet[0]->mac),
 						   eth_if);
 
 	stats->out_ucast_pkts =
 		mppabeth_mac_get_total_tx_packet_nb((void *)&(mppa_ethernet[0]->mac),
-						   eth_if)-
+						    eth_if)-
 		mppabeth_mac_get_tx_multicast((void *)&(mppa_ethernet[0]->mac),
 					      eth_if) -
 		mppabeth_mac_get_tx_broadcast((void *)&(mppa_ethernet[0]->mac),

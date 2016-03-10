@@ -262,6 +262,9 @@ static int eth_rpc_handler(unsigned remoteClus, odp_rpc_t *msg, uint8_t *payload
 	case ODP_RPC_CMD_ETH_DUAL_MAC:
 		ack = eth_dual_mac(remoteClus, msg);
 		break;
+	case ODP_RPC_CMD_ETH_GET_STAT:
+		ack = eth_get_stat(remoteClus, msg, ack_payload, &ack_payload_len);
+		break;
 	default:
 		return -ODP_RPC_ERR_BAD_SUBTYPE;
 	}

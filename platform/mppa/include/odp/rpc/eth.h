@@ -179,18 +179,6 @@ typedef struct {
 	uint64_t in_errors;
 
 	/**
-	 * For packet-oriented interfaces, the number of packets received via
-	 * the interface which were discarded because of an unknown or
-	 * unsupported protocol.  For character-oriented or fixed-length
-	 * interfaces that support protocol multiplexing the number of
-	 * transmission units received via the interface which were discarded
-	 * because of an unknown or unsupported protocol.  For any interface
-	 * that does not support protocol multiplexing, this counter will always
-	 * be 0. See ifInUnknownProtos in RFC 2863, RFC 3635.
-	 */
-	uint64_t in_unknown_protos;
-
-	/**
 	 * The number of octets transmitted in valid MAC frames on this
 	 * interface, including the MAC header and FCS.  This does include
 	 * the number of octets in valid MAC Control frames transmitted on
