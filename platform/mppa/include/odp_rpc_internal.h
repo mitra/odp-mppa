@@ -103,7 +103,8 @@ typedef union {
 		uint8_t tx_enabled : 1;  /**< Enable packet transmission (Clus2Eth) */
 		uint8_t jumbo : 1;       /**< Enable Jumbo frame support */
 		uint8_t nb_rules : 4;    /**< Number of rule to the has policy.
-								  *   Rules are provided in the payload */
+					  *   Rules are provided in the payload */
+		uint8_t verbose :1;      /**< Make firmware verbose when opening a lane */
 	};
 	odp_rpc_inl_data_t inl_data;
 } odp_rpc_cmd_eth_open_t;

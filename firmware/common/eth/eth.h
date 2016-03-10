@@ -21,7 +21,7 @@ int ethtool_setup_eth2clus(unsigned remoteClus, int eth_if,
 			   int nocIf, int externalAddress,
 			   int min_rx, int max_rx);
 int ethtool_setup_clus2eth(unsigned remoteClus, int eth_if, int nocIf);
-int ethtool_init_lane(unsigned eth_if, int loopback);
+int ethtool_init_lane(unsigned eth_if, int loopback, int verbose);
 void ethtool_cleanup_cluster(unsigned remoteClus, unsigned eth_if);
 int ethtool_enable_cluster(unsigned remoteClus, unsigned eth_if);
 int ethtool_disable_cluster(unsigned remoteClus, unsigned eth_if);

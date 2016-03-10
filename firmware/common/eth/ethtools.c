@@ -188,7 +188,7 @@ int ethtool_setup_clus2eth(unsigned remoteClus, int if_id, int nocIf)
 	return 0;
 }
 
-int ethtool_init_lane(unsigned if_id, int loopback)
+int ethtool_init_lane(unsigned if_id, int loopback, int verbose)
 {
 	int ret;
 	int eth_if = if_id % 4;
@@ -196,9 +196,9 @@ int ethtool_init_lane(unsigned if_id, int loopback)
 	switch (status[eth_if].initialized) {
 	case ETH_LANE_OFF:
 		if (loopback) {
-#ifdef VERBOSE
-			printf("[ETH] Initializing lane %d in loopback\n", eth_if);
-#endif
+			if (verbose)
+				printf("[ETH] Initializing lane %d in loopback\n", eth_if);
+
 			mppabeth_mac_enable_loopback_bypass((void *)&(mppa_ethernet[0]->mac));
 			for (int i = 0; i < N_ETH_LANE; ++i)
 				status[i].initialized = (if_id == 4) ? ETH_LANE_LOOPBACK_40G :  ETH_LANE_LOOPBACK;
@@ -214,15 +214,15 @@ int ethtool_init_lane(unsigned if_id, int loopback)
 				/* Link could do 40G but we use only one lane */
 				link_speed = MPPA_ETH_MAC_ETHMODE_10G_BASE_R;
 			}
-#ifdef VERBOSE
-			printf("[ETH] Initializing global MAC @ %d\n", link_speed);
-#endif
+			if (verbose)
+				printf("[ETH] Initializing global MAC @ %d\n", link_speed);
+
 			mppabeth_mac_cfg_mode((void*) &(mppa_ethernet[0]->mac), link_speed);
 
 			/* Init MAC */
-#ifdef VERBOSE
-			printf("[ETH] Initializing MAC for lane %d\n", eth_if);
-#endif
+			if (verbose)
+				printf("[ETH] Initializing MAC for lane %d\n", eth_if);
+
 			ret = mppa_eth_utils_init_mac(eth_if, link_speed);
 			if (ret == BAD_VENDOR) {
 				fprintf(stderr,
@@ -244,14 +244,14 @@ int ethtool_init_lane(unsigned if_id, int loopback)
 				&(mppa_ethernet[0]->mac));
 			mppabeth_mac_enable_rx_check_preambule((void*)
 				&(mppa_ethernet[0]->mac));
-#ifdef VERBOSE
-			printf("[ETH] Starting MAC for lane %d\n", eth_if);
-#endif
+
+			if (verbose)
+				printf("[ETH] Starting MAC for lane %d\n", eth_if);
 			mppa_eth_utils_start_lane(eth_if, link_speed);
 
-#ifdef VERBOSE
-			printf("[ETH] Waiting for link %d\n", eth_if);
-#endif
+			if (verbose)
+				printf("[ETH] Waiting for link %d\n", eth_if);
+
 			/* Wait for link to come up */
 			unsigned long long start = __k1_read_dsu_timestamp();
 			int up = 0;
@@ -261,9 +261,9 @@ int ethtool_init_lane(unsigned if_id, int loopback)
 					break;
 				}
 			}
-#ifdef VERBOSE
-			printf("Link %d %s\n", eth_if, up ? "up" : "down/polling");
-#endif
+			if (verbose)
+				printf("Link %d %s\n", eth_if, up ? "up" : "down/polling");
+
 			if (!up)
 				return -1;
 			if (if_id == 4) {
