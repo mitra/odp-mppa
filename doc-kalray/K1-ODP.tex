@@ -74,7 +74,9 @@ The K1-ODP files will be installed under the
 \subsection{K1-ODP 0.4}
 \begin{itemize}
 \item[-]{New firmware system}
-\item[-]{Remove synchronisation barrier at cluster initialization}
+\item[-]{Remove synchronisation barrier at cluster
+  initialization. \texttt{boot\_set\_nb\_clusters} should not be
+  called anymore.}
 \item[-]{Add non-standard \texttt{\_odp\_pktio\_stats} function to get
 ethernet counters}
 \item[-]{Ethernet lane is now UP when calling
